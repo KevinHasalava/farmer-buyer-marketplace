@@ -1,0 +1,22 @@
+# Flutter and Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Flutter tooling
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Platform generated files
+android/.gradle/
+android/local.properties
+ios/Pods/
+macos/Pods/
