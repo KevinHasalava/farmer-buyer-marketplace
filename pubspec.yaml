@@ -1,5 +1,5 @@
 name: farmer_buyer_marketplace
-description: A farmer and buyer marketplace built with Flutter.
+description: Farm Trust — a mobile marketplace connecting small-scale farmers directly with buyers.
 publish_to: "none"
 version: 1.0.0+1
 
@@ -10,6 +10,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # State Management
+  provider: ^6.1.2
+
+  # Typography
+  google_fonts: ^6.2.1
+
+  # Navigation
+  go_router: ^14.6.2
 
 dev_dependencies:
   flutter_test:

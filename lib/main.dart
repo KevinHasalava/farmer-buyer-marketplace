@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import 'screens/home_screen.dart';
+import 'core/routes/app_router.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
-  runApp(const FarmerBuyerMarketplaceApp());
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Lock to portrait orientation for a consistent mobile experience.
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Edge-to-edge transparent status bar.
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
+
+  runApp(const FarmTrustApp());
 }
 
-class FarmerBuyerMarketplaceApp extends StatelessWidget {
-  const FarmerBuyerMarketplaceApp({super.key});
+/// Root widget for the Farm Trust marketplace application.
+class FarmTrustApp extends StatelessWidget {
+  const FarmTrustApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Farmer Buyer Marketplace',
+    return MaterialApp.router(
+      title: 'Farm Trust',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
+
+      // ── Theme ──────────────────────────────────────────────────────────
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
+
+      // ── Navigation ─────────────────────────────────────────────────────
+      routerConfig: appRouter,
     );
   }
 }
