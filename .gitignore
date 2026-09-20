@@ -20,3 +20,5 @@ android/.gradle/
 android/local.properties
 ios/Pods/
 macos/Pods/
+# Widget Preview related
+.widget_preview/
