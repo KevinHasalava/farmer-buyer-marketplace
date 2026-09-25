@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/routes/app_router.dart';
+import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ── Supabase init (loads .env → initialises client) ──────────────────
+  await SupabaseConfig.initialize();
+
   // Lock to portrait orientation for a consistent mobile experience.
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -31,7 +35,7 @@ class FarmTrustApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Farm Trust',
+      title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
 
       // ── Theme ──────────────────────────────────────────────────────────

@@ -22,3 +22,8 @@ ios/Pods/
 macos/Pods/
 # Widget Preview related
 .widget_preview/
+
+# Environment secrets — NEVER commit these
+.env
+.env.*
+!.env.example
