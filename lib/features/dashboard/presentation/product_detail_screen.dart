@@ -21,6 +21,8 @@ class ProductData {
     required this.harvestDate,
     required this.tags,
     required this.farmer,
+    this.category = 'Vegetables',
+    this.isActive = true,
   });
 
   final String name;
@@ -36,6 +38,44 @@ class ProductData {
   final String harvestDate;
   final List<String> tags;
   final FarmerData farmer;
+  final String category;
+  final bool isActive;
+
+  ProductData copyWith({
+    String? name,
+    String? price,
+    String? unit,
+    String? rating,
+    String? reviews,
+    String? availability,
+    String? emoji,
+    String? tag,
+    Color? tagColor,
+    String? description,
+    String? harvestDate,
+    List<String>? tags,
+    FarmerData? farmer,
+    String? category,
+    bool? isActive,
+  }) {
+    return ProductData(
+      name: name ?? this.name,
+      price: price ?? this.price,
+      unit: unit ?? this.unit,
+      rating: rating ?? this.rating,
+      reviews: reviews ?? this.reviews,
+      availability: availability ?? this.availability,
+      emoji: emoji ?? this.emoji,
+      tag: tag ?? this.tag,
+      tagColor: tagColor ?? this.tagColor,
+      description: description ?? this.description,
+      harvestDate: harvestDate ?? this.harvestDate,
+      tags: tags ?? this.tags,
+      farmer: farmer ?? this.farmer,
+      category: category ?? this.category,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }
 
 class FarmerData {
@@ -62,6 +102,20 @@ class FarmerData {
   final String happyCustomers;
   final String about;
   final String emoji;
+
+  static const defaultFarmer = FarmerData(
+    name: 'Sunil Perera',
+    role: 'Small-Scale Farmer',
+    location: 'Hambantota',
+    rating: '4.8',
+    reviews: '120',
+    yearsExperience: '5',
+    isOrganic: true,
+    happyCustomers: '200',
+    about:
+        'I am a small-scale farmer from Hambantota. I grow fresh vegetables using natural methods. My goal is to provide healthy and fresh produce to my customers.',
+    emoji: '👨‍🌾',
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
