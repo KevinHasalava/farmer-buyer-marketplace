@@ -115,17 +115,20 @@ class DatabaseService {
     String? category,
     int limit = 20,
   }) async {
-    var query = _db
-        .from('products')
-        .select('*, profiles(full_name)')
-        .order('created_at', ascending: false);
+    // Apply filter BEFORE order/limit — eq() is only on PostgrestFilterBuilder
+    var query = _db.from('products').select('*, profiles(full_name)');
 
     if (category != null) {
-      final result = await query.eq('category', category).limit(limit);
+      final result = await query
+          .eq('category', category)
+          .order('created_at', ascending: false)
+          .limit(limit);
       return List<Map<String, dynamic>>.from(result);
     }
 
-    final result = await query.limit(limit);
+    final result = await query
+        .order('created_at', ascending: false)
+        .limit(limit);
     return List<Map<String, dynamic>>.from(result);
   }
 
