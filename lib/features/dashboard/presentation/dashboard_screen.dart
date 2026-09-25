@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/constants/constants.dart';
+import 'farmer_profile_screen.dart';
+import 'product_detail_screen.dart';
 
 /// Premium Dashboard / Home screen — Farm2Home
 class DashboardScreen extends StatefulWidget {
@@ -29,20 +31,39 @@ class _DashboardScreenState extends State<DashboardScreen>
     ('Dairy', Icons.egg_rounded, '🥛'),
   ];
 
+  static const _defaultFarmer = FarmerData(
+    name: 'Sunil Perera',
+    role: 'Small-Scale Farmer',
+    location: 'Hambantota',
+    rating: '4.8',
+    reviews: '120',
+    yearsExperience: '5',
+    isOrganic: true,
+    happyCustomers: '200',
+    about:
+        'I am a small-scale farmer from Hambantota. I grow fresh vegetables using natural methods. My goal is to provide healthy and fresh produce to my customers.',
+    emoji: '👨‍🌾',
+  );
+
   static const _products = [
-    _Product(
-      name: 'Tomatoes',
+    ProductData(
+      name: 'Organic Tomatoes',
       price: 'Rs. 250',
       unit: '/kg',
-      rating: '4.7',
+      rating: '4.8',
       reviews: '32',
       availability: 'Available: 25kg',
       emoji: '🍅',
       tag: 'Bestseller',
       tagColor: Color(0xFFFF6B35),
+      description:
+          'Fresh and naturally grown tomatoes from our farm. No chemicals, 100% organic.',
+      harvestDate: '18 Aug 2026',
+      tags: ['Organic', 'Fresh'],
+      farmer: _defaultFarmer,
     ),
-    _Product(
-      name: 'Carrots',
+    ProductData(
+      name: 'Fresh Carrots',
       price: 'Rs. 300',
       unit: '/kg',
       rating: '4.6',
@@ -51,9 +72,14 @@ class _DashboardScreenState extends State<DashboardScreen>
       emoji: '🥕',
       tag: 'Fresh',
       tagColor: Color(0xFF1E8342),
+      description:
+          'Crispy sweet carrots cultivated in natural mineral-rich soil. High in beta-carotene and fiber, washed and packed fresh on harvest morning.',
+      harvestDate: '19 Aug 2026',
+      tags: ['Organic', 'Farm Fresh'],
+      farmer: _defaultFarmer,
     ),
-    _Product(
-      name: 'Potatoes',
+    ProductData(
+      name: 'Highland Potatoes',
       price: 'Rs. 220',
       unit: '/kg',
       rating: '4.8',
@@ -62,8 +88,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       emoji: '🥔',
       tag: null,
       tagColor: null,
+      description:
+          'Earthy Sri Lankan highland potatoes. Perfect for curries, baking, or frying. Harvested at peak maturity for rich starch and flavor.',
+      harvestDate: '16 Aug 2026',
+      tags: ['Highland', 'Natural'],
+      farmer: _defaultFarmer,
     ),
-    _Product(
+    ProductData(
       name: 'Bell Peppers',
       price: 'Rs. 380',
       unit: '/kg',
@@ -73,6 +104,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       emoji: '🫑',
       tag: 'Premium',
       tagColor: Color(0xFF8B5CF6),
+      description:
+          'Vibrant bell peppers with thick crunchy walls and naturally sweet taste. Carefully nurtured in organic greenhouse conditions.',
+      harvestDate: '20 Aug 2026',
+      tags: ['Greenhouse', 'Premium'],
+      farmer: _defaultFarmer,
     ),
   ];
 
@@ -109,7 +145,16 @@ class _DashboardScreenState extends State<DashboardScreen>
         physics: const BouncingScrollPhysics(),
         slivers: [
           // ── Premium App Bar ────────────────────────────────────────────
-          _PremiumSliverAppBar(headerFade: _headerFade),
+          _PremiumSliverAppBar(
+            headerFade: _headerFade,
+            onAvatarTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const FarmerProfileScreen(farmer: _defaultFarmer),
+              ),
+            ),
+          ),
 
           SliverToBoxAdapter(
             child: Column(
@@ -250,14 +295,22 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                     itemCount: _products.length,
                     itemBuilder: (context, i) {
+                      final product = _products[i];
                       return _PremiumProductCard(
-                        product: _products[i],
+                        product: product,
                         isWishlisted: _wishlist.contains(i),
                         onWishlistToggle: () => setState(() {
                           _wishlist.contains(i)
                               ? _wishlist.remove(i)
                               : _wishlist.add(i);
                         }),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ProductDetailScreen(product: product),
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -268,7 +321,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                 // ── Fresh From Farmers section ──────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _FreshFromFarmersCard(),
+                  child: _FreshFromFarmersCard(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const FarmerProfileScreen(farmer: _defaultFarmer),
+                      ),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 100),
@@ -281,45 +342,35 @@ class _DashboardScreenState extends State<DashboardScreen>
       // ── Premium Bottom Navigation ──────────────────────────────────────
       bottomNavigationBar: _PremiumBottomNav(
         selectedIndex: _selectedNav,
-        onTap: (i) => setState(() => _selectedNav = i),
+        onTap: (i) {
+          if (i == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const FarmerProfileScreen(farmer: _defaultFarmer),
+              ),
+            );
+          } else {
+            setState(() => _selectedNav = i);
+          }
+        },
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Data model
-// ─────────────────────────────────────────────────────────────────────────────
-class _Product {
-  const _Product({
-    required this.name,
-    required this.price,
-    required this.unit,
-    required this.rating,
-    required this.reviews,
-    required this.availability,
-    required this.emoji,
-    required this.tag,
-    required this.tagColor,
-  });
-
-  final String name;
-  final String price;
-  final String unit;
-  final String rating;
-  final String reviews;
-  final String availability;
-  final String emoji;
-  final String? tag;
-  final Color? tagColor;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Premium Sliver App Bar
 // ─────────────────────────────────────────────────────────────────────────────
 class _PremiumSliverAppBar extends StatelessWidget {
-  const _PremiumSliverAppBar({required this.headerFade});
+  const _PremiumSliverAppBar({
+    required this.headerFade,
+    this.onAvatarTap,
+  });
+
   final Animation<double> headerFade;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -339,31 +390,34 @@ class _PremiumSliverAppBar extends StatelessWidget {
               child: Row(
                 children: [
                   // Avatar
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E8342), Color(0xFF063725)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                  GestureDetector(
+                    onTap: onAvatarTap,
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E8342), Color(0xFF063725)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'K',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'K',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -779,11 +833,13 @@ class _PremiumProductCard extends StatefulWidget {
     required this.product,
     required this.isWishlisted,
     required this.onWishlistToggle,
+    this.onTap,
   });
 
-  final _Product product;
+  final ProductData product;
   final bool isWishlisted;
   final VoidCallback onWishlistToggle;
+  final VoidCallback? onTap;
 
   @override
   State<_PremiumProductCard> createState() => _PremiumProductCardState();
@@ -815,230 +871,234 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
   Widget build(BuildContext context) {
     final p = widget.product;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image area
-            Expanded(
-              child: Stack(
-                children: [
-                  // Background gradient
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen.withValues(alpha: 0.06),
-                          AppColors.primaryGreen.withValues(alpha: 0.12),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        p.emoji,
-                        style: const TextStyle(fontSize: 56),
-                      ),
-                    ),
-                  ),
-
-                  // Tag badge
-                  if (p.tag != null)
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: p.tagColor,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
-                          p.tag!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Wishlist heart
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () {
-                        _heartController.reverse().then(
-                              (_) => _heartController.forward(),
-                            );
-                        widget.onWishlistToggle();
-                      },
-                      child: ScaleTransition(
-                        scale: _heartController,
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            widget.isWishlisted
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 16,
-                            color: widget.isWishlisted
-                                ? Colors.redAccent
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Info area
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
-                      letterSpacing: -0.2,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        p.price,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryGreen,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      Text(
-                        p.unit,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Row(
-                    children: [
-                      // Rating
-                      const Icon(
-                        Icons.star_rounded,
-                        size: 13,
-                        color: AppColors.accentOrange,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        p.rating,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      Text(
-                        ' (${p.reviews})',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const Spacer(),
-
-                      // Add button
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF1E8342),
-                                Color(0xFF0D5C38),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryGreen
-                                    .withValues(alpha: 0.35),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-                  Text(
-                    p.availability,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image area
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Background gradient
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primaryGreen.withValues(alpha: 0.06),
+                            AppColors.primaryGreen.withValues(alpha: 0.12),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          p.emoji,
+                          style: const TextStyle(fontSize: 56),
+                        ),
+                      ),
+                    ),
+
+                    // Tag badge
+                    if (p.tag != null)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: p.tagColor,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            p.tag!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Wishlist heart
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          _heartController.reverse().then(
+                                (_) => _heartController.forward(),
+                              );
+                          widget.onWishlistToggle();
+                        },
+                        child: ScaleTransition(
+                          scale: _heartController,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              widget.isWishlisted
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 16,
+                              color: widget.isWishlisted
+                                  ? Colors.redAccent
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Info area
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.2,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          p.price,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryGreen,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        Text(
+                          p.unit,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Row(
+                      children: [
+                        // Rating
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 13,
+                          color: AppColors.accentOrange,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          p.rating,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        Text(
+                          ' (${p.reviews})',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const Spacer(),
+
+                        // Add button
+                        GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFF1E8342),
+                                  Color(0xFF0D5C38),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen
+                                      .withValues(alpha: 0.35),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+                    Text(
+                      p.availability,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1049,70 +1109,75 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
 // Fresh From Farmers Banner
 // ─────────────────────────────────────────────────────────────────────────────
 class _FreshFromFarmersCard extends StatelessWidget {
-  const _FreshFromFarmersCard();
+  const _FreshFromFarmersCard({this.onTap});
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF8E6), Color(0xFFFFF3CC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF8E6), Color(0xFFFFF3CC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AppColors.accentOrange.withValues(alpha: 0.3),
+          ),
         ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.accentOrange.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Text('🌾', style: TextStyle(fontSize: 40)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Fresh From Farmers',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF7A4500),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                const Text(
-                  'Hand-cut at dawn from local organic farmers across the valley.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9A6010),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.accentOrange,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Explore Farms →',
+        child: Row(
+          children: [
+            const Text('🌾', style: TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Fresh From Farmers',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
+                      color: Color(0xFF7A4500),
+                      letterSpacing: -0.3,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Hand-cut at dawn from local organic farmers across the valley.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF9A6010),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentOrange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Explore Farms →',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
