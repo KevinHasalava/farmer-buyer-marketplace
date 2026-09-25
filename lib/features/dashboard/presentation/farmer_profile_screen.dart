@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/constants.dart';
+import '../../farmer/presentation/add_edit_product_screen.dart';
+import '../../farmer/presentation/farmer_products_screen.dart';
 import 'product_detail_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -448,7 +450,13 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 ),
                               ),
                               TextButton(
-                                onPressed: () {},
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const FarmerProductsScreen(),
+                                  ),
+                                ),
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppColors.primaryGreen,
                                   padding: EdgeInsets.zero,
@@ -523,24 +531,12 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                 ],
               ),
               child: GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.check_circle_rounded,
-                              color: Colors.white, size: 20),
-                          SizedBox(width: 10),
-                          Text('Add Product dialog opened'),
-                        ],
-                      ),
-                      backgroundColor: AppColors.primaryGreen,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddEditProductScreen(),
+                  ),
+                ),
                 child: Container(
                   height: 54,
                   decoration: BoxDecoration(

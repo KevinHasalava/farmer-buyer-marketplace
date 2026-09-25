@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/constants/constants.dart';
+import '../../farmer/presentation/farmer_dashboard_screen.dart';
+import '../../search/presentation/search_filter_screen.dart';
 import 'farmer_profile_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -476,6 +478,46 @@ class _PremiumSliverAppBar extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
+
+                  // Farmer Portal Mode Switch
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FarmerDashboardScreen(),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF235D3A).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF235D3A)
+                              .withValues(alpha: 0.35),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '🌾 Farmer',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF235D3A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
 
                   // Notification button
                   _IconBtn(
@@ -576,48 +618,55 @@ class _PremiumSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SearchFilterScreen()),
       ),
-      child: Row(
-        children: [
-          const SizedBox(width: 14),
-          const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Search fresh veggies, fruits, spices...',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.textHint,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 14),
+            const Icon(Icons.search_rounded,
+                color: AppColors.textSecondary, size: 20),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Search fresh veggies, fruits, spices...',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textHint,
+                ),
               ),
             ),
-          ),
-          Container(
-            width: 36,
-            height: 36,
-            margin: const EdgeInsets.only(right: 7),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F7F3),
-              borderRadius: BorderRadius.circular(10),
+            Container(
+              width: 36,
+              height: 36,
+              margin: const EdgeInsets.only(right: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F7F3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.tune_rounded,
+                size: 17,
+                color: AppColors.primaryGreen,
+              ),
             ),
-            child: const Icon(
-              Icons.tune_rounded,
-              size: 17,
-              color: AppColors.primaryGreen,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
