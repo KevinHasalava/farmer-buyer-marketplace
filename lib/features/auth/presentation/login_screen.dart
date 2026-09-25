@@ -121,12 +121,127 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (mounted) context.go(AppRoutes.dashboard);
     } on AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('rate limit')) {
+        // Attempt sign in in case user account was created in a previous attempt
+        try {
+          await _authService.signIn(
+            email: _emailCtrl.text.trim(),
+            password: _passwordCtrl.text,
+          );
+          if (mounted) {
+            context.go(AppRoutes.dashboard);
+            return;
+          }
+        } catch (_) {
+          // If signIn fails, show the rate limit resolution dialog with bypass
+          if (mounted) {
+            _showRateLimitDialog();
+            return;
+          }
+        }
+      }
       _showError(e.message);
     } catch (e) {
       _showError('Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showRateLimitDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Email Rate Limit',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Supabase free tier limits confirmation emails to 3 per hour. Since you tested multiple times, Supabase has paused sending confirmation emails temporarily.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8E1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFE082)),
+              ),
+              child: const Text(
+                '💡 Tip: To permanently fix this in Supabase, go to Authentication > Providers > Email and turn OFF "Confirm email".',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF795548),
+                  height: 1.4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Would you like to enter directly into the app now?',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF235D3A),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _isSignInMode = true);
+            },
+            child: const Text(
+              'Switch to Sign In',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.go(AppRoutes.dashboard);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF235D3A),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Continue to App'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showError(String msg) {
@@ -398,6 +513,63 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ],
                               ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: AppDimensions.spaceLG),
+
+                        // ── Demo / Skip Mode ────────────────────────────
+                        Row(
+                          children: [
+                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                'OR',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ),
+                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                          ],
+                        ),
+
+                        const SizedBox(height: AppDimensions.spaceMD),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.go(AppRoutes.dashboard),
+                            icon: const Icon(
+                              Icons.flash_on_rounded,
+                              size: 18,
+                              color: Color(0xFF235D3A),
+                            ),
+                            label: const Text(
+                              'Skip & Explore as Demo User',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF235D3A),
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                color: Color(0xFF235D3A),
+                                width: 1.5,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusSM,
+                                ),
+                              ),
+                              backgroundColor:
+                                  const Color(0xFF235D3A).withValues(alpha: 0.05),
                             ),
                           ),
                         ),
