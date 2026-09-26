@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 import '../../dashboard/presentation/product_detail_screen.dart';
 
-/// Premium Add / Edit Product Screen
+/// Pixel-perfect Add/Edit Product Screen matching Screenshot 3
 class AddEditProductScreen extends StatefulWidget {
   const AddEditProductScreen({super.key, this.productToEdit});
   final ProductData? productToEdit;
@@ -14,100 +13,142 @@ class AddEditProductScreen extends StatefulWidget {
   State<AddEditProductScreen> createState() => _AddEditProductScreenState();
 }
 
-class _AddEditProductScreenState extends State<AddEditProductScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
-
+class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late String _selectedProductName;
   late String _selectedCategory;
+  late String _selectedImageUrl;
+  late String _selectedEmoji;
+
   late TextEditingController _priceController;
   late TextEditingController _quantityController;
   late TextEditingController _descriptionController;
   late TextEditingController _locationController;
+
   late DateTime _harvestDate;
   late bool _isOrganic;
   late bool _isFresh;
-  late bool _isPremium;
-  late String _selectedEmoji;
-
-
 
   static const _productOptions = [
-    ('Tomatoes', '🍅', 'Vegetables'),
-    ('Carrots', '🥕', 'Vegetables'),
-    ('Potatoes', '🥔', 'Vegetables'),
-    ('Bell Peppers', '🫑', 'Vegetables'),
-    ('Cucumber', '🥒', 'Vegetables'),
-    ('Cabbage', '🥬', 'Vegetables'),
-    ('Pumpkin', '🎃', 'Vegetables'),
-    ('Green Chili', '🌶️', 'Spices'),
-    ('Banana', '🍌', 'Fruits'),
-    ('Papaya', '🍈', 'Fruits'),
-    ('Mango', '🥭', 'Fruits'),
-    ('Coconut', '🥥', 'Fruits'),
+    (
+      name: 'Tomatoes',
+      emoji: '🍅',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Carrots',
+      emoji: '🥕',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Cucumber',
+      emoji: '🥒',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Potatoes',
+      emoji: '🥔',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Bell Peppers',
+      emoji: '🫑',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Cabbage',
+      emoji: '🥬',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Pumpkin',
+      emoji: '🎃',
+      category: 'Vegetables',
+      imageUrl:
+          'https://images.unsplash.com/photo-1508747703725-719777637510?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Green Chili',
+      emoji: '🌶️',
+      category: 'Spices',
+      imageUrl:
+          'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Banana',
+      emoji: '🍌',
+      category: 'Fruits',
+      imageUrl:
+          'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Papaya',
+      emoji: '🍈',
+      category: 'Fruits',
+      imageUrl:
+          'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=400&auto=format&fit=crop&q=80',
+    ),
+    (
+      name: 'Mango',
+      emoji: '🥭',
+      category: 'Fruits',
+      imageUrl:
+          'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&auto=format&fit=crop&q=80',
+    ),
   ];
 
   static const _categoryOptions = [
-    ('Vegetables', '🥦', Color(0xFF1E8342)),
-    ('Fruits', '🍎', Color(0xFFEA580C)),
-    ('Grains', '🌾', Color(0xFFD97706)),
-    ('Spices', '🌶️', Color(0xFFDC2626)),
-    ('Dairy', '🥛', Color(0xFF2563EB)),
+    'Vegetables',
+    'Fruits',
+    'Grains',
+    'Spices',
+    'Dairy',
   ];
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..forward();
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    )..forward();
-
-    _fadeAnim =
-        CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
-
     final p = widget.productToEdit;
+
     _selectedProductName = p?.name ?? 'Tomatoes';
     _selectedCategory = p?.category ?? 'Vegetables';
     _selectedEmoji = p?.emoji ?? '🍅';
+    _selectedImageUrl = p?.imageUrl ??
+        _productOptions.firstWhere((o) => o.name == _selectedProductName,
+            orElse: () => _productOptions[0]).imageUrl;
+
     _priceController = TextEditingController(
-      text: p != null
-          ? p.price.replaceAll(RegExp(r'[^0-9.]'), '')
-          : '250',
+      text: p != null ? p.price.replaceAll(RegExp(r'[^0-9.]'), '') : '250',
     );
     _quantityController = TextEditingController(
-      text: p != null
-          ? p.availability.replaceAll(RegExp(r'[^0-9.]'), '')
-          : '50',
+      text:
+          p != null ? p.availability.replaceAll(RegExp(r'[^0-9.]'), '') : '50',
     );
     _descriptionController = TextEditingController(
-      text: p?.description ?? 'Fresh and organic produce from our farm.',
+      text: p?.description ?? 'Fresh and organic tomatoes from our farm.',
     );
     _locationController = TextEditingController(
       text: p?.farmer.location ?? 'Hambantota',
     );
+
     _harvestDate = DateTime(2026, 8, 18);
     _isOrganic = p?.tags.contains('Organic') ?? true;
     _isFresh = p?.tags.contains('Fresh') ?? true;
-    _isPremium = false;
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
     _priceController.dispose();
     _quantityController.dispose();
     _descriptionController.dispose();
@@ -117,8 +158,18 @@ class _AddEditProductScreenState extends State<AddEditProductScreen>
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
@@ -132,9 +183,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen>
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.light(
-            primary: Color(0xFF1E8342),
+            primary: Color(0xFF235A43),
             onPrimary: Colors.white,
-            onSurface: Color(0xFF1A1A1A),
+            onSurface: Color(0xFF111827),
           ),
         ),
         child: child!,
@@ -143,683 +194,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen>
     if (picked != null) setState(() => _harvestDate = picked);
   }
 
-  void _saveProduct() {
-    HapticFeedback.mediumImpact();
-    final name = _selectedProductName;
-    final price = _priceController.text.trim().isEmpty
-        ? '250'
-        : _priceController.text.trim();
-    final qty = _quantityController.text.trim().isEmpty
-        ? '50'
-        : _quantityController.text.trim();
-    final desc = _descriptionController.text.trim().isEmpty
-        ? 'Fresh and naturally grown from our farm.'
-        : _descriptionController.text.trim();
-
-    final tags = <String>[];
-    if (_isOrganic) tags.add('Organic');
-    if (_isFresh) tags.add('Fresh');
-    if (_isPremium) tags.add('Premium');
-
-    final product = ProductData(
-      name: name,
-      price: 'Rs. $price',
-      unit: '/kg',
-      rating: widget.productToEdit?.rating ?? '4.8',
-      reviews: widget.productToEdit?.reviews ?? '1',
-      availability: 'Available: $qty kg',
-      emoji: _selectedEmoji,
-      tag: _isOrganic ? 'Organic' : (_isFresh ? 'Fresh' : null),
-      tagColor: const Color(0xFF1E8342),
-      description: desc,
-      harvestDate: _formatDate(_harvestDate),
-      tags: tags.isEmpty ? ['Farm Fresh'] : tags,
-      farmer: widget.productToEdit?.farmer ?? FarmerData.defaultFarmer,
-      category: _selectedCategory,
-      isActive: true,
-    );
-
-    Navigator.pop(context, product);
-  }
-
-  Color get _categoryColor {
-    final match = _categoryOptions.where((c) => c.$1 == _selectedCategory);
-    return match.isNotEmpty ? match.first.$3 : const Color(0xFF1E8342);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
-
-    final isEditing = widget.productToEdit != null;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F2),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: _buildHeader(context, isEditing),
-            ),
-
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  SlideTransition(
-                    position: _slideAnim,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Photo section
-                        _buildPhotoSection(),
-                        const SizedBox(height: 24),
-
-                        // Product Info card
-                        _buildSectionCard(
-                          title: 'Product Information',
-                          icon: Icons.inventory_2_outlined,
-                          child: Column(
-                            children: [
-                              // Product name
-                              _buildDropdownField(
-                                label: 'Product Name',
-                                value: _selectedProductName,
-                                items: _productOptions
-                                    .map((o) => DropdownMenuItem<String>(
-                                          value: o.$1,
-                                          child: Row(children: [
-                                            Text(o.$2,
-                                                style: const TextStyle(
-                                                    fontSize: 20)),
-                                            const SizedBox(width: 10),
-                                            Text(o.$1,
-                                                style: GoogleFonts.poppins(
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight.w500)),
-                                          ]),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    final m = _productOptions
-                                        .firstWhere((o) => o.$1 == val);
-                                    setState(() {
-                                      _selectedProductName = val;
-                                      _selectedEmoji = m.$2;
-                                      _selectedCategory = m.$3;
-                                    });
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 14),
-
-                              // Category
-                              _buildLabel('Category'),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _categoryOptions.map((cat) {
-                                  final isSelected =
-                                      _selectedCategory == cat.$1;
-                                  return GestureDetector(
-                                    onTap: () => setState(
-                                        () => _selectedCategory = cat.$1),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        gradient: isSelected
-                                            ? LinearGradient(colors: [
-                                                cat.$3,
-                                                cat.$3.withValues(alpha: 0.7)
-                                              ])
-                                            : null,
-                                        color: isSelected
-                                            ? null
-                                            : const Color(0xFFF3F4F6),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                        boxShadow: isSelected
-                                            ? [
-                                                BoxShadow(
-                                                  color: cat.$3.withValues(
-                                                      alpha: 0.4),
-                                                  blurRadius: 10,
-                                                  offset: const Offset(0, 3),
-                                                )
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(cat.$2,
-                                              style: const TextStyle(
-                                                  fontSize: 14)),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            cat.$1,
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : const Color(0xFF6B7280),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Pricing & Quantity card
-                        _buildSectionCard(
-                          title: 'Pricing & Quantity',
-                          icon: Icons.attach_money_rounded,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                  label: 'Price per Kg (Rs.)',
-                                  controller: _priceController,
-                                  hint: '250',
-                                  keyboardType: TextInputType.number,
-                                  prefixText: 'Rs.',
-                                  color: _categoryColor,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: _buildTextField(
-                                  label: 'Quantity (kg)',
-                                  controller: _quantityController,
-                                  hint: '50',
-                                  keyboardType: TextInputType.number,
-                                  prefixText: 'kg',
-                                  color: _categoryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Harvest date & description card
-                        _buildSectionCard(
-                          title: 'Details',
-                          icon: Icons.description_outlined,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Harvest date
-                              _buildLabel('Harvest Date'),
-                              const SizedBox(height: 8),
-                              GestureDetector(
-                                onTap: _pickHarvestDate,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF9FAFB),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                        color: const Color(0xFFE5E7EB)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: _categoryColor
-                                              .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                            Icons.calendar_today_outlined,
-                                            size: 16,
-                                            color: _categoryColor),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        _formatDate(_harvestDate),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF1A1A1A),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          size: 20,
-                                          color: Color(0xFF9CA3AF)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-
-                              // Description
-                              _buildLabel('Description'),
-                              const SizedBox(height: 8),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF9FAFB),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                      color: const Color(0xFFE5E7EB)),
-                                ),
-                                child: TextField(
-                                  controller: _descriptionController,
-                                  maxLines: 3,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: const Color(0xFF1A1A1A),
-                                  ),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.all(14),
-                                    hintText:
-                                        'Fresh and organic produce from our farm...',
-                                    hintStyle: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      color: const Color(0xFF9CA3AF),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Quality tags card
-                        _buildSectionCard(
-                          title: 'Quality Tags',
-                          icon: Icons.verified_outlined,
-                          child: Column(
-                            children: [
-                              _buildPremiumToggle(
-                                label: 'Organic',
-                                description: 'Grown without pesticides',
-                                emoji: '🌿',
-                                value: _isOrganic,
-                                color: const Color(0xFF1E8342),
-                                onChanged: (v) =>
-                                    setState(() => _isOrganic = v),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildPremiumToggle(
-                                label: 'Farm Fresh',
-                                description: 'Harvested within 24 hours',
-                                emoji: '🌱',
-                                value: _isFresh,
-                                color: const Color(0xFF059669),
-                                onChanged: (v) =>
-                                    setState(() => _isFresh = v),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildPremiumToggle(
-                                label: 'Premium Quality',
-                                description: 'Hand-selected top grade',
-                                emoji: '⭐',
-                                value: _isPremium,
-                                color: const Color(0xFFD97706),
-                                onChanged: (v) =>
-                                    setState(() => _isPremium = v),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Location card
-                        _buildSectionCard(
-                          title: 'Farm Location',
-                          icon: Icons.location_on_outlined,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF9FAFB),
-                              borderRadius: BorderRadius.circular(14),
-                              border:
-                                  Border.all(color: const Color(0xFFE5E7EB)),
-                            ),
-                            child: Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 14),
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFEF4444)
-                                          .withValues(alpha: 0.1),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                        Icons.location_on_rounded,
-                                        size: 16,
-                                        color: Color(0xFFEF4444)),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _locationController,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF1A1A1A),
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 14),
-                                      hintText: 'Hambantota',
-                                      hintStyle: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        color: const Color(0xFF9CA3AF),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Save button
-                        _buildSaveButton(isEditing),
-
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                ]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isEditing) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF063725),
-            _categoryColor,
-            _categoryColor.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -15,
-            bottom: 0,
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.04),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2)),
-                      ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white, size: 17),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isEditing ? 'Edit Product' : 'Add New Product',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        Text(
-                          isEditing
-                              ? 'Update your product details'
-                              : 'List your fresh produce',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2)),
-                        ),
-                        child: const Icon(Icons.notifications_outlined,
-                            color: Colors.white, size: 19),
-                      ),
-                      Positioned(
-                        right: 7,
-                        top: 7,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFBBF24),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1.5),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoSection() {
-    return Row(
-      children: [
-        // Current product preview
-        Expanded(
-          child: Container(
-            height: 130,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  _categoryColor.withValues(alpha: 0.1),
-                  _categoryColor.withValues(alpha: 0.22),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: _categoryColor.withValues(alpha: 0.25)),
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Text(_selectedEmoji,
-                      style: const TextStyle(fontSize: 60)),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(
-                        _selectedProductName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: _categoryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-
-        // Change photo / Add photo
-        Expanded(
-          child: GestureDetector(
-            onTap: () => _showEmojiPicker(),
-            child: Container(
-              height: 130,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF1E8342),
-                  width: 1.5,
-                  strokeAlign: BorderSide.strokeAlignInside,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        const Color(0xFF1E8342).withValues(alpha: 0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E8342), Color(0xFF063725)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.camera_alt_outlined,
-                        color: Colors.white, size: 22),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Change Icon',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E8342),
-                    ),
-                  ),
-                  Text(
-                    'Tap to select',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showEmojiPicker() {
+  void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,351 +220,534 @@ class _AddEditProductScreenState extends State<AddEditProductScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Select Product',
+              'Select Product Photo',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
               ),
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: _productOptions.map((opt) {
-                final isSelected = _selectedProductName == opt.$1;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedProductName = opt.$1;
-                      _selectedEmoji = opt.$2;
-                      _selectedCategory = opt.$3;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? const LinearGradient(colors: [
-                              Color(0xFF1E8342),
-                              Color(0xFF063725)
-                            ])
-                          : null,
-                      color: isSelected ? null : const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFF1E8342)
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              )
-                            ]
-                          : null,
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _productOptions.length,
+                itemBuilder: (ctx, i) {
+                  final opt = _productOptions[i];
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedImageUrl = opt.imageUrl;
+                        _selectedProductName = opt.name;
+                        _selectedEmoji = opt.emoji;
+                        _selectedCategory = opt.category;
+                      });
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      width: 90,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _selectedImageUrl == opt.imageUrl
+                              ? const Color(0xFF235A43)
+                              : const Color(0xFFE5E7EB),
+                          width: _selectedImageUrl == opt.imageUrl ? 2.5 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          opt.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(opt.emoji,
+                                style: const TextStyle(fontSize: 32)),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: Center(
-                      child: Text(opt.$2,
-                          style: const TextStyle(fontSize: 30)),
-                    ),
-                  ),
-                );
-              }).toList(),
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Card header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: _categoryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child:
-                      Icon(icon, size: 16, color: _categoryColor),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              children: [
-                const SizedBox(height: 12),
-                child,
-              ],
-            ),
-          ),
-        ],
-      ),
+  void _saveProduct() {
+    HapticFeedback.mediumImpact();
+    final price = _priceController.text.trim().isEmpty
+        ? '250'
+        : _priceController.text.trim();
+    final qty = _quantityController.text.trim().isEmpty
+        ? '50'
+        : _quantityController.text.trim();
+    final desc = _descriptionController.text.trim().isEmpty
+        ? 'Fresh and organic tomatoes from our farm.'
+        : _descriptionController.text.trim();
+
+    final tags = <String>[];
+    if (_isOrganic) tags.add('Organic');
+    if (_isFresh) tags.add('Fresh');
+
+    final product = ProductData(
+      name: _selectedProductName,
+      price: 'Rs. $price',
+      unit: '/kg',
+      rating: widget.productToEdit?.rating ?? '4.8',
+      reviews: widget.productToEdit?.reviews ?? '1',
+      availability: 'Available: $qty kg',
+      emoji: _selectedEmoji,
+      tag: _isOrganic ? 'Organic' : (_isFresh ? 'Fresh' : null),
+      tagColor: const Color(0xFF235A43),
+      description: desc,
+      harvestDate: _formatDate(_harvestDate),
+      tags: tags.isEmpty ? ['Farm Fresh'] : tags,
+      farmer: widget.productToEdit?.farmer ?? FarmerData.defaultFarmer,
+      category: _selectedCategory,
+      isActive: widget.productToEdit?.isActive ?? true,
+      imageUrl: _selectedImageUrl,
     );
+
+    Navigator.pop(context, product);
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.poppins(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: const Color(0xFF6B7280),
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
       ),
     );
-  }
 
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<DropdownMenuItem<String>> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              icon: Icon(Icons.keyboard_arrow_down_rounded,
-                  color: _categoryColor),
-              items: items,
-              onChanged: onChanged,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF1A1A1A),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Top App Bar ───────────────────────────────────────────────
+            _buildTopBar(context),
+
+            // ── Scrollable Form Fields ────────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+
+                    // Photo Section (Thumbnail + Dashed Box)
+                    _buildPhotoSection(),
+                    const SizedBox(height: 20),
+
+                    // Product Name
+                    _buildFieldLabel('Product Name'),
+                    const SizedBox(height: 6),
+                    _buildProductNameDropdown(),
+                    const SizedBox(height: 16),
+
+                    // Category
+                    _buildFieldLabel('Category'),
+                    const SizedBox(height: 6),
+                    _buildCategoryDropdown(),
+                    const SizedBox(height: 16),
+
+                    // Side-by-side: Price per Kg & Available Quantity
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFieldLabel('Price per Kg (Rs.)'),
+                              const SizedBox(height: 6),
+                              _buildTextInput(
+                                controller: _priceController,
+                                hint: '250',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFieldLabel('Available Quantity (kg)'),
+                              const SizedBox(height: 6),
+                              _buildTextInput(
+                                controller: _quantityController,
+                                hint: '50',
+                                keyboardType: TextInputType.number,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Harvest Date
+                    _buildFieldLabel('Harvest Date'),
+                    const SizedBox(height: 6),
+                    _buildHarvestDateField(),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    _buildFieldLabel('Description'),
+                    const SizedBox(height: 6),
+                    _buildDescriptionInput(),
+                    const SizedBox(height: 18),
+
+                    // Toggles Row: Organic & Fresh
+                    _buildTogglesRow(),
+                    const SizedBox(height: 18),
+
+                    // Location
+                    _buildFieldLabel('Location'),
+                    const SizedBox(height: 6),
+                    _buildLocationField(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    required TextInputType keyboardType,
-    String? prefixText,
-    required Color color,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Row(
-            children: [
-              if (prefixText != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.08),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(13),
-                      bottomLeft: Radius.circular(13),
+            // ── Pinned Bottom Button ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _saveProduct,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF235A43),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
                     ),
-                    border: Border(
-                        right: BorderSide(
-                            color: const Color(0xFFE5E7EB))),
                   ),
                   child: Text(
-                    prefixText,
+                    'Save Product',
                     style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  keyboardType: keyboardType,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 14),
-                    hintText: hint,
-                    hintStyle: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: const Color(0xFF9CA3AF),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildPremiumToggle({
-    required String label,
-    required String description,
-    required String emoji,
-    required bool value,
-    required Color color,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: value ? color.withValues(alpha: 0.06) : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: value ? color.withValues(alpha: 0.3) : const Color(0xFFE5E7EB),
-        ),
-      ),
+  // ── Top App Bar ─────────────────────────────────────────────────────────────
+  Widget _buildTopBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                ),
-                Text(
-                  description,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: const Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF111827),
+              size: 30,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          Text(
+            'Add/Edit Product',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: color,
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFE5E7EB),
+          IconButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Product notification settings',
+                    style: GoogleFonts.poppins(),
+                  ),
+                  backgroundColor: const Color(0xFF235A43),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: Color(0xFF111827),
+              size: 24,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSaveButton(bool isEditing) {
-    return GestureDetector(
-      onTap: _saveProduct,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [_categoryColor, const Color(0xFF063725)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: _categoryColor.withValues(alpha: 0.45),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+  // ── Photo Section ───────────────────────────────────────────────────────────
+  Widget _buildPhotoSection() {
+    return SizedBox(
+      height: 125,
+      child: Row(
+        children: [
+          // Current selected photo thumbnail
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                _selectedImageUrl,
+                height: 125,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: const Color(0xFFF0FDF4),
+                  child: Center(
+                    child: Text(_selectedEmoji,
+                        style: const TextStyle(fontSize: 48)),
+                  ),
+                ),
+              ),
             ),
-          ],
+          ),
+          const SizedBox(width: 14),
+
+          // Dashed border Add Photo box
+          Expanded(
+            child: GestureDetector(
+              onTap: _showPhotoOptions,
+              child: CustomPaint(
+                painter: const _DashedBorderPainter(
+                  color: Color(0xFF10B981),
+                  strokeWidth: 1.5,
+                  radius: 16,
+                  dashWidth: 6,
+                  dashSpace: 4,
+                ),
+                child: Container(
+                  height: 125,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4).withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFBBF7D0),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_outlined,
+                          color: Color(0xFF10B981),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add Photo',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF059669),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Field Label ─────────────────────────────────────────────────────────────
+  Widget _buildFieldLabel(String label) {
+    return Text(
+      label,
+      style: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w500,
+        color: const Color(0xFF374151),
+      ),
+    );
+  }
+
+  // ── Product Name Dropdown ───────────────────────────────────────────────────
+  Widget _buildProductNameDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedProductName,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF9CA3AF),
+            size: 24,
+          ),
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF111827),
+          ),
+          onChanged: (val) {
+            if (val != null) {
+              final match = _productOptions.firstWhere(
+                (o) => o.name == val,
+                orElse: () => _productOptions[0],
+              );
+              setState(() {
+                _selectedProductName = val;
+                _selectedEmoji = match.emoji;
+                _selectedCategory = match.category;
+                _selectedImageUrl = match.imageUrl;
+              });
+            }
+          },
+          items: _productOptions.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt.name,
+              child: Text(opt.name),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ── Category Dropdown ───────────────────────────────────────────────────────
+  Widget _buildCategoryDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedCategory,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF9CA3AF),
+            size: 24,
+          ),
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF111827),
+          ),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedCategory = val);
+            }
+          },
+          items: _categoryOptions.map((cat) {
+            return DropdownMenuItem<String>(
+              value: cat,
+              child: Text(cat),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ── Text Input ──────────────────────────────────────────────────────────────
+  Widget _buildTextInput({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFF111827),
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          hintText: hint,
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 14,
+            color: const Color(0xFF9CA3AF),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Harvest Date Field ──────────────────────────────────────────────────────
+  Widget _buildHarvestDateField() {
+    return GestureDetector(
+      onTap: _pickHarvestDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isEditing ? Icons.save_rounded : Icons.add_rounded,
-                color: Colors.white,
-                size: 17,
-              ),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 18,
+              color: Color(0xFF059669),
             ),
             const SizedBox(width: 10),
             Text(
-              isEditing ? 'Save Changes' : 'Add Product',
+              _formatDate(_harvestDate),
               style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 0.3,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF111827),
               ),
             ),
           ],
@@ -1188,4 +755,222 @@ class _AddEditProductScreenState extends State<AddEditProductScreen>
       ),
     );
   }
+
+  // ── Description Input ───────────────────────────────────────────────────────
+  Widget _buildDescriptionInput() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: TextField(
+        controller: _descriptionController,
+        maxLines: 3,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF111827),
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: 'Fresh and organic tomatoes from our farm.',
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 14,
+            color: const Color(0xFF9CA3AF),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Toggles Row: Organic & Fresh ────────────────────────────────────────────
+  Widget _buildTogglesRow() {
+    return Row(
+      children: [
+        // Organic Switch
+        _buildSwitchItem(
+          label: 'Organic',
+          value: _isOrganic,
+          onChanged: (v) => setState(() => _isOrganic = v),
+        ),
+        const SizedBox(width: 32),
+        // Fresh Switch
+        _buildSwitchItem(
+          label: 'Fresh',
+          value: _isFresh,
+          onChanged: (v) => setState(() => _isFresh = v),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchItem({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CustomSwitch(
+            value: value,
+            onChanged: onChanged,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF374151),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Location Field ──────────────────────────────────────────────────────────
+  Widget _buildLocationField() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.location_on_outlined,
+            size: 18,
+            color: Color(0xFF059669),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _locationController,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF111827),
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                hintText: 'Hambantota',
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom Pill Switch matching Screenshot 3
+// ─────────────────────────────────────────────────────────────────────────────
+class _CustomSwitch extends StatelessWidget {
+  const _CustomSwitch({required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 44,
+        height: 24,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: value ? const Color(0xFF235A43) : const Color(0xFFD1D5DB),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dashed Border Painter for Add Photo Container
+// ─────────────────────────────────────────────────────────────────────────────
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.radius,
+    this.dashWidth = 6.0,
+    this.dashSpace = 4.0,
+  });
+
+  final Color color;
+  final double strokeWidth;
+  final double radius;
+  final double dashWidth;
+  final double dashSpace;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        strokeWidth / 2,
+        strokeWidth / 2,
+        size.width - strokeWidth,
+        size.height - strokeWidth,
+      ),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    final metrics = path.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final nextDistance = distance + dashWidth;
+        final extractPath = metric.extractPath(
+          distance,
+          nextDistance > metric.length ? metric.length : nextDistance,
+        );
+        canvas.drawPath(extractPath, paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color ||
+      strokeWidth != oldDelegate.strokeWidth ||
+      radius != oldDelegate.radius ||
+      dashWidth != oldDelegate.dashWidth ||
+      dashSpace != oldDelegate.dashSpace;
 }

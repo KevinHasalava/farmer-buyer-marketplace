@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_products_screen.dart';
 
-/// Premium Farmer Dashboard Screen
+/// Pixel-perfect Farmer Dashboard Screen matching reference design
 class FarmerDashboardScreen extends StatefulWidget {
   const FarmerDashboardScreen({super.key});
 
@@ -17,13 +16,10 @@ class FarmerDashboardScreen extends StatefulWidget {
 }
 
 class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   int _selectedNav = 0;
-
   late AnimationController _fadeController;
-  late AnimationController _pulseController;
   late Animation<double> _fadeAnim;
-  late Animation<double> _pulseAnim;
 
   static const _farmer = FarmerData.defaultFarmer;
 
@@ -34,7 +30,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       amount: 'Rs. 950',
       status: 'Pending',
       isPending: true,
-      avatarEmoji: '👩‍💼',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     ),
     (
       id: '#F2H1024',
@@ -42,15 +39,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       amount: 'Rs. 1,200',
       status: 'Confirmed',
       isPending: false,
-      avatarEmoji: '👨‍💼',
-    ),
-    (
-      id: '#F2H1023',
-      customer: 'Amara Silva',
-      amount: 'Rs. 2,100',
-      status: 'Delivered',
-      isPending: false,
-      avatarEmoji: '👩',
+      avatarUrl:
+          'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
     ),
   ];
 
@@ -59,25 +49,14 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..repeat(reverse: true);
-
+      duration: const Duration(milliseconds: 600),
+    )..forward();
     _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
-    _pulseAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _fadeController.forward();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -88,360 +67,670 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     return 'Good Evening';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+  void _showOrdersSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Incoming Orders',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._recentOrders.map(
+              (ord) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildOrderCard(ord),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F2),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // ── Premium Gradient Hero Header ──────────────────────────────
-            SliverToBoxAdapter(child: _buildHeroHeader(context)),
-
-            // ── Body Content ───────────────────────────────────────────────
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  const SizedBox(height: 20),
-
-                  // Stats Grid
-                  _buildStatsGrid(context),
-                  const SizedBox(height: 24),
-
-                  // Quick Actions
-                  _buildQuickActions(context),
-                  const SizedBox(height: 24),
-
-                  // Recent Orders
-                  _buildRecentOrders(context),
-                  const SizedBox(height: 100),
-                ]),
+  void _showMessagesSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                color: Color(0xFFECFDF5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: Color(0xFF235A43),
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Farmer Direct Chat',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Chat directly with verified buyers inquiring about your fresh produce.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF235A43),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                'Close',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
 
-      // ── Floating Bottom Navigation ──────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF8),
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+
+                // ── Top Bar ───────────────────────────────────────────────
+                _buildTopBar(context),
+                const SizedBox(height: 24),
+
+                // ── Greeting Header ───────────────────────────────────────
+                _buildGreeting(),
+                const SizedBox(height: 20),
+
+                // ── Farmer Profile Card ───────────────────────────────────
+                _buildProfileCard(context),
+                const SizedBox(height: 22),
+
+                // ── 2x2 Stats Grid ────────────────────────────────────────
+                _buildStatsGrid(context),
+                const SizedBox(height: 24),
+
+                // ── Quick Actions ─────────────────────────────────────────
+                _buildQuickActions(context),
+                const SizedBox(height: 24),
+
+                // ── Recent Orders ─────────────────────────────────────────
+                _buildRecentOrdersSection(),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
+      ),
       bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
-  Widget _buildHeroHeader(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF063725), Color(0xFF1E8342), Color(0xFF2DA55A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  // ── Top App Bar ─────────────────────────────────────────────────────────────
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Farmer Dashboard',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF111827),
+          ),
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Decorative circles
-          Positioned(
-            right: -30,
-            top: -30,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 30,
-            top: 50,
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            bottom: 10,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.04),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Row: Title + Actions
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Farmer Dashboard',
-                          style: GoogleFonts.poppins(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            letterSpacing: 0.2,
-                          ),
-                        ),
+        Row(
+          children: [
+            // Buyer View Switcher pill button
+            GestureDetector(
+              onTap: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Already at the root of Farmer view',
+                        style: GoogleFonts.poppins(),
                       ),
-                      // Buyer View Switch
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.25),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Buyer View',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.swap_horiz_rounded,
-                                  size: 14, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Notification Bell
-                      AnimatedBuilder(
-                        animation: _pulseAnim,
-                        builder: (_, __) => Stack(
-                          children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color:
-                                    Colors.white.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color:
-                                      Colors.white.withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_outlined,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            Positioned(
-                              right: 7,
-                              top: 7,
-                              child: Container(
-                                width: 9,
-                                height: 9,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFBBF24)
-                                      .withValues(alpha: _pulseAnim.value),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.white, width: 1.5),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Greeting Row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${_getGreeting()}, Sunil 🌾',
-                              style: GoogleFonts.poppins(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                height: 1.2,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Here's your farm overview today",
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.75),
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Farmer Avatar Card
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const FarmerProfileScreen(farmer: _farmer),
-                          ),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFFFD700),
-                                Color(0xFFFFA500)
-                              ],
-                            ),
-                          ),
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF1A5C34),
-                                  Color(0xFF063725)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text('👨‍🌾',
-                                  style: TextStyle(fontSize: 28)),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Farmer Info Card (Glassmorphism)
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const FarmerProfileScreen(farmer: _farmer),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Buyer View',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF4B5563),
                       ),
                     ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 14,
+                      color: Color(0xFF4B5563),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Bell Notification with green indicator dot
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'You have 2 pending order notifications',
+                      style: GoogleFonts.poppins(),
+                    ),
+                    backgroundColor: const Color(0xFF235A43),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Color(0xFF111827),
+                      size: 22,
+                    ),
+                  ),
+                  Positioned(
+                    top: 1,
+                    right: 1,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // Verified badge
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.verified_rounded,
-                                color: Color(0xFF4ADE80), size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _farmer.name,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  _farmer.role,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on_rounded,
-                                  size: 13, color: Color(0xFF86EFAC)),
-                              const SizedBox(width: 3),
-                              Text(
-                                _farmer.location,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      Colors.white.withValues(alpha: 0.85),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(Icons.chevron_right_rounded,
-                                  size: 16, color: Colors.white54),
-                            ],
-                          ),
-                        ],
+                        color: const Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
                     ),
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Greeting Header ─────────────────────────────────────────────────────────
+  Widget _buildGreeting() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${_getGreeting()}, Sunil 🌾',
+          style: GoogleFonts.poppins(
+            fontSize: 23,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF111827),
+            letterSpacing: -0.4,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "Here's your farm overview",
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Farmer Profile Card ─────────────────────────────────────────────────────
+  Widget _buildProfileCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sunil Perera',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Small-Scale Farmer',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 15,
+                        color: Color(0xFF059669),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Hambantota',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Profile photo with green ring & verified badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF22C55E),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFFDCFCE7),
+                        child: const Center(
+                          child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -1,
+                  right: -1,
+                  child: Container(
+                    width: 19,
+                    height: 19,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── 2x2 Stats Grid ──────────────────────────────────────────────────────────
+  Widget _buildStatsGrid(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                value: '12',
+                label: 'Active Products',
+                icon: Icons.inventory_2_outlined,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FarmerProductsScreen(),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildStatCard(
+                value: '5',
+                label: 'New Orders',
+                icon: Icons.assignment_outlined,
+                onTap: _showOrdersSheet,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                value: '18',
+                label: 'Completed Orders',
+                icon: Icons.check_circle_outline_rounded,
+                onTap: _showOrdersSheet,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: _buildStatCard(
+                value: 'Rs. 8,500',
+                label: 'This Week Earnings',
+                icon: Icons.monetization_on_outlined,
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Total weekly earnings: Rs. 8,500 across 18 orders',
+                        style: GoogleFonts.poppins(),
+                      ),
+                      backgroundColor: const Color(0xFF235A43),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String value,
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: GoogleFonts.poppins(
+                      fontSize: value.startsWith('Rs') ? 17 : 22,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1E5E3A),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 20, color: const Color(0xFF10B981)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Quick Actions ───────────────────────────────────────────────────────────
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'QUICK ACTIONS',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF374151),
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildActionItem(
+              icon: Icons.add_rounded,
+              label: 'Add Product',
+              isPrimary: true,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+              ),
+            ),
+            _buildActionItem(
+              icon: Icons.inventory_2_outlined,
+              label: 'My Products',
+              isPrimary: false,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FarmerProductsScreen()),
+              ),
+            ),
+            _buildActionItem(
+              icon: Icons.assignment_outlined,
+              label: 'Orders',
+              isPrimary: false,
+              onTap: _showOrdersSheet,
+            ),
+            _buildActionItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'Messages',
+              isPrimary: false,
+              onTap: _showMessagesSheet,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionItem({
+    required IconData icon,
+    required String label,
+    required bool isPrimary,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: isPrimary ? const Color(0xFF235A43) : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: isPrimary
+                  ? null
+                  : Border.all(color: const Color(0xFFE5E7EB)),
+              boxShadow: [
+                BoxShadow(
+                  color: isPrimary
+                      ? const Color(0xFF235A43).withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: isPrimary ? 28 : 24,
+              color: isPrimary ? Colors.white : const Color(0xFF235A43),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF374151),
             ),
           ),
         ],
@@ -449,631 +738,104 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
-  Widget _buildStatsGrid(BuildContext context) {
-    final stats = [
-      (
-        number: '12',
-        label: 'Active\nProducts',
-        icon: Icons.inventory_2_rounded,
-        color1: const Color(0xFF1E8342),
-        color2: const Color(0xFF0D6B35),
-        onTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const FarmerProductsScreen())),
-      ),
-      (
-        number: '5',
-        label: 'New\nOrders',
-        icon: Icons.receipt_long_rounded,
-        color1: const Color(0xFF2563EB),
-        color2: const Color(0xFF1D4ED8),
-        onTap: () {},
-      ),
-      (
-        number: '18',
-        label: 'Completed\nOrders',
-        icon: Icons.check_circle_rounded,
-        color1: const Color(0xFF7C3AED),
-        color2: const Color(0xFF6D28D9),
-        onTap: () {},
-      ),
-      (
-        number: 'Rs.\n8,500',
-        label: 'This Week\nEarnings',
-        icon: Icons.account_balance_wallet_rounded,
-        color1: const Color(0xFFD97706),
-        color2: const Color(0xFFB45309),
-        onTap: () {},
-      ),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 18,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E8342), Color(0xFF4ADE80)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Performance Overview',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1A1A),
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.55,
-          children: stats
-              .map((s) => _PremiumStatCard(
-                    number: s.number,
-                    label: s.label,
-                    icon: s.icon,
-                    color1: s.color1,
-                    color2: s.color2,
-                    onTap: s.onTap,
-                  ))
-              .toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 4,
-              height: 18,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E8342), Color(0xFF4ADE80)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Quick Actions',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A1A1A),
-                letterSpacing: -0.2,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: _PremiumQuickAction(
-                icon: Icons.add_rounded,
-                label: 'Add\nProduct',
-                isPrimary: true,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const AddEditProductScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _PremiumQuickAction(
-                icon: Icons.inventory_2_outlined,
-                label: 'My\nProducts',
-                isPrimary: false,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const FarmerProductsScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _PremiumQuickAction(
-                icon: Icons.assignment_outlined,
-                label: 'Orders',
-                isPrimary: false,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  _premiumSnackBar('Orders view coming soon'),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _PremiumQuickAction(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: 'Messages',
-                isPrimary: false,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  _premiumSnackBar('Messages coming soon'),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentOrders(BuildContext context) {
+  // ── Recent Orders Section ───────────────────────────────────────────────────
+  Widget _buildRecentOrdersSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E8342), Color(0xFF4ADE80)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Recent Orders',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1A1A1A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
-            ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1E8342),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                backgroundColor:
-                    const Color(0xFF1E8342).withValues(alpha: 0.08),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
+            Text(
+              'Recent Orders',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF111827),
               ),
+            ),
+            GestureDetector(
+              onTap: _showOrdersSheet,
               child: Text(
                 'See All',
                 style: GoogleFonts.poppins(
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  color: const Color(0xFF235A43),
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ...List.generate(_recentOrders.length, (i) {
-          final ord = _recentOrders[i];
-          return Padding(
-            padding: EdgeInsets.only(bottom: i < _recentOrders.length - 1 ? 10 : 0),
-            child: _PremiumOrderCard(
-              id: ord.id,
-              customer: ord.customer,
-              amount: ord.amount,
-              status: ord.status,
-              isPending: ord.isPending,
-              avatarEmoji: ord.avatarEmoji,
-            ),
-          );
-        }),
+        ..._recentOrders.map(
+          (ord) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildOrderCard(ord),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      height: 72 + MediaQuery.of(context).padding.bottom,
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavBtn(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            isSelected: _selectedNav == 0,
-            onTap: () => setState(() => _selectedNav = 0),
-          ),
-          _NavBtn(
-            icon: Icons.receipt_long_rounded,
-            label: 'Orders',
-            badgeDot: true,
-            isSelected: _selectedNav == 1,
-            onTap: () => setState(() => _selectedNav = 1),
-          ),
-          _NavBtn(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
-            isSelected: _selectedNav == 2,
-            onTap: () => setState(() => _selectedNav = 2),
-          ),
-          _NavBtn(
-            icon: Icons.person_outline_rounded,
-            label: 'Profile',
-            isSelected: _selectedNav == 3,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    const FarmerProfileScreen(farmer: _farmer),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  SnackBar _premiumSnackBar(String msg) {
-    return SnackBar(
-      content: Text(msg,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-      backgroundColor: const Color(0xFF063725),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Stat Card with gradient
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumStatCard extends StatefulWidget {
-  const _PremiumStatCard({
-    required this.number,
-    required this.label,
-    required this.icon,
-    required this.color1,
-    required this.color2,
-    required this.onTap,
-  });
-  final String number;
-  final String label;
-  final IconData icon;
-  final Color color1;
-  final Color color2;
-  final VoidCallback onTap;
-
-  @override
-  State<_PremiumStatCard> createState() => _PremiumStatCardState();
-}
-
-class _PremiumStatCardState extends State<_PremiumStatCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scaleAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _scaleAnim =
-        Tween<double>(begin: 1.0, end: 0.95).animate(_ctrl);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: AnimatedBuilder(
-        animation: _scaleAnim,
-        builder: (_, child) =>
-            Transform.scale(scale: _scaleAnim.value, child: child),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [widget.color1, widget.color2],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: widget.color1.withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Background icon watermark
-              Positioned(
-                right: -8,
-                bottom: -8,
-                child: Icon(
-                  widget.icon,
-                  size: 64,
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child:
-                          Icon(widget.icon, size: 17, color: Colors.white),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.number,
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          widget.label,
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.8),
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Quick Action Button
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumQuickAction extends StatefulWidget {
-  const _PremiumQuickAction({
-    required this.icon,
-    required this.label,
-    required this.isPrimary,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final bool isPrimary;
-  final VoidCallback onTap;
-
-  @override
-  State<_PremiumQuickAction> createState() => _PremiumQuickActionState();
-}
-
-class _PremiumQuickActionState extends State<_PremiumQuickAction>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: AnimatedBuilder(
-        animation: _ctrl,
-        builder: (_, child) => Transform.scale(
-          scale: 1 - _ctrl.value * 0.06,
-          child: child,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: widget.isPrimary
-                    ? const LinearGradient(
-                        colors: [Color(0xFF1E8342), Color(0xFF063725)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: widget.isPrimary ? null : Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: widget.isPrimary
-                    ? null
-                    : Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.isPrimary
-                        ? const Color(0xFF1E8342).withValues(alpha: 0.4)
-                        : Colors.black.withValues(alpha: 0.06),
-                    blurRadius: widget.isPrimary ? 14 : 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                widget.icon,
-                size: 24,
-                color: widget.isPrimary
-                    ? Colors.white
-                    : const Color(0xFF1E8342),
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              widget.label,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF374151),
-                height: 1.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Order Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumOrderCard extends StatelessWidget {
-  const _PremiumOrderCard({
-    required this.id,
-    required this.customer,
-    required this.amount,
-    required this.status,
-    required this.isPending,
-    required this.avatarEmoji,
-  });
-  final String id, customer, amount, status, avatarEmoji;
-  final bool isPending;
-
-  @override
-  Widget build(BuildContext context) {
-    Color statusColor;
-    Color statusBg;
-    Color statusBorder;
-
-    if (status == 'Pending') {
-      statusColor = const Color(0xFFD97706);
-      statusBg = const Color(0xFFFFFBEB);
-      statusBorder = const Color(0xFFFDE68A);
-    } else if (status == 'Confirmed') {
-      statusColor = const Color(0xFF059669);
-      statusBg = const Color(0xFFECFDF5);
-      statusBorder = const Color(0xFFA7F3D0);
-    } else {
-      statusColor = const Color(0xFF2563EB);
-      statusBg = const Color(0xFFEFF6FF);
-      statusBorder = const Color(0xFFBFDBFE);
+  Widget _buildOrderCard((
+    {
+      String id,
+      String customer,
+      String amount,
+      String status,
+      bool isPending,
+      String avatarUrl,
     }
+  ) ord) {
+    final isPending = ord.isPending;
+    final badgeBg = isPending
+        ? const Color(0xFFFFFBEB)
+        : const Color(0xFFECFDF5);
+    final badgeBorder = isPending
+        ? const Color(0xFFFDE68A)
+        : const Color(0xFFA7F3D0);
+    final badgeText = isPending
+        ? const Color(0xFFD97706)
+        : const Color(0xFF059669);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
-            ),
-            child: Center(
-              child: Text(avatarEmoji,
-                  style: const TextStyle(fontSize: 22)),
+          // Customer avatar photo
+          ClipOval(
+            child: Image.network(
+              ord.avatarUrl,
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 44,
+                height: 44,
+                color: const Color(0xFFF3F4F6),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
 
-          // Order info
+          // Order details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1081,58 +843,60 @@ class _PremiumOrderCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      id,
+                      ord.id,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E8342),
+                        color: const Color(0xFF111827),
                       ),
                     ),
                     Text(
-                      '  •  ',
+                      ' • ',
                       style: GoogleFonts.poppins(
-                          fontSize: 12, color: const Color(0xFF9CA3AF)),
+                        fontSize: 13,
+                        color: const Color(0xFF9CA3AF),
+                      ),
                     ),
                     Expanded(
                       child: Text(
-                        customer,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF374151),
-                        ),
+                        ord.customer,
                         overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF4B5563),
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  amount,
+                  ord.amount,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1A1A1A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Status pill
+          // Status Badge Pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: statusBg,
-              borderRadius: BorderRadius.circular(99),
-              border: Border.all(color: statusBorder),
+              color: badgeBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: badgeBorder),
             ),
             child: Text(
-              status,
+              ord.status,
               style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: statusColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: badgeText,
               ),
             ),
           ),
@@ -1140,82 +904,113 @@ class _PremiumOrderCard extends StatelessWidget {
       ),
     );
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Nav Button
-// ─────────────────────────────────────────────────────────────────────────────
-class _NavBtn extends StatelessWidget {
-  const _NavBtn({
-    required this.icon,
-    required this.label,
-    this.badgeDot = false,
-    required this.isSelected,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final bool badgeDot;
-  final bool isSelected;
-  final VoidCallback onTap;
+  // ── Bottom Navigation Bar ───────────────────────────────────────────────────
+  Widget _buildBottomNav(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(
+            icon: Icons.home_rounded,
+            label: 'Home',
+            isSelected: _selectedNav == 0,
+            onTap: () => setState(() => _selectedNav = 0),
+          ),
+          _buildNavItem(
+            icon: Icons.assignment_outlined,
+            label: 'Orders',
+            hasBadge: true,
+            isSelected: _selectedNav == 1,
+            onTap: () {
+              setState(() => _selectedNav = 1);
+              _showOrdersSheet();
+            },
+          ),
+          _buildNavItem(
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'Chat',
+            isSelected: _selectedNav == 2,
+            onTap: () {
+              setState(() => _selectedNav = 2);
+              _showMessagesSheet();
+            },
+          ),
+          _buildNavItem(
+            icon: Icons.person_outline_rounded,
+            label: 'Profile',
+            isSelected: _selectedNav == 3,
+            onTap: () {
+              setState(() => _selectedNav = 3);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    bool hasBadge = false,
+    required VoidCallback onTap,
+  }) {
+    const activeColor = Color(0xFF235A43);
+    const inactiveColor = Color(0xFF9CA3AF);
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF1E8342).withValues(alpha: 0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: isSelected
-                      ? const Color(0xFF1E8342)
-                      : const Color(0xFF9CA3AF),
-                ),
-                if (badgeDot)
-                  Positioned(
-                    right: -3,
-                    top: -3,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF59E0B),
-                        shape: BoxShape.circle,
-                      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: isSelected ? activeColor : inactiveColor,
+              ),
+              if (hasBadge)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
                     ),
                   ),
-              ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? activeColor : inactiveColor,
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? const Color(0xFF1E8342)
-                    : const Color(0xFF9CA3AF),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

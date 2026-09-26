@@ -119,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
 
-      if (mounted) context.go(AppRoutes.dashboard);
+      if (mounted) {
+        context.go(_isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard);
+      }
     } on AuthException catch (e) {
       final msg = e.message.toLowerCase();
       if (msg.contains('rate limit')) {
@@ -130,7 +132,9 @@ class _LoginScreenState extends State<LoginScreen>
             password: _passwordCtrl.text,
           );
           if (mounted) {
-            context.go(AppRoutes.dashboard);
+            context.go(
+              _isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard,
+            );
             return;
           }
         } catch (_) {
@@ -228,7 +232,9 @@ class _LoginScreenState extends State<LoginScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context.go(AppRoutes.dashboard);
+              context.go(
+                _isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF235D3A),
@@ -544,7 +550,11 @@ class _LoginScreenState extends State<LoginScreen>
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton.icon(
-                            onPressed: () => context.go(AppRoutes.dashboard),
+                            onPressed: () => context.go(
+                              _isBuyer
+                                  ? AppRoutes.dashboard
+                                  : AppRoutes.farmerDashboard,
+                            ),
                             icon: const Icon(
                               Icons.flash_on_rounded,
                               size: 18,

@@ -23,6 +23,7 @@ class ProductData {
     required this.farmer,
     this.category = 'Vegetables',
     this.isActive = true,
+    this.imageUrl,
   });
 
   final String name;
@@ -40,6 +41,7 @@ class ProductData {
   final FarmerData farmer;
   final String category;
   final bool isActive;
+  final String? imageUrl;
 
   ProductData copyWith({
     String? name,
@@ -57,6 +59,7 @@ class ProductData {
     FarmerData? farmer,
     String? category,
     bool? isActive,
+    String? imageUrl,
   }) {
     return ProductData(
       name: name ?? this.name,
@@ -74,6 +77,7 @@ class ProductData {
       farmer: farmer ?? this.farmer,
       category: category ?? this.category,
       isActive: isActive ?? this.isActive,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }
@@ -90,6 +94,7 @@ class FarmerData {
     required this.happyCustomers,
     required this.about,
     required this.emoji,
+    this.avatarUrl,
   });
 
   final String name;
@@ -102,6 +107,7 @@ class FarmerData {
   final String happyCustomers;
   final String about;
   final String emoji;
+  final String? avatarUrl;
 
   static const defaultFarmer = FarmerData(
     name: 'Sunil Perera',
@@ -115,6 +121,8 @@ class FarmerData {
     about:
         'I am a small-scale farmer from Hambantota. I grow fresh vegetables using natural methods. My goal is to provide healthy and fresh produce to my customers.',
     emoji: '👨‍🌾',
+    avatarUrl:
+        'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
   );
 }
 
