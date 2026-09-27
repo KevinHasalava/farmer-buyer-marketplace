@@ -99,6 +99,8 @@ class FarmerData {
     required this.about,
     required this.emoji,
     this.avatarUrl,
+    this.coverUrl,
+    this.phone,
   });
 
   final String name;
@@ -112,6 +114,40 @@ class FarmerData {
   final String about;
   final String emoji;
   final String? avatarUrl;
+  final String? coverUrl;
+  final String? phone;
+
+  FarmerData copyWith({
+    String? name,
+    String? role,
+    String? location,
+    String? rating,
+    String? reviews,
+    String? yearsExperience,
+    bool? isOrganic,
+    String? happyCustomers,
+    String? about,
+    String? emoji,
+    String? avatarUrl,
+    String? coverUrl,
+    String? phone,
+  }) {
+    return FarmerData(
+      name: name ?? this.name,
+      role: role ?? this.role,
+      location: location ?? this.location,
+      rating: rating ?? this.rating,
+      reviews: reviews ?? this.reviews,
+      yearsExperience: yearsExperience ?? this.yearsExperience,
+      isOrganic: isOrganic ?? this.isOrganic,
+      happyCustomers: happyCustomers ?? this.happyCustomers,
+      about: about ?? this.about,
+      emoji: emoji ?? this.emoji,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      phone: phone ?? this.phone,
+    );
+  }
 
   static const defaultFarmer = FarmerData(
     name: 'Sunil Perera',
@@ -119,14 +155,17 @@ class FarmerData {
     location: 'Hambantota',
     rating: '4.8',
     reviews: '120',
-    yearsExperience: '5',
+    yearsExperience: '5+',
     isOrganic: true,
-    happyCustomers: '200',
+    happyCustomers: '200+',
     about:
         'I am a small-scale farmer from Hambantota. I grow fresh vegetables using natural methods. My goal is to provide healthy and fresh produce to my customers.',
     emoji: '👨‍🌾',
     avatarUrl:
-        'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80',
+    coverUrl:
+        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&auto=format&fit=crop&q=80',
+    phone: '076 323 8225',
   );
 }
 
@@ -301,26 +340,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       fit: StackFit.expand,
                       children: [
                         // Product image background
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primaryGreen
-                                    .withValues(alpha: 0.08),
-                                AppColors.primaryGreen
-                                    .withValues(alpha: 0.18),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                        if (p.imageUrl != null && p.imageUrl!.isNotEmpty)
+                          Image.network(
+                            p.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primaryGreen.withValues(alpha: 0.08),
+                                    AppColors.primaryGreen.withValues(alpha: 0.18),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(p.emoji, style: const TextStyle(fontSize: 120)),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primaryGreen.withValues(alpha: 0.08),
+                                  AppColors.primaryGreen.withValues(alpha: 0.18),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                p.emoji,
+                                style: const TextStyle(fontSize: 120),
+                              ),
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              p.emoji,
-                              style: const TextStyle(fontSize: 120),
-                            ),
-                          ),
-                        ),
                         // Subtle bottom fade
                         Positioned(
                           bottom: 0,

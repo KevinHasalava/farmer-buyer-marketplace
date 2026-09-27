@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../farmer/presentation/add_edit_product_screen.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
 import 'product_detail_screen.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Farmer Profile Screen — matches Figma design
-// ─────────────────────────────────────────────────────────────────────────────
+/// Premium Farmer Profile Screen matching Image 2 with dynamic edit capabilities
 class FarmerProfileScreen extends StatefulWidget {
   const FarmerProfileScreen({super.key, required this.farmer});
   final FarmerData farmer;
@@ -22,61 +21,74 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
 
-  // Products for this farmer
+  late FarmerData _farmer;
+
+  static const Color _forestGreen = Color(0xFF286A46);
+  static const Color _bgSoft = Color(0xFFF9FBFA);
+  static const Color _textDark = Color(0xFF1E293B);
+
+  // Products for this farmer with high quality real photographs
   List<ProductData> get _farmerProductData => [
         ProductData(
-          name: 'Organic Tomatoes',
+          name: 'Tomatoes',
           price: 'Rs. 250',
           unit: '/kg',
-          rating: '4.8',
+          rating: '4.7',
           reviews: '32',
-          availability: 'Available: 25kg',
+          availability: 'Available: 25 kg',
           emoji: '🍅',
+          imageUrl:
+              'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80',
           tag: 'Bestseller',
           tagColor: const Color(0xFFFF6B35),
           description:
-              'Fresh and naturally grown tomatoes from our farm. No chemicals, 100% organic.',
+              'Fresh and naturally grown tomatoes from our Hambantota farm. No synthetic chemicals, 100% organic produce.',
           harvestDate: '18 Aug 2026',
           tags: const ['Organic', 'Fresh'],
-          farmer: widget.farmer,
+          farmer: _farmer,
         ),
         ProductData(
-          name: 'Fresh Carrots',
+          name: 'Carrots',
           price: 'Rs. 300',
           unit: '/kg',
           rating: '4.6',
           reviews: '28',
-          availability: 'Available: 15kg',
+          availability: 'Available: 15 kg',
           emoji: '🥕',
+          imageUrl:
+              'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
           tag: 'Fresh',
           tagColor: const Color(0xFF1E8342),
           description:
               'Crispy sweet carrots cultivated in natural mineral-rich soil. High in beta-carotene and fiber, washed and packed fresh on harvest morning.',
           harvestDate: '19 Aug 2026',
           tags: const ['Organic', 'Farm Fresh'],
-          farmer: widget.farmer,
+          farmer: _farmer,
         ),
         ProductData(
-          name: 'Crisp Cucumber',
+          name: 'Cucumber',
           price: 'Rs. 200',
           unit: '/kg',
-          rating: '4.7',
+          rating: '4.8',
           reviews: '24',
-          availability: 'Available: 30kg',
+          availability: 'Available: 30 kg',
           emoji: '🥒',
+          imageUrl:
+              'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=500&auto=format&fit=crop&q=80',
           tag: 'Organic',
           tagColor: const Color(0xFF1E8342),
           description:
-              'Freshly harvested crisp cucumbers with high water content and cool refreshing taste. Ideal for daily salads.',
+              'Freshly harvested crisp cucumbers with high water content and cool refreshing taste. Ideal for daily salads and hydration.',
           harvestDate: '21 Aug 2026',
           tags: const ['Organic', 'Hydrating'],
-          farmer: widget.farmer,
+          farmer: _farmer,
         ),
       ];
 
   @override
   void initState() {
     super.initState();
+    _farmer = widget.farmer;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -95,23 +107,226 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
     super.dispose();
   }
 
+  void _showEditProfileModal() {
+    final nameCtrl = TextEditingController(text: _farmer.name);
+    final roleCtrl = TextEditingController(text: _farmer.role);
+    final locCtrl = TextEditingController(text: _farmer.location);
+    final expCtrl = TextEditingController(text: _farmer.yearsExperience);
+    final custCtrl = TextEditingController(text: _farmer.happyCustomers);
+    final aboutCtrl = TextEditingController(text: _farmer.about);
+    final phoneCtrl = TextEditingController(text: _farmer.phone ?? '076 323 8225');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Edit Farmer Profile',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: _textDark,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Name Field
+                _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'e.g. Sunil Perera'),
+                const SizedBox(height: 12),
+
+                // Role Field
+                _buildEditField(controller: roleCtrl, label: 'Role / Farm Title', hint: 'e.g. Small-Scale Farmer'),
+                const SizedBox(height: 12),
+
+                // Location Field
+                _buildEditField(controller: locCtrl, label: 'Location', hint: 'e.g. Hambantota'),
+                const SizedBox(height: 12),
+
+                // Phone Field
+                _buildEditField(controller: phoneCtrl, label: 'Phone Number', hint: 'e.g. 076 323 8225', keyboardType: TextInputType.phone),
+                const SizedBox(height: 12),
+
+                // Experience & Customers row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEditField(controller: expCtrl, label: 'Experience', hint: 'e.g. 5+ Years'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEditField(controller: custCtrl, label: 'Happy Customers', hint: 'e.g. 200+'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // About Me Field
+                _buildEditField(
+                  controller: aboutCtrl,
+                  label: 'About Me',
+                  hint: 'Tell buyers about your natural farming methods...',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+
+                // Save Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _forestGreen,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      setState(() {
+                        _farmer = _farmer.copyWith(
+                          name: nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : _farmer.name,
+                          role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : _farmer.role,
+                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _farmer.location,
+                          phone: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : _farmer.phone,
+                          yearsExperience: expCtrl.text.trim().isNotEmpty ? expCtrl.text.trim() : _farmer.yearsExperience,
+                          happyCustomers: custCtrl.text.trim().isNotEmpty ? custCtrl.text.trim() : _farmer.happyCustomers,
+                          about: aboutCtrl.text.trim().isNotEmpty ? aboutCtrl.text.trim() : _farmer.about,
+                        );
+                      });
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile details updated successfully!'),
+                          backgroundColor: _forestGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: _textDark),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _forestGreen, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final f = widget.farmer;
+    final f = _farmer;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
+    final coverImg = f.coverUrl ??
+        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&auto=format&fit=crop&q=80';
+    final avatarImg = f.avatarUrl ??
+        'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80';
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: _bgSoft,
       body: Stack(
         children: [
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ── Cover + Avatar App Bar ─────────────────────────────────
+              // ── Cover + Avatar App Bar matching Image 2 ────────────────────
               SliverAppBar(
                 expandedHeight: 220,
                 pinned: true,
-                backgroundColor: AppColors.surfaceWhite,
+                backgroundColor: Colors.white,
+                elevation: 0,
                 leading: GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
@@ -129,11 +344,46 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                     child: const Icon(
                       Icons.arrow_back_ios_new_rounded,
                       size: 18,
-                      color: AppColors.textDark,
+                      color: _textDark,
                     ),
                   ),
                 ),
                 actions: [
+                  // Edit Profile Button in Top Bar
+                  GestureDetector(
+                    onTap: _showEditProfileModal,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.edit_rounded, size: 14, color: _forestGreen),
+                          SizedBox(width: 4),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _forestGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Notification Button
                   Container(
                     margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
                     width: 40,
@@ -153,17 +403,17 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                       children: [
                         const Icon(
                           Icons.notifications_outlined,
-                          size: 18,
-                          color: AppColors.textDark,
+                          size: 19,
+                          color: _textDark,
                         ),
                         Positioned(
-                          right: 8,
-                          top: 8,
+                          right: 9,
+                          top: 9,
                           child: Container(
                             width: 7,
                             height: 7,
                             decoration: const BoxDecoration(
-                              color: AppColors.success,
+                              color: Color(0xFF22C55E),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -175,9 +425,10 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                 title: const Text(
                   'Farmer Profile',
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: _textDark,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 centerTitle: true,
@@ -185,37 +436,47 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Cover photo — green gradient landscape feel
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Color(0xFF1A5C35),
-                              Color(0xFF2E8B4F),
-                              Color(0xFF4CAF70),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                      // Real landscape cover photograph matching Image 2
+                      Image.network(
+                        coverImg,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF1A5C35), Color(0xFF2E8B4F)],
+                            ),
                           ),
                         ),
-                        child: CustomPaint(painter: _LandscapePainter()),
                       ),
-                      // Bottom white curve
+                      // Gradient overlay for visual readability
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withValues(alpha: 0.25),
+                              Colors.transparent,
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                      // Bottom curve
                       Positioned(
                         bottom: 0,
                         left: 0,
                         right: 0,
                         child: Container(
-                          height: 36,
+                          height: 38,
                           decoration: const BoxDecoration(
-                            color: AppColors.backgroundLight,
+                            color: _bgSoft,
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(28),
                             ),
                           ),
                         ),
                       ),
-                      // Avatar
+                      // Centered overlapping Avatar with checkmark
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -225,27 +486,24 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             clipBehavior: Clip.none,
                             children: [
                               Container(
-                                width: 90,
-                                height: 90,
+                                width: 92,
+                                height: 92,
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF1E8342),
-                                      Color(0xFF063725),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: Colors.white,
-                                    width: 3,
+                                    width: 3.5,
                                   ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    f.emoji,
-                                    style: const TextStyle(fontSize: 44),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                  image: DecorationImage(
+                                    image: NetworkImage(avatarImg),
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
                               ),
@@ -256,14 +514,16 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                   width: 26,
                                   height: 26,
                                   decoration: BoxDecoration(
-                                    color: AppColors.success,
+                                    color: _forestGreen,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white, width: 2.5),
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.check_rounded,
-                                    size: 13,
+                                    size: 14,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -277,19 +537,18 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                 ),
               ),
 
-              // ── Content ───────────────────────────────────────────────
+              // ── Profile Content ───────────────────────────────────────────
               SliverToBoxAdapter(
                 child: SlideTransition(
                   position: _slide,
                   child: FadeTransition(
                     opacity: _fade,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          16, 16, 16, 100 + bottomPad),
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 100 + bottomPad),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // ── Name + verified ──────────────────────────
+                          // Name + verified check icon matching Image 2
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -298,15 +557,15 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textDark,
+                                  color: _textDark,
                                   letterSpacing: -0.3,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               const Icon(
-                                Icons.verified_rounded,
-                                size: 20,
-                                color: AppColors.primaryGreen,
+                                Icons.check_circle_rounded,
+                                size: 19,
+                                color: _forestGreen,
                               ),
                             ],
                           ),
@@ -315,26 +574,28 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             f.role,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: AppColors.textSecondary,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 10),
 
-                          // ── Location + Rating ────────────────────────
+                          // Location + Rating line
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
                                 Icons.location_on_rounded,
                                 size: 14,
-                                color: AppColors.primaryGreen,
+                                color: _forestGreen,
                               ),
-                              const SizedBox(width: 3),
+                              const SizedBox(width: 4),
                               Text(
                                 f.location,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF64748B),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -342,22 +603,23 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 width: 4,
                                 height: 4,
                                 decoration: const BoxDecoration(
-                                  color: AppColors.textHint,
+                                  color: Color(0xFFCBD5E1),
                                   shape: BoxShape.circle,
                                 ),
                               ),
                               const SizedBox(width: 10),
                               const Icon(
                                 Icons.star_rounded,
-                                size: 14,
-                                color: AppColors.accentOrange,
+                                size: 15,
+                                color: Color(0xFFFFA000),
                               ),
-                              const SizedBox(width: 3),
+                              const SizedBox(width: 4),
                               Text(
                                 '${f.rating} (${f.reviews} reviews)',
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF64748B),
                                 ),
                               ),
                             ],
@@ -365,12 +627,14 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
                           const SizedBox(height: 20),
 
-                          // ── Stats Row (3 separate cards matching Figma) ──
+                          // ── Stats Row matching Image 2 ─────────────────────
                           Row(
                             children: [
                               Expanded(
                                 child: _StatCard(
-                                  value: '${f.yearsExperience}+',
+                                  value: f.yearsExperience.contains('+')
+                                      ? f.yearsExperience
+                                      : '${f.yearsExperience}+',
                                   label: 'Years\nExperience',
                                 ),
                               ),
@@ -384,7 +648,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _StatCard(
-                                  value: '${f.happyCustomers}+',
+                                  value: f.happyCustomers.contains('+')
+                                      ? f.happyCustomers
+                                      : '${f.happyCustomers}+',
                                   label: 'Happy\nCustomers',
                                 ),
                               ),
@@ -393,18 +659,18 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
                           const SizedBox(height: 20),
 
-                          // ── About Me ─────────────────────────────────
+                          // ── About Me Card matching Image 2 ─────────────────
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceWhite,
-                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: const Color(0xFFEDF2EF)),
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 10,
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
                               ],
@@ -412,22 +678,35 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'ABOUT ME',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textDark,
-                                    letterSpacing: 1.2,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'ABOUT ME',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: _textDark,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: _showEditProfileModal,
+                                      child: const Icon(
+                                        Icons.edit_outlined,
+                                        size: 16,
+                                        color: _forestGreen,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
                                   f.about,
                                   style: const TextStyle(
                                     fontSize: 13,
-                                    color: AppColors.textSecondary,
-                                    height: 1.6,
+                                    color: Color(0xFF64748B),
+                                    height: 1.55,
                                   ),
                                 ),
                               ],
@@ -436,7 +715,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
                           const SizedBox(height: 20),
 
-                          // ── My Products ──────────────────────────────
+                          // ── My Products Header ─────────────────────────────
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -445,7 +724,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
+                                  color: _textDark,
                                   letterSpacing: -0.3,
                                 ),
                               ),
@@ -453,16 +732,14 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const FarmerProductsScreen(),
+                                    builder: (_) => const FarmerProductsScreen(),
                                   ),
                                 ),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.primaryGreen,
+                                  foregroundColor: _forestGreen,
                                   padding: EdgeInsets.zero,
                                   minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: const Text(
                                   'See All',
@@ -477,9 +754,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
                           const SizedBox(height: 12),
 
-                          // Horizontal product list
+                          // Horizontal Real Product Cards
                           SizedBox(
-                            height: 170,
+                            height: 165,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
@@ -491,12 +768,12 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                   child: _FarmerProductCard(
                                     name: prod.name,
                                     price: '${prod.price}${prod.unit}',
+                                    imageUrl: prod.imageUrl,
                                     emoji: prod.emoji,
                                     onTap: () => Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) =>
-                                            ProductDetailScreen(product: prod),
+                                        builder: (_) => ProductDetailScreen(product: prod),
                                       ),
                                     ),
                                   ),
@@ -513,63 +790,57 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
             ],
           ),
 
-          // ── Fixed Add Product Button ───────────────────────────────────
+          // ── Fixed "Add Product" Button matching Image 2 ────────────────────
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomPad),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 14 + bottomPad),
               decoration: BoxDecoration(
-                color: AppColors.surfaceWhite,
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.07),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 16,
                     offset: const Offset(0, -4),
                   ),
                 ],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              child: GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddEditProductScreen(),
-                  ),
-                ),
-                child: Container(
-                  height: 54,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E8342), Color(0xFF063725)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _forestGreen,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.35),
-                        blurRadius: 14,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        color: Colors.white,
-                        size: 18,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddEditProductScreen(),
                       ),
-                      SizedBox(width: 10),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.add_circle_outline_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
                       Text(
                         'Add Product',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          letterSpacing: 0.3,
                         ),
                       ),
                     ],
@@ -585,59 +856,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Decorative landscape painter for cover photo
-// ─────────────────────────────────────────────────────────────────────────────
-class _LandscapePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-
-    // Rolling hills
-    paint.color = const Color(0xFF1A6B3C).withValues(alpha: 0.6);
-    final hill1 = Path();
-    hill1.moveTo(0, size.height * 0.55);
-    hill1.quadraticBezierTo(
-      size.width * 0.3, size.height * 0.3,
-      size.width * 0.6, size.height * 0.5,
-    );
-    hill1.quadraticBezierTo(
-      size.width * 0.8, size.height * 0.65,
-      size.width, size.height * 0.5,
-    );
-    hill1.lineTo(size.width, size.height);
-    hill1.lineTo(0, size.height);
-    hill1.close();
-    canvas.drawPath(hill1, paint);
-
-    paint.color = const Color(0xFF0D5C38).withValues(alpha: 0.5);
-    final hill2 = Path();
-    hill2.moveTo(0, size.height * 0.7);
-    hill2.quadraticBezierTo(
-      size.width * 0.25, size.height * 0.5,
-      size.width * 0.5, size.height * 0.65,
-    );
-    hill2.quadraticBezierTo(
-      size.width * 0.75, size.height * 0.8,
-      size.width, size.height * 0.6,
-    );
-    hill2.lineTo(size.width, size.height);
-    hill2.lineTo(0, size.height);
-    hill2.close();
-    canvas.drawPath(hill2, paint);
-
-    // Sun
-    paint.color = Colors.white.withValues(alpha: 0.15);
-    canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.2), 30, paint);
-    paint.color = Colors.white.withValues(alpha: 0.08);
-    canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.2), 50, paint);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat card for the 3 stats row matching Figma
+// Stat Card for 3 stats row matching Image 2
 // ─────────────────────────────────────────────────────────────────────────────
 class _StatCard extends StatelessWidget {
   const _StatCard({required this.value, required this.label});
@@ -649,12 +868,13 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEDF2EF), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -666,7 +886,7 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
+              color: Color(0xFF1E293B),
               letterSpacing: -0.3,
             ),
           ),
@@ -677,7 +897,7 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
+              color: Color(0xFF64748B),
               height: 1.25,
             ),
           ),
@@ -688,18 +908,20 @@ class _StatCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Farmer's product card (horizontal scroll)
+// Farmer Product Card with Real Photography matching Image 2
 // ─────────────────────────────────────────────────────────────────────────────
 class _FarmerProductCard extends StatefulWidget {
   const _FarmerProductCard({
     required this.name,
     required this.price,
+    this.imageUrl,
     required this.emoji,
     this.onTap,
   });
 
   final String name;
   final String price;
+  final String? imageUrl;
   final String emoji;
   final VoidCallback? onTap;
 
@@ -718,13 +940,14 @@ class _FarmerProductCardState extends State<_FarmerProductCard> {
       child: Container(
         width: 130,
         decoration: BoxDecoration(
-          color: AppColors.surfaceWhite,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFEDF2EF), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -733,56 +956,51 @@ class _FarmerProductCardState extends State<_FarmerProductCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image area
+              // Real Image area
               Expanded(
                 child: Stack(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primaryGreen.withValues(alpha: 0.07),
-                            AppColors.primaryGreen.withValues(alpha: 0.14),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+                      Image.network(
+                        widget.imageUrl!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFFF1F5F3),
+                          child: Center(
+                            child: Text(widget.emoji, style: const TextStyle(fontSize: 36)),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        color: const Color(0xFFF1F5F3),
+                        child: Center(
+                          child: Text(widget.emoji, style: const TextStyle(fontSize: 36)),
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          widget.emoji,
-                          style: const TextStyle(fontSize: 46),
-                        ),
-                      ),
-                    ),
+
+                    // Heart icon on top right
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 6,
+                      right: 6,
                       child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _wishlisted = !_wishlisted),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _wishlisted = !_wishlisted);
+                        },
                         child: Container(
-                          width: 28,
-                          height: 28,
+                          width: 26,
+                          height: 26,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 4,
-                              ),
-                            ],
                           ),
                           child: Icon(
-                            _wishlisted
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 13,
-                            color: _wishlisted
-                                ? Colors.redAccent
-                                : AppColors.textSecondary,
+                            _wishlisted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 14,
+                            color: _wishlisted ? Colors.redAccent : const Color(0xFF64748B),
                           ),
                         ),
                       ),
@@ -791,28 +1009,29 @@ class _FarmerProductCardState extends State<_FarmerProductCard> {
                 ),
               ),
 
-              // Info
+              // Details
               Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       widget.name,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: Color(0xFF1E293B),
                       ),
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       widget.price,
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF286A46),
                       ),
                     ),
                   ],
