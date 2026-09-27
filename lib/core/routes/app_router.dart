@@ -8,6 +8,9 @@ import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
 import '../../features/farmer/presentation/add_edit_product_screen.dart';
 import '../../features/search/presentation/search_filter_screen.dart';
+import '../../features/cart/presentation/my_cart_screen.dart';
+import '../../features/cart/presentation/checkout_delivery_screen.dart';
+import '../../features/orders_chat/presentation/orders_chat_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
@@ -19,6 +22,9 @@ abstract final class AppRoutes {
   static const String farmerProducts  = '/farmer-products';
   static const String addEditProduct  = '/add-edit-product';
   static const String searchFilter    = '/search-filter';
+  static const String ordersChat      = '/orders-chat';
+  static const String cart            = '/cart';
+  static const String checkout        = '/checkout';
 }
 
 /// Application-level [GoRouter] instance.
@@ -67,6 +73,21 @@ final appRouter = GoRouter(
       path: AppRoutes.searchFilter,
       name: 'searchFilter',
       builder: (context, state) => const SearchFilterScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.ordersChat,
+      name: 'ordersChat',
+      builder: (context, state) => const OrdersChatScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.cart,
+      name: 'cart',
+      builder: (context, state) => const MyCartScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.checkout,
+      name: 'checkout',
+      builder: (context, state) => const CheckoutDeliveryScreen(),
     ),
   ],
 );

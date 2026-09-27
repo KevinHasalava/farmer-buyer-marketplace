@@ -6,6 +6,8 @@ import '../../farmer/presentation/farmer_dashboard_screen.dart';
 import '../../search/presentation/search_filter_screen.dart';
 import 'farmer_profile_screen.dart';
 import 'product_detail_screen.dart';
+import '../../cart/presentation/my_cart_screen.dart';
+import '../../orders_chat/presentation/orders_chat_screen.dart';
 
 /// Premium Dashboard / Home screen — Farm2Home
 class DashboardScreen extends StatefulWidget {
@@ -345,7 +347,21 @@ class _DashboardScreenState extends State<DashboardScreen>
       bottomNavigationBar: _PremiumBottomNav(
         selectedIndex: _selectedNav,
         onTap: (i) {
-          if (i == 3) {
+          if (i == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const OrdersChatScreen(initialTab: 0),
+              ),
+            );
+          } else if (i == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const OrdersChatScreen(initialTab: 1),
+              ),
+            );
+          } else if (i == 3) {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -532,6 +548,10 @@ class _PremiumSliverAppBar extends StatelessWidget {
                     icon: Icons.shopping_bag_outlined,
                     badge: true,
                     badgeCount: 2,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MyCartScreen()),
+                    ),
                   ),
                 ],
               ),
@@ -548,15 +568,20 @@ class _IconBtn extends StatelessWidget {
     required this.icon,
     required this.badge,
     required this.badgeCount,
+    this.onTap,
   });
 
   final IconData icon;
   final bool badge;
   final int? badgeCount;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
@@ -606,6 +631,7 @@ class _IconBtn extends StatelessWidget {
             ),
           ),
       ],
+    ),
     );
   }
 }
@@ -1291,12 +1317,30 @@ class _PremiumBottomNav extends StatelessWidget {
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
-                  Icon(
-                    isSelected ? activeIcon : inactiveIcon,
-                    size: 24,
-                    color: isSelected
-                        ? AppColors.primaryGreen
-                        : AppColors.textSecondary,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        isSelected ? activeIcon : inactiveIcon,
+                        size: 24,
+                        color: isSelected
+                            ? AppColors.primaryGreen
+                            : AppColors.textSecondary,
+                      ),
+                      if (i == 1)
+                        Positioned(
+                          top: -1,
+                          right: -1,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(

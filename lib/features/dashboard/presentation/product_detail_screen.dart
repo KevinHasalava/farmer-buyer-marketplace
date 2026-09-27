@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/constants.dart';
 import 'farmer_profile_screen.dart';
+import '../../cart/models/cart_item_model.dart';
+import '../../cart/services/cart_state.dart';
+import '../../cart/presentation/my_cart_screen.dart';
+import '../../cart/presentation/checkout_delivery_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared product data model — used by dashboard + detail screens
@@ -575,7 +579,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   // Add to Cart
                   Expanded(
                     child: GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        MarketplaceState.instance.addToCart(
+                          CartItem(
+                            id: widget.product.name.toLowerCase().replaceAll(' ', '_'),
+                            name: widget.product.name,
+                            price: double.tryParse(widget.product.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 250.0,
+                            unit: widget.product.unit,
+                            quantity: 1,
+                            emoji: widget.product.emoji,
+                            farmName: widget.product.farmer.name,
+                          ),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${widget.product.name} added to cart!'),
+                            action: SnackBarAction(
+                              label: 'View Cart',
+                              textColor: const Color(0xFF4ADE80),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const MyCartScreen()),
+                              ),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
                       child: Container(
                         height: 52,
                         decoration: BoxDecoration(
@@ -612,7 +642,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   // Buy Now
                   Expanded(
                     child: GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        MarketplaceState.instance.addToCart(
+                          CartItem(
+                            id: widget.product.name.toLowerCase().replaceAll(' ', '_'),
+                            name: widget.product.name,
+                            price: double.tryParse(widget.product.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 250.0,
+                            unit: widget.product.unit,
+                            quantity: 1,
+                            emoji: widget.product.emoji,
+                            farmName: widget.product.farmer.name,
+                          ),
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CheckoutDeliveryScreen(),
+                          ),
+                        );
+                      },
                       child: Container(
                         height: 52,
                         decoration: BoxDecoration(
