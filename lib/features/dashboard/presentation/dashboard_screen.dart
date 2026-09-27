@@ -5,7 +5,6 @@ import '../../../core/constants/constants.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/presentation/my_cart_screen.dart';
 import '../../cart/services/cart_state.dart';
-import '../../farmer/presentation/farmer_dashboard_screen.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../../search/presentation/search_filter_screen.dart';
 import 'farmer_profile_screen.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/constants/constants.dart';
 import '../../farmer/presentation/add_edit_product_screen.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
 import 'product_detail_screen.dart';
