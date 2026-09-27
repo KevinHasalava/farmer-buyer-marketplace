@@ -915,7 +915,7 @@ class _PromoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 180,
+      height: 195,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
@@ -958,14 +958,14 @@ class _PromoBanner extends StatelessWidget {
 
             // Content
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Badge pill matching Image 1
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF2C6E49).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
@@ -987,29 +987,29 @@ class _PromoBanner extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
 
                   const Text(
                     'Up to 25% Off Fresh\nGreens',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 19,
                       fontWeight: FontWeight.w800,
-                      height: 1.2,
+                      height: 1.18,
                       letterSpacing: -0.4,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
 
                   const Text(
                     'Hand-cut at dawn from local organic\nfarmers across the valley.',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
-                      height: 1.35,
+                      height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   GestureDetector(
                     onTap: onShopSpecials,
