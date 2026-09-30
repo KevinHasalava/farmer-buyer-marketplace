@@ -11,15 +11,21 @@ import '../../features/search/presentation/search_filter_screen.dart';
 import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
+import '../../features/Driver/presentation/driver_dashboard_screen.dart';
+import '../../features/Driver/presentation/delivery_details_screen.dart';
+import '../../features/Driver/presentation/deliveries_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
-  static const String welcome         = '/welcome';
-  static const String onboarding      = '/onboarding';
-  static const String login           = '/login';
-  static const String dashboard       = '/dashboard';
-  static const String farmerDashboard = '/farmer-dashboard';
-  static const String farmerProducts  = '/farmer-products';
+  static const String welcome          = '/welcome';
+  static const String onboarding       = '/onboarding';
+  static const String login            = '/login';
+  static const String dashboard        = '/dashboard';
+  static const String farmerDashboard  = '/farmer-dashboard';
+  static const String driverDashboard  = '/driver-dashboard';
+  static const String deliveryDetails  = '/delivery-details';
+  static const String driverDeliveries = '/driver-deliveries';
+  static const String farmerProducts   = '/farmer-products';
   static const String addEditProduct  = '/add-edit-product';
   static const String searchFilter    = '/search-filter';
   static const String ordersChat      = '/orders-chat';
@@ -29,9 +35,9 @@ abstract final class AppRoutes {
 
 /// Application-level [GoRouter] instance.
 ///
-/// Initial location is `/welcome` (splash / landing).
+/// Initial location is set to `/driver-dashboard` for immediate testing.
 final appRouter = GoRouter(
-  initialLocation: AppRoutes.welcome,
+  initialLocation: AppRoutes.driverDashboard,
   debugLogDiagnostics: true,
   routes: [
     GoRoute(
@@ -58,6 +64,21 @@ final appRouter = GoRouter(
       path: AppRoutes.farmerDashboard,
       name: 'farmerDashboard',
       builder: (context, state) => const FarmerDashboardScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverDashboard,
+      name: 'driverDashboard',
+      builder: (context, state) => const DriverDashboardScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.deliveryDetails,
+      name: 'deliveryDetails',
+      builder: (context, state) => const DeliveryDetailsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverDeliveries,
+      name: 'driverDeliveries',
+      builder: (context, state) => const DeliveriesScreen(),
     ),
     GoRoute(
       path: AppRoutes.farmerProducts,
