@@ -80,6 +80,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     try {
       await const AuthService().signOut();
     } catch (_) {}
+    if (!mounted) return;
     await context.settings.clearRole();
     if (mounted) context.go(AppRoutes.roleSelection);
   }
