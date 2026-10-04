@@ -9,7 +9,7 @@ import '../../../core/routes/app_router.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import 'role_meta.dart';
 
-/// Step 4: Role Selection Screen — matching original Login Account Type selector.
+/// Step 4: Role Selection Screen — rich agricultural styling tailored for Sri Lankan Farmers & Buyers.
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
 
@@ -52,9 +52,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             heightFactor: 0.27,
           ),
 
-          // ── Selectable Cards ────────────────────────────────────────────
+          // ── Rich Agro Role Selection Cards ──────────────────────────────
           Expanded(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                 AppDimensions.spaceLG,
                 AppDimensions.spaceMD,
@@ -64,38 +65,56 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'SELECT YOUR ACCOUNT TYPE',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                      letterSpacing: 1.2,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          tr.roleSelectHint,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryGreen,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '🌾 Farm2Home Direct',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppDimensions.spaceMD),
 
-                  // 1. Buyer
+                  // 1. Farmer Card (ගොවි මහතා)
                   AppSelectableCard(
-                    title: UserRole.buyer.label(tr),
-                    subtitle: UserRole.buyer.subtitle(tr),
-                    icon: Icons.shopping_basket_rounded,
-                    iconEmoji: '🛒',
-                    badgeText: 'POPULAR',
-                    isSelected: _selected == UserRole.buyer,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selected = UserRole.buyer);
-                    },
-                  ),
-                  const SizedBox(height: AppDimensions.spaceMD),
-
-                  // 2. Farmer
-                  AppSelectableCard(
-                    title: UserRole.farmer.label(tr),
+                    title: tr.roleFarmerTitle,
                     subtitle: UserRole.farmer.subtitle(tr),
                     icon: Icons.agriculture_rounded,
-                    iconEmoji: '👨‍🌾',
+                    iconEmoji: '🌾',
+                    imageUrl:
+                        'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80',
+                    categoryTag: '🌾 PRODUCER • ගොවි මහතා',
+                    badgeText: '100% DIRECT',
+                    selectedLabel: tr.roleSelectedBadge,
+                    featureChips: [
+                      '🌾 ${tr.onb1ChipA}',
+                      '💰 ${tr.onb1ChipB}',
+                      '⚡ ${tr.onb1ChipC}',
+                    ],
                     isSelected: _selected == UserRole.farmer,
                     onTap: () {
                       HapticFeedback.selectionClick();
@@ -104,13 +123,46 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   ),
                   const SizedBox(height: AppDimensions.spaceMD),
 
-                  // 3. Driver
+                  // 2. Buyer Card (ගැණුම්කරු)
                   AppSelectableCard(
-                    title: UserRole.driver.label(tr),
+                    title: tr.roleBuyerTitle,
+                    subtitle: UserRole.buyer.subtitle(tr),
+                    icon: Icons.shopping_basket_rounded,
+                    iconEmoji: '🥕',
+                    imageUrl:
+                        'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
+                    categoryTag: '🥕 CONSUMER • ගැණුම්කරු',
+                    badgeText: 'POPULAR',
+                    selectedLabel: tr.roleSelectedBadge,
+                    featureChips: [
+                      '🥕 ${tr.onb2ChipA}',
+                      '🏷️ ${tr.onb2ChipB}',
+                      '🚚 ${tr.onb2ChipC}',
+                    ],
+                    isSelected: _selected == UserRole.buyer,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selected = UserRole.buyer);
+                    },
+                  ),
+                  const SizedBox(height: AppDimensions.spaceMD),
+
+                  // 3. Driver Card (ප්‍රවාහකයා)
+                  AppSelectableCard(
+                    title: tr.roleDriverTitle,
                     subtitle: UserRole.driver.subtitle(tr),
                     icon: Icons.local_shipping_rounded,
                     iconEmoji: '🛵',
+                    imageUrl:
+                        'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&auto=format&fit=crop&q=80',
+                    categoryTag: '🛵 LOGISTICS • ප්‍රවාහකයා',
                     badgeText: 'EARN',
+                    selectedLabel: tr.roleSelectedBadge,
+                    featureChips: [
+                      '⏰ ${tr.onb3ChipA}',
+                      '💵 ${tr.onb3ChipB}',
+                      '📍 ${tr.onb3ChipC}',
+                    ],
                     isSelected: _selected == UserRole.driver,
                     onTap: () {
                       HapticFeedback.selectionClick();

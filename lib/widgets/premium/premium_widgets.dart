@@ -254,7 +254,7 @@ class AppBrandLogo extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// App Selectable Card (matching _PremiumAccountCard in Login screen)
+// App Selectable Card (Agro-styled Role & Account Selection Card)
 // ─────────────────────────────────────────────────────────────────────────────
 class AppSelectableCard extends StatelessWidget {
   const AppSelectableCard({
@@ -266,6 +266,10 @@ class AppSelectableCard extends StatelessWidget {
     required this.onTap,
     this.badgeText,
     this.iconEmoji,
+    this.imageUrl,
+    this.categoryTag,
+    this.featureChips,
+    this.selectedLabel,
   });
 
   final String title;
@@ -275,6 +279,10 @@ class AppSelectableCard extends StatelessWidget {
   final VoidCallback onTap;
   final String? badgeText;
   final String? iconEmoji;
+  final String? imageUrl;
+  final String? categoryTag;
+  final List<String>? featureChips;
+  final String? selectedLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -283,158 +291,428 @@ class AppSelectableCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [Color(0xFFE8F8EF), Color(0xFFD0F0DF)],
+                  colors: [
+                    Color(0xFFF0FDF4),
+                    Color(0xFFDCFCE7),
+                    Color(0xFFF7FAF7),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
               : null,
           color: isSelected ? null : AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : const Color(0xFFE5E7EB),
-            width: isSelected ? 2 : 1,
+            color: isSelected ? AppColors.primaryGreen : const Color(0xFFE2E8F0),
+            width: isSelected ? 2.2 : 1.4,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.18),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
                   ),
                 ]
               : [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
                   ),
                 ],
         ),
-        child: Row(
-          children: [
-            // Icon container
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : AppColors.backgroundLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : const Color(0xFFE5E7EB),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(
+            children: [
+              // Subtle Agricultural Botanical Watermark in corner
+              Positioned(
+                bottom: -12,
+                right: -12,
+                child: IgnorePointer(
+                  child: Icon(
+                    Icons.eco_rounded,
+                    size: 84,
+                    color: AppColors.primaryGreen.withValues(
+                      alpha: isSelected ? 0.09 : 0.035,
+                    ),
+                  ),
                 ),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (iconEmoji != null)
-                    Text(
-                      iconEmoji!,
-                      style: const TextStyle(fontSize: 26),
-                    )
-                  else
-                    Icon(
-                      icon,
-                      size: 26,
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.primaryGreen,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
 
-            // Texts
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isSelected
-                              ? AppColors.darkGreen
-                              : AppColors.textDark,
-                        ),
-                      ),
-                      if (badgeText != null) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentOrange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            badgeText!,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accentOrange,
+              // Main Card Content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top Category & Selection Status Row
+                    Row(
+                      children: [
+                        if (categoryTag != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
                             ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primaryGreen
+                                      .withValues(alpha: 0.12)
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                        .withValues(alpha: 0.3)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.eco_rounded,
+                                  size: 11,
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  categoryTag!.toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                    color: isSelected
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+
+                        // If Selected: Active Green Pill Badge
+                        if (isSelected && selectedLabel != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 11,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  selectedLabel!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (badgeText != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentOrange
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              badgeText!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.accentOrange,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Main Row: Rich Avatar + Texts + Glowing Tick
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Rich Agricultural Avatar ─────────────────────────
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 62,
+                              height: 62,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                    : AppColors.backgroundLight,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : const Color(0xFFCBD5E1),
+                                  width: isSelected ? 2.5 : 1.5,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primaryGreen
+                                              .withValues(alpha: 0.25),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: imageUrl != null
+                                    ? Image.network(
+                                        imageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            _fallbackIcon(),
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                          if (progress == null) return child;
+                                          return Container(
+                                            color: const Color(0xFFF1F5F9),
+                                            child: const Center(
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.primaryGreen,
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : _fallbackIcon(),
+                              ),
+                            ),
+
+                            // Micro Agro Badge on avatar corner
+                            Positioned(
+                              right: -4,
+                              bottom: -4,
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : AppColors.darkGreen,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    iconEmoji ?? '🌾',
+                                    style: const TextStyle(fontSize: 10),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        // ── Role Title & Descriptive Subtitle ───────────────
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                  color: isSelected
+                                      ? AppColors.darkGreen
+                                      : AppColors.textDark,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                subtitle,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // ── Glorious Animated Agro Tick (Checkmark Seal) ────
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeOutBack,
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: isSelected
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF22C55E),
+                                      Color(0xFF15803D),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                            color: isSelected ? null : const Color(0xFFF8FAFC),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFFCBD5E1),
+                              width: isSelected ? 2.2 : 2.0,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primaryGreen
+                                          .withValues(alpha: 0.45),
+                                      blurRadius: 12,
+                                      spreadRadius: 1,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Center(
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 19,
+                                    color: Colors.white,
+                                  )
+                                : Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Color(0xFFCBD5E1),
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                      height: 1.35,
                     ),
-                  ),
-                ],
-              ),
-            ),
 
-            const SizedBox(width: 12),
-
-            // Circular Checkmark indicator
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : Colors.transparent,
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : const Color(0xFFD1D5DB),
-                  width: 2,
+                    // Feature Chips Row
+                    if (featureChips != null && featureChips!.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 5,
+                        children: featureChips!.map((chip) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                        .withValues(alpha: 0.35)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Text(
+                              chip,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? AppColors.darkGreen
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              child: isSelected
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 15,
-                      color: Colors.white,
-                    )
-                  : null,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _fallbackIcon() {
+    if (iconEmoji != null) {
+      return Center(
+        child: Text(
+          iconEmoji!,
+          style: const TextStyle(fontSize: 28),
+        ),
+      );
+    }
+    return Icon(
+      icon,
+      size: 28,
+      color: isSelected ? Colors.white : AppColors.primaryGreen,
     );
   }
 }

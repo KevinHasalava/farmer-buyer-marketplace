@@ -9,52 +9,83 @@ import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
-class _SlideData {
-  const _SlideData({
+class _OnboardSlide {
+  const _OnboardSlide({
     required this.tag,
+    required this.badge,
+    required this.topRightBadge,
     required this.title,
     required this.body,
-    required this.icon,
+    required this.imageUrl,
+    required this.quote,
+    required this.fallbackIcon,
     required this.chipA,
     required this.chipB,
+    required this.chipC,
   });
 
   final String tag;
+  final String badge;
+  final String topRightBadge;
   final String title;
   final String body;
-  final IconData icon;
+  final String imageUrl;
+  final String quote;
+  final IconData fallbackIcon;
   final String chipA;
   final String chipB;
+  final String chipC;
 }
 
-List<_SlideData> _getSlides(AppStrings tr) => [
-      _SlideData(
+List<_OnboardSlide> _getSlides(AppStrings tr) => [
+      _OnboardSlide(
         tag: tr.onb1Tag,
+        badge: '🌾 100% කෙළින්ම ගොවිබිමෙන්',
+        topRightBadge: '0% MIDDLEMEN',
         title: tr.onb1Title,
         body: tr.onb1Body,
-        icon: Icons.agriculture_rounded,
+        // High quality smiling Sri Lankan / Asian farmer in lush farm field
+        imageUrl:
+            'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=900&auto=format&fit=crop&q=85',
+        quote: tr.onb1Quote,
+        fallbackIcon: Icons.agriculture_rounded,
         chipA: tr.onb1ChipA,
         chipB: tr.onb1ChipB,
+        chipC: tr.onb1ChipC,
       ),
-      _SlideData(
+      _OnboardSlide(
         tag: tr.onb2Tag,
+        badge: '🥕 දිනපතා නැවුම් අස්වැන්න',
+        topRightBadge: 'FAIR RATES',
         title: tr.onb2Title,
         body: tr.onb2Body,
-        icon: Icons.shopping_basket_rounded,
+        // Fresh farm vegetables and produce basket direct from soil
+        imageUrl:
+            'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=900&auto=format&fit=crop&q=85',
+        quote: tr.onb2Quote,
+        fallbackIcon: Icons.shopping_basket_rounded,
         chipA: tr.onb2ChipA,
         chipB: tr.onb2ChipB,
+        chipC: tr.onb2ChipC,
       ),
-      _SlideData(
+      _OnboardSlide(
         tag: tr.onb3Tag,
+        badge: '🚚 ප්‍රදේශයේ ගොවි ප්‍රවාහනය',
+        topRightBadge: 'DAILY CASH',
         title: tr.onb3Title,
         body: tr.onb3Body,
-        icon: Icons.local_shipping_rounded,
+        // Farm-to-home fresh deliveries & transport
+        imageUrl:
+            'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&auto=format&fit=crop&q=85',
+        quote: tr.onb3Quote,
+        fallbackIcon: Icons.local_shipping_rounded,
         chipA: tr.onb3ChipA,
         chipB: tr.onb3ChipB,
+        chipC: tr.onb3ChipC,
       ),
     ];
 
-/// Step 3: Onboarding Carousel matching original light theme styling.
+/// Premium Onboarding with rich agricultural imagery, badges & farmer-market aesthetic.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -81,8 +112,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     HapticFeedback.lightImpact();
     if (_currentPage < total - 1) {
       _controller.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeOutCubic,
       );
     } else {
       _finish();
@@ -111,19 +142,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const AppLanguagePill(isDarkHeader: false),
                   const Spacer(),
                   if (!isLast)
-                    TextButton(
-                      onPressed: _finish,
-                      child: Text(
-                        tr.skip,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: TextButton(
+                        onPressed: _finish,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          tr.skip,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     )
                   else
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 38),
                 ],
               ),
             ),
@@ -136,117 +182,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (i) => setState(() => _currentPage = i),
                 itemBuilder: (context, i) {
                   final slide = slides[i];
-                  return Padding(
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppDimensions.spaceLG,
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Spacer(),
+                        const SizedBox(height: 4),
 
-                        // Hero Icon Illustration Card
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceWhite,
-                            borderRadius: BorderRadius.circular(32),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryGreen
-                                    .withValues(alpha: 0.12),
-                                blurRadius: 30,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: AppColors.darkGreen,
-                                borderRadius: BorderRadius.circular(22),
-                              ),
-                              child: Icon(
-                                slide.icon,
-                                size: 48,
-                                color: AppColors.accentOrange,
-                              ),
-                            ),
-                          ),
-                        ),
+                        // ── Rich Agricultural Image Card ────────────────────
+                        _buildHeroImageCard(slide),
 
-                        const SizedBox(height: AppDimensions.spaceXL),
+                        const SizedBox(height: 18),
 
-                        // Tag Chip
+                        // ── Tag Badge with Pulse Dot ────────────────────────
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: AppDimensions.spaceMD,
-                            vertical: AppDimensions.spaceXXS + 2,
+                            horizontal: 14,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                            color:
+                                AppColors.primaryGreen.withValues(alpha: 0.10),
                             borderRadius:
                                 BorderRadius.circular(AppDimensions.radiusFull),
                             border: Border.all(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                              color: AppColors.primaryGreen
+                                  .withValues(alpha: 0.28),
                             ),
                           ),
-                          child: Text(
-                            slide.tag,
-                            style: GoogleFonts.poppins(
-                              color: AppColors.primaryGreen,
-                              fontSize: 11,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                slide.tag.toUpperCase(),
+                                style: GoogleFonts.poppins(
+                                  color: AppColors.primaryGreen,
+                                  fontSize: 11,
+                                  letterSpacing: 1.2,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceMD),
+                        const SizedBox(height: 12),
 
-                        // Title
+                        // ── Headline ────────────────────────────────────────
                         Text(
                           slide.title,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 26,
+                            fontSize: 25,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
-                            height: 1.25,
+                            height: 1.24,
                             letterSpacing: -0.5,
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceSM),
+                        const SizedBox(height: 8),
 
-                        // Subtitle
+                        // ── Subtitle ────────────────────────────────────────
                         Text(
                           slide.body,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: AppColors.textSecondary,
                             height: 1.5,
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceLG),
+                        const SizedBox(height: 16),
 
-                        // Highlight chips row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        // ── 3 Agricultural Feature Chips ─────────────────────
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
                           children: [
-                            _featureChip(slide.chipA),
-                            const SizedBox(width: 8),
-                            _featureChip(slide.chipB),
+                            _featureChip(slide.chipA, Icons.verified_rounded),
+                            _featureChip(slide.chipB, Icons.payments_rounded),
+                            _featureChip(slide.chipC, Icons.bolt_rounded),
                           ],
                         ),
-
-                        const Spacer(flex: 2),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   );
@@ -254,44 +287,78 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // ── Bottom Controls ─────────────────────────────────────────────
+            // ── Bottom Controls & Indicators ─────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppDimensions.spaceLG,
                 0,
                 AppDimensions.spaceLG,
-                AppDimensions.spaceLG,
+                AppDimensions.spaceMD,
               ),
               child: Column(
                 children: [
-                  // Dot Indicators
+                  // Modern Animated Leaf / Pill Indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       slides.length,
                       (i) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 320),
+                        curve: Curves.easeOutCubic,
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: i == _currentPage ? 24 : 8,
+                        width: i == _currentPage ? 32 : 8,
                         height: 8,
                         decoration: BoxDecoration(
+                          gradient: i == _currentPage
+                              ? const LinearGradient(
+                                  colors: [
+                                    Color(0xFF22C55E),
+                                    Color(0xFF15803D),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
                           color: i == _currentPage
-                              ? AppColors.primaryGreen
+                              ? null
                               : const Color(0xFFD1D5DB),
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusFull),
+                          boxShadow: i == _currentPage
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryGreen
+                                        .withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: AppDimensions.spaceLG),
+                  const SizedBox(height: AppDimensions.spaceMD),
 
                   // Button
                   AppPrimaryButton(
                     label: isLast ? tr.getStarted : tr.next,
                     onPressed: () => _nextPage(slides.length),
                     icon: Icons.arrow_forward_rounded,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Reassuring Local Agricultural Heritage Tag
+                  Text(
+                    '🇱🇰 ශ්‍රී ලාංකික ගොවි ජනතාව සවිබල ගන්වන විශ්වාසනීය වෙළඳපොළ',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),
@@ -302,19 +369,227 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _featureChip(String text) {
+  // ── Hero Image Card with Nature Gradient Overlay & Badges ────────────────
+  Widget _buildHeroImageCard(_OnboardSlide slide) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      width: double.infinity,
+      height: 255,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: AppColors.darkGreen.withValues(alpha: 0.12),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.darkGreen.withValues(alpha: 0.18),
+            blurRadius: 26,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background Image with smooth fade & fallback
+            Image.network(
+              slide.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF032B1C), Color(0xFF0F5A2C)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        slide.fallbackIcon,
+                        size: 72,
+                        color: AppColors.accentOrange,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Farm2Home Agriculture',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  color: const Color(0xFFF1F5F9),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // Subtle dark gradients for pristine badge & quote contrast
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.45, 1.0],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.40),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.70),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Top-Left Floating Trust Badge
+            Positioned(
+              top: 14,
+              left: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.darkGreen.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.eco_rounded,
+                      color: AppColors.accentOrange,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      slide.badge,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Top-Right Agro Tag
+            Positioned(
+              top: 14,
+              right: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accentOrange.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  slide.topRightBadge,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ),
+
+            // Bottom Floating Agro Quote Banner
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.58),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.20),
+                  ),
+                ),
+                child: Text(
+                  slide.quote,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _featureChip(String text, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle_rounded,
+          Icon(
+            icon,
             size: 14,
             color: AppColors.primaryGreen,
           ),
@@ -322,8 +597,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             text,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
               color: AppColors.textDark,
             ),
           ),

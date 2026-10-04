@@ -54,8 +54,14 @@ class AppStrings {
         'අතරමැදියන් නැත. ඔබේම මිල තීරණය කර, ඔබේ මහන්සියට සරිලන ආදායමක් ලබන්න.',
         'இடைத்தரகர்கள் இல்லை. உங்கள் விலையை நீங்களே நிர்ணயித்து, உழைப்புக்கேற்ற வருமானம் பெறுங்கள்.',
       );
-  String get onb1ChipA => _t('No middlemen', 'අතරමැදියන් නැත', 'இடைத்தரகர் இல்லை');
+  String get onb1ChipA => _t('0% Middlemen', 'අතරමැදියන් නැත', 'இடைத்தரகர் இல்லை');
   String get onb1ChipB => _t('Your price', 'ඔබේම මිල', 'உங்கள் விலை');
+  String get onb1ChipC => _t('Instant cash', 'ක්ෂණික මුදල්', 'உடனடி பணம்');
+  String get onb1Quote => _t(
+        '🌾 "Set your own price for your hard-earned harvest"',
+        '🌾 "මහන්සියෙන් වගාකළ අස්වැන්නට ඔබේම මිලක්"',
+        '🌾 "உங்கள் உழைப்புக்கான அறுவடைக்கு உங்கள் சொந்த விலை"',
+      );
 
   String get onb2Tag => _t('FOR BUYERS', 'ගැණුම්කරුවන් සඳහා', 'வாங்குபவர்களுக்கு');
   String get onb2Title => _t(
@@ -70,6 +76,12 @@ class AppStrings {
       );
   String get onb2ChipA => _t('Harvested today', 'අද නෙළූ', 'இன்று அறுவடை');
   String get onb2ChipB => _t('Fair price', 'සාධාරණ මිල', 'நியாய விலை');
+  String get onb2ChipC => _t('Doorstep delivery', 'නිවසටම ප්‍රවාහනය', 'வீட்டு வாசலில் டெலிவரி');
+  String get onb2Quote => _t(
+        '🥬 "Fresh crops from the soil directly to your kitchen table"',
+        '🥬 "ගොවිබිමෙන්ම නෙළූ නැවුම් අස්වැන්න ඔබේ නිවසටම"',
+        '🥬 "பண்ணையிலிருந்து புதிய விளைபொருட்கள் உங்கள் சமையலறைக்கு"',
+      );
 
   String get onb3Tag => _t('FOR DRIVERS', 'රියදුරන් සඳහා', 'ஓட்டுநர்களுக்கு');
   String get onb3Title => _t(
@@ -84,35 +96,51 @@ class AppStrings {
       );
   String get onb3ChipA => _t('Flexible hours', 'නිදහස් වේලාවන්', 'நெகிழ்வான நேரம்');
   String get onb3ChipB => _t('Daily payouts', 'දිනපතා ගෙවීම්', 'தினசரி கட்டணம்');
+  String get onb3ChipC => _t('Local routes', 'ප්‍රදේශයේ ඇණවුම්', 'உள்ளூர் வழிகள்');
+  String get onb3Quote => _t(
+        '🚚 "Connecting rural village farmers to buyers with fast transport"',
+        '🚚 "ගමේ ගොවියාගේ අස්වැන්න ඉක්මනින් නගරයට ගෙනියන්න"',
+        '🚚 "கிராமப்புற விவசாயிகளை வாங்குபவர்களுடன் இணைக்கும் போக்குவரத்து"',
+      );
 
   // ── Role selection ──────────────────────────────────────────────────────
   String get whoAreYou => _t(
-        'How will you use\nFarm2Home?',
-        'ඔබ Farm2Home\nභාවිතා කරන්නේ කෙසේද?',
-        'Farm2Home-ஐ எப்படிப்\nபயன்படுத்துவீர்கள்?',
+        'Choose your role',
+        'ඔබේ භූමිකාව තෝරන්න',
+        'உங்கள் பங்கைத் தேர்ந்தெடுக்கவும்',
       );
   String get whoAreYouSub => _t(
-        'Choose your role to get a personalised experience',
-        'ඔබට ගැළපෙන අත්දැකීමක් සඳහා ඔබේ භූමිකාව තෝරන්න',
-        'உங்களுக்கான அனுபவத்தைப் பெற உங்கள் பங்கைத் தேர்ந்தெடுக்கவும்',
+        'Connecting farmers, buyers, and local drivers across Sri Lanka',
+        'ශ්‍රී ලංකාවේ ගොවීන්, ගැණුම්කරුවන් සහ රියදුරන් එකට යා කරන වෙළඳපොළ',
+        'இலங்கையின் விவசாயிகள், வாங்குபவர்கள் மற்றும் ஓட்டுநர்களை இணைக்கும் தளம்',
       );
+  String get roleSelectHint => _t(
+        'SELECT ACCOUNT TYPE',
+        'ගිණුම් වර්ගය තෝරන්න',
+        'கணக்கு வகையைத் தேர்ந்தெடுக்கவும்',
+      );
+  String get roleSelectedBadge => _t('SELECTED', 'තෝරා ඇත', 'தேர்ந்தெடுக்கப்பட்டது');
+  String get roleTapToSelect => _t('TAP TO SELECT', 'තේරීමට ස්පර්ශ කරන්න', 'தேர்ந்தெடுக்க தட்டவும்');
   String get roleBuyer => _t("I'm Buying", 'මම මිලදී ගන්නවා', 'நான் வாங்குகிறேன்');
+  String get roleBuyerTitle => _t("Buyer / Wholesale", 'ගැණුම්කරු (Buyer)', 'வாங்குபவர்');
   String get roleBuyerSub => _t(
-        'Fresh produce for home & business',
-        'නිවසට සහ ව්‍යාපාරයට නැවුම් අස්වැන්න',
-        'வீடு & வணிகத்திற்கு புதிய விளைபொருட்கள்',
+        'Buy farm-fresh vegetables, fruits & grains at fair prices',
+        'නැවුම් එළවළු, පළතුරු සහ ධාන්‍ය අඩුම මිලට ලබාගන්න',
+        'புதிய காய்கறி, பழங்கள் & தானியங்களை நியாய விலையில் பெறுங்கள்',
       );
   String get roleFarmer => _t("I'm Farming", 'මම ගොවිතැන් කරනවා', 'நான் விவசாயம் செய்கிறேன்');
+  String get roleFarmerTitle => _t("Farmer / Producer", 'ගොවි මහතා (Farmer)', 'விவசாயி');
   String get roleFarmerSub => _t(
-        'Sell your harvest directly',
-        'අස්වැන්න කෙළින්ම විකුණන්න',
-        'அறுவடையை நேரடியாக விற்கவும்',
+        'Sell your harvest directly without middlemen at your own price',
+        'අතරමැදියන් නැතිව ඔබේම මිලට අස්වැන්න කෙළින්ම විකුණන්න',
+        'இடைத்தரகர்கள் இன்றி உங்கள் சொந்த விலையில் அறுவடையை விற்கவும்',
       );
   String get roleDriver => _t("I'm Driving", 'මම රිය පදවනවා', 'நான் வாகனம் ஓட்டுகிறேன்');
+  String get roleDriverTitle => _t("Logistics / Driver", 'ප්‍රවාහකයා (Driver)', 'ஓட்டுநர்');
   String get roleDriverSub => _t(
-        'Deliver orders & earn income',
-        'ඇණවුම් බෙදාහැර ආදායම් උපයන්න',
-        'ஆர்டர்களை டெலிவரி செய்து சம்பாதியுங்கள்',
+        'Accept delivery orders and earn daily income on your schedule',
+        'ප්‍රවාහන ඇණවුම් භාරගෙන දිනපතා ස්ථිර ආදායමක් ලබන්න',
+        'டெலிவரி ஆர்டர்களை ஏற்று தினசரி வருமானம் பெறுங்கள்',
       );
 
   // ── Phone / OTP auth ────────────────────────────────────────────────────
