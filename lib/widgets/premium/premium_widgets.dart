@@ -1,236 +1,476 @@
-import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Aurora background — deep forest gradient with slowly drifting glow orbs.
+// Signature Curved Green Header (matching Login & Welcome screens)
 // ─────────────────────────────────────────────────────────────────────────────
-class AuroraBackground extends StatefulWidget {
-  const AuroraBackground({
+class AppHeaderBanner extends StatelessWidget {
+  const AppHeaderBanner({
     super.key,
-    required this.child,
-    this.accent = AppColors.emeraldGlow,
-    this.secondary = AppColors.gold,
+    required this.title,
+    this.subtitle,
+    this.badgeText,
+    this.showBack = false,
+    this.onBack,
+    this.trailing,
+    this.heightFactor = 0.25,
   });
 
-  final Widget child;
-  final Color accent;
-  final Color secondary;
-
-  @override
-  State<AuroraBackground> createState() => _AuroraBackgroundState();
-}
-
-class _AuroraBackgroundState extends State<AuroraBackground>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 14),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  final String title;
+  final String? subtitle;
+  final String? badgeText;
+  final bool showBack;
+  final VoidCallback? onBack;
+  final Widget? trailing;
+  final double heightFactor;
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.forest, AppColors.forestDeep],
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
+    return Stack(
+      children: [
+        // Dark forest green gradient background
+        Container(
+          width: double.infinity,
+          height: screenHeight * heightFactor,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF032B1C),
+                Color(0xFF063725),
+                Color(0xFF0D5C38),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
         ),
-        child: Stack(
-          children: [
-            AnimatedBuilder(
-              animation: _ctrl,
-              builder: (context, _) {
-                final t = _ctrl.value * 2 * math.pi;
-                final size = MediaQuery.sizeOf(context);
-                return Stack(
-                  children: [
-                    _orb(
-                      color: widget.accent,
-                      diameter: size.width * 1.1,
-                      left: -size.width * 0.35 + math.sin(t) * 30,
-                      top: -size.width * 0.45 + math.cos(t) * 24,
-                      opacity: 0.28,
+
+        // Decorative background leaf icons
+        Positioned(
+          right: -20,
+          top: -10,
+          child: Transform.rotate(
+            angle: -0.3,
+            child: Icon(
+              Icons.eco_rounded,
+              size: 110,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+        ),
+        Positioned(
+          left: -20,
+          bottom: 10,
+          child: Transform.rotate(
+            angle: 0.4,
+            child: Icon(
+              Icons.local_florist_rounded,
+              size: 80,
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
+          ),
+        ),
+
+        // Content
+        Positioned.fill(
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Top navigation row
+                  Row(
+                    children: [
+                      if (showBack)
+                        GestureDetector(
+                          onTap: onBack ?? () => Navigator.maybePop(context),
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 38),
+                      const Spacer(),
+                      if (badgeText != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Text(
+                            badgeText!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                      if (trailing != null)
+                        trailing!
+                      else
+                        const SizedBox(width: 38),
+                    ],
+                  ),
+                  const Spacer(),
+
+                  // Title
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
-                    _orb(
-                      color: widget.secondary,
-                      diameter: size.width * 0.9,
-                      left: size.width * 0.45 + math.cos(t) * 26,
-                      top: size.height * 0.30 + math.sin(t) * 34,
-                      opacity: 0.12,
-                    ),
-                    _orb(
-                      color: widget.accent,
-                      diameter: size.width * 1.0,
-                      left: -size.width * 0.30 + math.sin(t + 1) * 20,
-                      top: size.height * 0.70 + math.cos(t + 1) * 20,
-                      opacity: 0.16,
+                  ),
+
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ],
-                );
-              },
+                  const Spacer(),
+                ],
+              ),
             ),
-            // Subtle dotted texture
-            const Positioned.fill(
-              child: IgnorePointer(child: CustomPaint(painter: _DotGridPainter())),
+          ),
+        ),
+
+        // Signature wave clipper at the bottom connecting to backgroundLight
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: ClipPath(
+            clipper: AppBottomWaveClipper(),
+            child: Container(
+              height: 28,
+              color: AppColors.backgroundLight,
             ),
-            widget.child,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Signature Bottom Wave Clipper (reusable)
+// ─────────────────────────────────────────────────────────────────────────────
+class AppBottomWaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(0, size.height);
+    path.quadraticBezierTo(
+      size.width * 0.25,
+      0,
+      size.width * 0.5,
+      size.height * 0.4,
+    );
+    path.quadraticBezierTo(
+      size.width * 0.75,
+      size.height * 0.8,
+      size.width,
+      0,
+    );
+    path.lineTo(size.width, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// App Brand Logo (squircle dark green + amber leaf motif matching Welcome screen)
+// ─────────────────────────────────────────────────────────────────────────────
+class AppBrandLogo extends StatelessWidget {
+  const AppBrandLogo({super.key, this.size = 80});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.darkGreen,
+        borderRadius: BorderRadius.circular(size * 0.28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.darkGreen.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.eco_rounded,
+        color: AppColors.accentOrange,
+        size: size * 0.5,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// App Selectable Card (matching _PremiumAccountCard in Login screen)
+// ─────────────────────────────────────────────────────────────────────────────
+class AppSelectableCard extends StatelessWidget {
+  const AppSelectableCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    this.badgeText,
+    this.iconEmoji,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final String? badgeText;
+  final String? iconEmoji;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFFE8F8EF), Color(0xFFD0F0DF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : const Color(0xFFE5E7EB),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Row(
+          children: [
+            // Icon container
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGreen
+                    : AppColors.backgroundLight,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : const Color(0xFFE5E7EB),
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (iconEmoji != null)
+                    Text(
+                      iconEmoji!,
+                      style: const TextStyle(fontSize: 26),
+                    )
+                  else
+                    Icon(
+                      icon,
+                      size: 26,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.primaryGreen,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Texts
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? AppColors.darkGreen
+                              : AppColors.textDark,
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentOrange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badgeText!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accentOrange,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // Circular Checkmark indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? AppColors.primaryGreen
+                    : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : const Color(0xFFD1D5DB),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: Colors.white,
+                    )
+                  : null,
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _orb({
-    required Color color,
-    required double diameter,
-    required double left,
-    required double top,
-    required double opacity,
-  }) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: IgnorePointer(
-        child: Container(
-          width: diameter,
-          height: diameter,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                color.withValues(alpha: opacity),
-                color.withValues(alpha: 0),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.035);
-    const gap = 22.0;
-    for (double y = 0; y < size.height; y += gap) {
-      for (double x = 0; x < size.width; x += gap) {
-        canvas.drawCircle(Offset(x, y), 0.9, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Glass card
+// App Solid Primary Green CTA Button (matching Login / Welcome screens)
 // ─────────────────────────────────────────────────────────────────────────────
-class GlassCard extends StatelessWidget {
-  const GlassCard({
-    super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.radius = 22,
-    this.borderColor,
-    this.fillOpacity = 0.07,
-    this.borderWidth = 1,
-  });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double radius;
-  final Color? borderColor;
-  final double fillOpacity;
-  final double borderWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: fillOpacity + 0.03),
-                Colors.white.withValues(alpha: fillOpacity * 0.5),
-              ],
-            ),
-            border: Border.all(
-              color: borderColor ?? Colors.white.withValues(alpha: 0.12),
-              width: borderWidth,
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Gradient CTA button with press-scale micro-interaction
-// ─────────────────────────────────────────────────────────────────────────────
-class GradientButton extends StatefulWidget {
-  const GradientButton({
+class AppPrimaryButton extends StatefulWidget {
+  const AppPrimaryButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.colors = AppColors.goldGradient,
-    this.foreground = AppColors.forestDeep,
     this.isLoading = false,
-    this.icon = Icons.arrow_forward_rounded,
-    this.height = 60,
+    this.icon,
+    this.backgroundColor,
   });
 
   final String label;
   final VoidCallback? onPressed;
-  final List<Color> colors;
-  final Color foreground;
   final bool isLoading;
   final IconData? icon;
-  final double height;
+  final Color? backgroundColor;
 
   @override
-  State<GradientButton> createState() => _GradientButtonState();
+  State<AppPrimaryButton> createState() => _AppPrimaryButtonState();
 }
 
-class _GradientButtonState extends State<GradientButton> {
+class _AppPrimaryButtonState extends State<AppPrimaryButton> {
   bool _pressed = false;
 
   bool get _enabled => widget.onPressed != null && !widget.isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final bg = widget.backgroundColor ?? AppColors.primaryGreen;
+
     return GestureDetector(
       onTapDown: _enabled ? (_) => setState(() => _pressed = true) : null,
       onTapCancel: () => setState(() => _pressed = false),
@@ -242,55 +482,52 @@ class _GradientButtonState extends State<GradientButton> {
             }
           : null,
       child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1,
-        duration: const Duration(milliseconds: 120),
+        scale: _pressed ? 0.98 : 1.0,
+        duration: const Duration(milliseconds: 100),
         child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 250),
-          opacity: widget.onPressed == null ? 0.45 : 1,
+          opacity: widget.onPressed == null ? 0.45 : 1.0,
+          duration: const Duration(milliseconds: 200),
           child: Container(
-            height: widget.height,
+            height: AppDimensions.buttonHeight,
             width: double.infinity,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              gradient: LinearGradient(colors: widget.colors),
+              color: bg,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               boxShadow: widget.onPressed == null
                   ? null
                   : [
                       BoxShadow(
-                        color: widget.colors.last.withValues(alpha: 0.45),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
+                        color: bg.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                     ],
             ),
             alignment: Alignment.center,
             child: widget.isLoading
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2.6,
-                      color: widget.foreground,
+                      strokeWidth: 2.5,
+                      color: Colors.white,
                     ),
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Flexible(
-                        child: Text(
-                          widget.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: widget.foreground,
-                            letterSpacing: 0.2,
-                          ),
+                      Text(
+                        widget.label,
+                        style: GoogleFonts.poppins(
+                          fontSize: AppTextStyles.labelLarge,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: AppTextStyles.trackingWide,
                         ),
                       ),
                       if (widget.icon != null) ...[
-                        const SizedBox(width: 10),
-                        Icon(widget.icon, color: widget.foreground, size: 22),
+                        const SizedBox(width: 8),
+                        Icon(widget.icon, color: Colors.white, size: 20),
                       ],
                     ],
                   ),
@@ -302,32 +539,12 @@ class _GradientButtonState extends State<GradientButton> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Circular glass icon button (back, close…)
+// App Language Pill (Light Themed)
 // ─────────────────────────────────────────────────────────────────────────────
-class GlassIconButton extends StatelessWidget {
-  const GlassIconButton({super.key, required this.icon, required this.onTap});
+class AppLanguagePill extends StatelessWidget {
+  const AppLanguagePill({super.key, this.isDarkHeader = false});
 
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassCard(
-        padding: const EdgeInsets.all(10),
-        radius: 14,
-        child: Icon(icon, color: Colors.white, size: 22),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Language pill — opens a bottom sheet to switch language from anywhere.
-// ─────────────────────────────────────────────────────────────────────────────
-class LanguagePill extends StatelessWidget {
-  const LanguagePill({super.key});
+  final bool isDarkHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -335,28 +552,53 @@ class LanguagePill extends StatelessWidget {
     final lang = settings.language ?? AppLanguage.english;
 
     return GestureDetector(
-      onTap: () => showLanguageSheet(context),
-      child: GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        radius: 30,
+      onTap: () => showAppLanguageSheet(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDarkHeader
+              ? Colors.white.withValues(alpha: 0.15)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDarkHeader
+                ? Colors.white.withValues(alpha: 0.3)
+                : const Color(0xFFE5E7EB),
+          ),
+          boxShadow: isDarkHeader
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.translate_rounded, color: AppColors.gold, size: 16),
+            Icon(
+              Icons.translate_rounded,
+              color: isDarkHeader ? Colors.white : AppColors.primaryGreen,
+              size: 15,
+            ),
             const SizedBox(width: 6),
             Text(
               lang.nativeName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
+              style: GoogleFonts.poppins(
+                color: isDarkHeader ? Colors.white : AppColors.textDark,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 2),
             Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Colors.white.withValues(alpha: 0.7),
-              size: 18,
+              color: isDarkHeader
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : AppColors.textSecondary,
+              size: 16,
             ),
           ],
         ),
@@ -365,180 +607,144 @@ class LanguagePill extends StatelessWidget {
   }
 }
 
-Future<void> showLanguageSheet(BuildContext context) {
+// ─────────────────────────────────────────────────────────────────────────────
+// App Language Bottom Sheet (Light Theme matching other bottom sheets)
+// ─────────────────────────────────────────────────────────────────────────────
+Future<void> showAppLanguageSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
+    isScrollControlled: true,
     builder: (ctx) {
       final settings = ctx.watch<AppSettings>();
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            decoration: BoxDecoration(
-              color: AppColors.forest,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  settings.strings.chooseLanguage,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                for (final l in AppLanguage.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        settings.setLanguage(l);
-                        Navigator.pop(ctx);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: settings.language == l
-                              ? AppColors.gold.withValues(alpha: 0.12)
-                              : Colors.white.withValues(alpha: 0.04),
-                          border: Border.all(
+            const SizedBox(height: 18),
+            Text(
+              settings.strings.chooseLanguage,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              settings.strings.chooseLanguageSub,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            for (final l in AppLanguage.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    settings.setLanguage(l);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: settings.language == l
+                          ? const Color(0xFFE8F8EF)
+                          : const Color(0xFFF9FBFA),
+                      border: Border.all(
+                        color: settings.language == l
+                            ? AppColors.primaryGreen
+                            : const Color(0xFFE5E7EB),
+                        width: settings.language == l ? 1.8 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
                             color: settings.language == l
-                                ? AppColors.gold
-                                : Colors.white.withValues(alpha: 0.08),
+                                ? AppColors.primaryGreen
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: settings.language == l
+                                  ? AppColors.primaryGreen
+                                  : const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                          child: Text(
+                            l.glyph,
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: settings.language == l
+                                  ? Colors.white
+                                  : AppColors.primaryGreen,
+                            ),
                           ),
                         ),
-                        child: Row(
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               l.nativeName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Text(
                               l.englishName,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
+                              style: GoogleFonts.poppins(
                                 fontSize: 12,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                            const Spacer(),
-                            if (settings.language == l)
-                              const Icon(Icons.check_circle_rounded,
-                                  color: AppColors.gold),
                           ],
                         ),
-                      ),
+                        const Spacer(),
+                        if (settings.language == l)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.primaryGreen,
+                          ),
+                      ],
                     ),
                   ),
-              ],
-            ),
-          ),
+                ),
+              ),
+          ],
         ),
       );
     },
   );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Segmented step indicator
-// ─────────────────────────────────────────────────────────────────────────────
-class StepIndicator extends StatelessWidget {
-  const StepIndicator({
-    super.key,
-    required this.total,
-    required this.current,
-    this.activeColors = AppColors.goldGradient,
-  });
-
-  final int total;
-  final int current; // 0-based
-  final List<Color> activeColors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(total, (i) {
-        final active = i <= current;
-        return Expanded(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeOutCubic,
-            height: 5,
-            margin: EdgeInsets.only(right: i == total - 1 ? 0 : 6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              gradient: active ? LinearGradient(colors: activeColors) : null,
-              color: active ? null : Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Staggered fade + slide-up entrance
-// ─────────────────────────────────────────────────────────────────────────────
-class FadeSlideIn extends StatelessWidget {
-  const FadeSlideIn({
-    super.key,
-    required this.child,
-    this.delay = Duration.zero,
-    this.offset = 24,
-    this.duration = const Duration(milliseconds: 600),
-  });
-
-  final Widget child;
-  final Duration delay;
-  final double offset;
-  final Duration duration;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = delay + duration;
-    final start = delay.inMilliseconds / total.inMilliseconds;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: total,
-      builder: (context, v, child) {
-        final t = Curves.easeOutCubic.transform(
-          ((v - start) / (1 - start)).clamp(0.0, 1.0),
-        );
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, offset * (1 - t)),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
@@ -15,7 +16,7 @@ import 'role_meta.dart';
 
 enum _AuthStep { phone, otp, name }
 
-/// Step 4 — password-less registration / login with mobile number + OTP.
+/// Step 5: Phone OTP Authentication Screen — matching original Login Screen style.
 class PhoneAuthScreen extends StatefulWidget {
   const PhoneAuthScreen({super.key});
 
@@ -50,8 +51,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     super.dispose();
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────
-  /// Normalises `0771234567` / `771234567` → `+94771234567`.
   String? get _e164 {
     var digits = _phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
     if (digits.startsWith('94')) digits = digits.substring(2);
@@ -82,7 +81,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       _error = null;
     });
     if (s == _AuthStep.otp) {
-      Future.delayed(const Duration(milliseconds: 350), () {
+      Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted) _otpFocus.requestFocus();
       });
     }
@@ -93,7 +92,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     context.go(AppRoutes.homeFor(role));
   }
 
-  // ── Actions ─────────────────────────────────────────────────────────────
   Future<void> _sendOtp() async {
     final tr = context.settings.strings;
     final phone = _e164;
@@ -110,7 +108,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       await _authService.sendPhoneOtp(phone);
       _demoMode = false;
     } catch (_) {
-      // SMS provider not configured → allow testing the flow in demo mode.
       _demoMode = true;
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -132,7 +129,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     });
     try {
       if (_demoMode) {
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 500));
         if (code != _demoCode) throw Exception('bad code');
         if (mounted) _goStep(_AuthStep.name);
         return;
@@ -143,7 +140,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       final existingName = user?.userMetadata?['full_name'] as String?;
       if (!mounted) return;
       if (existingName != null && existingName.trim().isNotEmpty) {
-        // Returning user — keep their role in sync and go home.
         await _authService.updateProfile(
           fullName: existingName,
           role: context.settings.role?.name ?? 'buyer',
@@ -204,18 +200,29 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     }
   }
 
-  // ── UI ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
     final role = context.watch<AppSettings>().role ?? UserRole.buyer;
-    final g = role.gradient;
-    final fg = role == UserRole.buyer ? AppColors.forestDeep : Colors.white;
+
+    final (String title, String sub) = switch (_step) {
+      _AuthStep.phone => (
+          tr.enterPhone.replaceAll('\n', ' '),
+          tr.enterPhoneSub,
+        ),
+      _AuthStep.otp => (
+          tr.enterOtp.replaceAll('\n', ' '),
+          '${tr.otpSentTo} $_prettyPhone',
+        ),
+      _AuthStep.name => (
+          tr.yourName.replaceAll('\n', ' '),
+          tr.yourNameSub,
+        ),
+    };
 
     final (String cta, VoidCallback? onCta) = switch (_step) {
       _AuthStep.phone => (tr.sendOtp, _sendOtp),
-      _AuthStep.otp =>
-        (tr.verify, _otpCtrl.text.length == 6 ? _verify : null),
+      _AuthStep.otp => (tr.verify, _otpCtrl.text.length == 6 ? _verify : null),
       _AuthStep.name => (tr.finish, _finish),
     };
 
@@ -225,172 +232,171 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         if (!didPop) _back();
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        body: AuroraBackground(
-          accent: g.first,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Top bar ───────────────────────────────────────────────
-                  Row(
-                    children: [
-                      GlassIconButton(
-                          icon: Icons.arrow_back_rounded, onTap: _back),
-                      const SizedBox(width: 12),
-                      _RoleBadge(
-                          label: role.label(tr), icon: role.icon, colors: g),
-                      const Spacer(),
-                      const LanguagePill(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  StepIndicator(total: 4, current: 3, activeColors: g),
-                  const SizedBox(height: 28),
+        backgroundColor: AppColors.backgroundLight,
+        body: Column(
+          children: [
+            // ── Signature Curved Header matching login_screen.dart ──────────
+            AppHeaderBanner(
+              title: title,
+              subtitle: sub,
+              badgeText: role.label(tr).toUpperCase(),
+              showBack: true,
+              onBack: _back,
+              trailing: const AppLanguagePill(isDarkHeader: true),
+              heightFactor: 0.27,
+            ),
 
-                  // ── Step body ─────────────────────────────────────────────
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 380),
-                        switchInCurve: Curves.easeOutCubic,
-                        transitionBuilder: (child, anim) => FadeTransition(
-                          opacity: anim,
-                          child: SlideTransition(
-                            position: Tween(
-                              begin: const Offset(0.08, 0),
-                              end: Offset.zero,
-                            ).animate(anim),
-                            child: child,
+            // ── Step Form ───────────────────────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.spaceLG,
+                  AppDimensions.spaceMD,
+                  AppDimensions.spaceLG,
+                  AppDimensions.spaceLG,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_step == _AuthStep.phone) _buildPhoneSection(tr),
+                    if (_step == _AuthStep.otp) _buildOtpSection(tr),
+                    if (_step == _AuthStep.name) _buildNameSection(tr),
+
+                    // Error Message
+                    if (_error != null) ...[
+                      const SizedBox(height: AppDimensions.spaceMD),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusSM),
+                          border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3),
                           ),
                         ),
-                        child: KeyedSubtree(
-                          key: ValueKey(_step),
-                          child: switch (_step) {
-                            _AuthStep.phone => _buildPhone(tr, g),
-                            _AuthStep.otp => _buildOtp(tr, g),
-                            _AuthStep.name => _buildName(tr, g),
-                          },
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.error,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style: GoogleFonts.poppins(
+                                  color: AppColors.error,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ),
+                    ],
 
-                  // ── Error ─────────────────────────────────────────────────
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    child: _error == null
-                        ? const SizedBox(width: double.infinity)
-                        : Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.error_outline_rounded,
-                                    color: Color(0xFFFF8A80), size: 18),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _error!,
-                                    style: const TextStyle(
-                                      color: Color(0xFFFF8A80),
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    const SizedBox(height: AppDimensions.spaceLG),
+
+                    // Legacy Email Sign In Link
+                    if (_step == _AuthStep.phone) ...[
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () => context.go(AppRoutes.login),
+                          icon: const Icon(Icons.mail_outline_rounded, size: 16),
+                          label: Text(
+                            'Or sign in with email & password',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryGreen,
                             ),
                           ),
-                  ),
-
-                  GradientButton(
-                    label: cta,
-                    colors: g,
-                    foreground: fg,
-                    isLoading: _loading,
-                    onPressed: onCta,
-                    icon: _step == _AuthStep.name
-                        ? Icons.check_rounded
-                        : Icons.arrow_forward_rounded,
-                  ),
-                ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
+
+            // ── Bottom Continue CTA ──────────────────────────────────────────
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.spaceLG,
+                  0,
+                  AppDimensions.spaceLG,
+                  AppDimensions.spaceLG,
+                ),
+                child: AppPrimaryButton(
+                  label: cta,
+                  isLoading: _loading,
+                  onPressed: onCta,
+                  icon: _step == _AuthStep.name
+                      ? Icons.check_rounded
+                      : Icons.arrow_forward_rounded,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _heading(String title, String sub) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            sub,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 14.5,
-              height: 1.5,
-            ),
-          ),
-        ],
-      );
-
-  // Step A — phone number
-  Widget _buildPhone(AppStrings tr, List<Color> g) {
+  // ── Phone Input (matching _PremiumPhoneField in login_screen.dart) ─────────
+  Widget _buildPhoneSection(AppStrings tr) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _heading(tr.enterPhone, tr.enterPhoneSub),
-        const SizedBox(height: 32),
         Text(
-          tr.phoneLabel.toUpperCase(),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 11.5,
-            letterSpacing: 1.4,
+          'ENTER YOUR MOBILE NUMBER',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
             fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 1.2,
           ),
         ),
-        const SizedBox(height: 10),
-        GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          radius: 20,
-          borderColor: g.first.withValues(alpha: 0.5),
-          borderWidth: 1.4,
+        const SizedBox(height: AppDimensions.spaceSM),
+        Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: Colors.white.withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: AppColors.divider),
+                  ),
                 ),
-                child: const Row(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('🇱🇰', style: TextStyle(fontSize: 20)),
-                    SizedBox(width: 8),
+                    const Text('🇱🇰', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 6),
                     Text(
                       '+94',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textDark,
                       ),
                     ),
                   ],
@@ -400,9 +406,13 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               Expanded(
                 child: TextField(
                   controller: _phoneCtrl,
-                  autofocus: true,
                   keyboardType: TextInputType.phone,
-                  cursorColor: g.first,
+                  autofocus: true,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
@@ -411,43 +421,36 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                     if (_error != null) setState(() => _error = null);
                   },
                   onSubmitted: (_) => _sendOtp(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                  ),
                   decoration: InputDecoration(
-                    filled: false,
+                    hintText: '77 123 4567',
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppColors.textHint,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
-                    hintText: '77 123 4567',
-                    hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
-                    ),
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: AppDimensions.spaceSM),
         Row(
           children: [
-            Icon(Icons.lock_rounded,
-                size: 16, color: Colors.white.withValues(alpha: 0.5)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                tr.secureNote,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 13,
-                ),
+            const Icon(
+              Icons.lock_outline_rounded,
+              size: 14,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              tr.secureNote,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -456,50 +459,61 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     );
   }
 
-  // Step B — OTP boxes
-  Widget _buildOtp(AppStrings tr, List<Color> g) {
+  // ── OTP Boxes (clean light theme) ─────────────────────────────────────────
+  Widget _buildOtpSection(AppStrings tr) {
     final code = _otpCtrl.text;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _heading(tr.enterOtp, '${tr.otpSentTo}  $_prettyPhone'),
         if (_demoMode) ...[
-          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: AppColors.gold.withValues(alpha: 0.12),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+              color: const Color(0xFFFFF8E1),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              border: Border.all(color: const Color(0xFFFFE082)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.science_rounded,
-                    color: AppColors.gold, size: 18),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Color(0xFFE65100),
+                  size: 18,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     tr.demoNotice,
-                    style: const TextStyle(
-                      color: AppColors.gold,
-                      fontSize: 12.5,
-                      height: 1.4,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: const Color(0xFF795548),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: AppDimensions.spaceMD),
         ],
-        const SizedBox(height: 28),
 
-        // Hidden field drives the visual boxes
+        Text(
+          'ENTER 6-DIGIT VERIFICATION CODE',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.spaceMD),
+
         Stack(
           children: [
             Opacity(
               opacity: 0,
               child: SizedBox(
-                height: 64,
+                height: 56,
                 child: TextField(
                   controller: _otpCtrl,
                   focusNode: _otpFocus,
@@ -523,45 +537,38 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   final filled = i < code.length;
                   final active = i == code.length && _otpFocus.hasFocus;
                   return Expanded(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      height: 64,
+                    child: Container(
+                      height: 56,
                       margin: EdgeInsets.only(right: i == 5 ? 0 : 8),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
                         color: filled
-                            ? g.first.withValues(alpha: 0.14)
-                            : Colors.white.withValues(alpha: 0.06),
+                            ? const Color(0xFFE8F8EF)
+                            : AppColors.surfaceWhite,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusMD),
                         border: Border.all(
                           color: _error != null
-                              ? const Color(0xFFFF8A80)
+                              ? AppColors.error
                               : (active || filled)
-                                  ? g.first
-                                  : Colors.white.withValues(alpha: 0.12),
-                          width: active ? 2 : 1.3,
+                                  ? AppColors.primaryGreen
+                                  : AppColors.border,
+                          width: (active || filled) ? 2 : 1,
                         ),
-                        boxShadow: active
-                            ? [
-                                BoxShadow(
-                                  color: g.first.withValues(alpha: 0.35),
-                                  blurRadius: 14,
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 150),
-                        transitionBuilder: (c, a) =>
-                            ScaleTransition(scale: a, child: c),
-                        child: Text(
-                          filled ? code[i] : '',
-                          key: ValueKey('$i${filled ? code[i] : ''}'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
+                        ],
+                      ),
+                      child: Text(
+                        filled ? code[i] : '',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
                         ),
                       ),
                     ),
@@ -571,45 +578,29 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+
+        const SizedBox(height: AppDimensions.spaceMD),
 
         Row(
           children: [
             if (_secondsLeft > 0)
-              Text.rich(
-                TextSpan(
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 14,
-                  ),
-                  children: [
-                    TextSpan(text: '${tr.resendIn} '),
-                    TextSpan(
-                      text: '00:${_secondsLeft.toString().padLeft(2, '0')}',
-                      style: TextStyle(
-                        color: g.first,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+              Text(
+                '${tr.resendIn} 00:${_secondsLeft.toString().padLeft(2, '0')}',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
                 ),
               )
             else
               GestureDetector(
                 onTap: _loading ? null : _sendOtp,
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh_rounded, color: g.first, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      tr.resend,
-                      style: TextStyle(
-                        color: g.first,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  tr.resend,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
               ),
             const Spacer(),
@@ -617,12 +608,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               onTap: () => _goStep(_AuthStep.phone),
               child: Text(
                 tr.changeNumber,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 14,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                   decoration: TextDecoration.underline,
-                  decorationColor: Colors.white.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -632,102 +622,72 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     );
   }
 
-  // Step C — name (new users only)
-  Widget _buildName(AppStrings tr, List<Color> g) {
+  // ── Name Field (matching _PremiumField in login_screen.dart) ───────────────
+  Widget _buildNameSection(AppStrings tr) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'YOUR FULL NAME',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.spaceSM),
         Container(
-          width: 64,
-          height: 64,
+          height: 54,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(colors: g),
+            color: AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            border: Border.all(color: AppColors.border),
             boxShadow: [
-              BoxShadow(color: g.last.withValues(alpha: 0.5), blurRadius: 24),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
-          child: const Icon(Icons.verified_user_rounded,
-              color: Colors.white, size: 30),
-        ),
-        const SizedBox(height: 22),
-        _heading(tr.yourName, tr.yourNameSub),
-        const SizedBox(height: 28),
-        GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          radius: 20,
-          borderColor: g.first.withValues(alpha: 0.5),
-          borderWidth: 1.4,
-          child: TextField(
-            controller: _nameCtrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            cursorColor: g.first,
-            onSubmitted: (_) => _finish(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 19,
-              fontWeight: FontWeight.w600,
-            ),
-            decoration: InputDecoration(
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              icon: Icon(Icons.person_rounded, color: g.first),
-              hintText: tr.fullName,
-              hintStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
-                fontSize: 18,
+          child: Row(
+            children: [
+              const Icon(
+                Icons.person_outline_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _nameCtrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                  onSubmitted: (_) => _finish(),
+                  decoration: InputDecoration(
+                    hintText: tr.fullName,
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: AppColors.textHint,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({
-    required this.label,
-    required this.icon,
-    required this.colors,
-  });
-
-  final String label;
-  final IconData icon;
-  final List<Color> colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: colors.first.withValues(alpha: 0.15),
-          border: Border.all(color: colors.first.withValues(alpha: 0.45)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: colors.first, size: 15),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: colors.first,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

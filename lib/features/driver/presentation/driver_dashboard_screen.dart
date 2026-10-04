@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -58,7 +60,7 @@ const _mockOrders = [
   ),
 ];
 
-/// Role-based home for drivers: availability toggle, earnings, and orders.
+/// Driver Dashboard matching the exact visual style of FarmerDashboard & DashboardScreen.
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
 
@@ -68,10 +70,10 @@ class DriverDashboardScreen extends StatefulWidget {
 
 class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _online = true;
-  int _tab = 0;
+  int _selectedNav = 0;
   final Set<String> _accepted = {};
 
-  String get _name {
+  String get _driverName {
     final n = const AuthService().currentUserModel?.name ?? '';
     return n.isEmpty ? 'Driver' : n.split(' ').first;
   }
@@ -88,389 +90,417 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    const g = AppColors.driverGradient;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Hero header ──────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(32)),
-              child: AuroraBackground(
-                accent: g.first,
-                secondary: g.last,
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(colors: g),
-                              ),
-                              child: const Icon(Icons.delivery_dining_rounded,
-                                  color: Colors.white),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${tr.hello} 👋',
-                                    style: TextStyle(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Text(
-                                    _name,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const LanguagePill(),
-                            const SizedBox(width: 8),
-                            GlassIconButton(
-                              icon: Icons.logout_rounded,
-                              onTap: _logout,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
+      backgroundColor: const Color(0xFFF8FAF8),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
 
-                        // Online toggle
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            setState(() => _online = !_online);
-                          },
-                          child: GlassCard(
-                            radius: 20,
-                            padding: const EdgeInsets.all(14),
-                            child: Row(
-                              children: [
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _online
-                                        ? const Color(0xFF4ADE80)
-                                        : Colors.white38,
-                                    boxShadow: _online
-                                        ? [
-                                            const BoxShadow(
-                                              color: Color(0xFF4ADE80),
-                                              blurRadius: 10,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _online ? tr.online : tr.offline,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                                Switch.adaptive(
-                                  value: _online,
-                                  activeThumbColor: Colors.white,
-                                  activeTrackColor: const Color(0xFF22C55E),
-                                  onChanged: (v) => setState(() => _online = v),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
+              // ── Top Bar matching FarmerDashboard ────────────────────────
+              _buildTopBar(context),
+              const SizedBox(height: 20),
 
-                        // Earnings
-                        GlassCard(
-                          radius: 24,
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                tr.todaysEarnings,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  const Text(
-                                    'Rs. 4,860',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Container(
-                                    margin: const EdgeInsets.only(bottom: 6),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF22C55E)
-                                          .withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Text(
-                                      '▲ 18%',
-                                      style: TextStyle(
-                                        color: Color(0xFF4ADE80),
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  _stat(Icons.route_rounded, '6', tr.trips),
-                                  _divider(),
-                                  _stat(Icons.straighten_rounded, '58 km',
-                                      tr.distance),
-                                  _divider(),
-                                  _stat(Icons.star_rounded, '4.9', tr.rating),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+              // ── Online / Offline Status Toggle Card ─────────────────────
+              _buildStatusCard(tr),
+              const SizedBox(height: 16),
 
-          // ── Orders header ────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-            sliver: SliverToBoxAdapter(
-              child: Row(
+              // ── Earnings Summary Card (Dark Forest Green) ───────────────
+              _buildEarningsCard(tr),
+              const SizedBox(height: 20),
+
+              // ── Stats 2x2 Row ───────────────────────────────────────────
+              _buildStatsRow(tr),
+              const SizedBox(height: 24),
+
+              // ── Available Delivery Orders Section ───────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      tr.availableOrders,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
+                  Text(
+                    tr.availableOrders,
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
                     ),
                   ),
                   if (_online)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: g.last.withValues(alpha: 0.1),
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '${_mockOrders.length} ${tr.nearby}',
-                        style: TextStyle(
-                          color: g.last,
-                          fontSize: 12,
+                        style: GoogleFonts.poppins(
+                          color: AppColors.primaryGreen,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                 ],
               ),
-            ),
-          ),
+              const SizedBox(height: 14),
 
-          // ── Orders list / offline state ──────────────────────────────────
-          if (!_online)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  children: [
-                    Icon(Icons.power_settings_new_rounded,
-                        size: 56, color: AppColors.textHint),
-                    const SizedBox(height: 12),
-                    Text(
-                      tr.offlineHint,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+              // Orders List
+              if (!_online)
+                _buildOfflineNotice(tr)
+              else
+                ..._mockOrders.map((o) => _buildOrderCard(o, tr)),
+
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNav(tr),
+    );
+  }
+
+  // ── Top Bar ───────────────────────────────────────────────────────────────
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      children: [
+        // Driver Avatar with online dot
+        Stack(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.darkGreen,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.local_shipping_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _online
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFF9CA3AF),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              sliver: SliverList.separated(
-                itemCount: _mockOrders.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
-                itemBuilder: (context, i) {
-                  final o = _mockOrders[i];
-                  return FadeSlideIn(
-                    delay: Duration(milliseconds: 100 * i),
-                    child: _OrderCard(
-                      order: o,
-                      accepted: _accepted.contains(o.id),
-                      onAccept: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() => _accepted.add(o.id));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(tr.orderAccepted)),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
             ),
-        ],
+          ],
+        ),
+        const SizedBox(width: 12),
+
+        // Greeting
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Good day,',
+                style: GoogleFonts.poppins(
+                  fontSize: 11.5,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '$_driverName 👋',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Language Pill
+        const AppLanguagePill(isDarkHeader: false),
+        const SizedBox(width: 8),
+
+        // Logout
+        GestureDetector(
+          onTap: _logout,
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: const Icon(
+              Icons.logout_rounded,
+              color: AppColors.textSecondary,
+              size: 18,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Online / Offline Card ─────────────────────────────────────────────────
+  Widget _buildStatusCard(AppStrings tr) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _online ? const Color(0xFFE8F8EF) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+        border: Border.all(
+          color: _online
+              ? AppColors.primaryGreen.withValues(alpha: 0.4)
+              : const Color(0xFFD1D5DB),
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        backgroundColor: Colors.white,
-        indicatorColor: g.last.withValues(alpha: 0.12),
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded, color: g.last),
-            label: tr.navHome,
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _online
+                  ? AppColors.primaryGreen
+                  : const Color(0xFF9CA3AF),
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded, color: g.last),
-            label: tr.navOrders,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _online ? tr.online : tr.offline,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _online
+                        ? AppColors.darkGreen
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  _online
+                      ? 'Ready to receive local farm orders'
+                      : tr.offlineHint,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon:
-                Icon(Icons.account_balance_wallet_rounded, color: g.last),
-            label: tr.navEarnings,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded, color: g.last),
-            label: tr.navProfile,
+          Switch.adaptive(
+            value: _online,
+            activeTrackColor: AppColors.primaryGreen,
+            activeThumbColor: Colors.white,
+            onChanged: (v) {
+              HapticFeedback.selectionClick();
+              setState(() => _online = v);
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _stat(IconData icon, String value, String label) => Expanded(
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.gold, size: 18),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
-                fontSize: 11.5,
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _divider() => Container(
-        width: 1,
-        height: 40,
-        color: Colors.white.withValues(alpha: 0.12),
-      );
-}
-
-class _OrderCard extends StatelessWidget {
-  const _OrderCard({
-    required this.order,
-    required this.accepted,
-    required this.onAccept,
-  });
-
-  final _DeliveryOrder order;
-  final bool accepted;
-  final VoidCallback onAccept;
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = context.tr;
-    const g = AppColors.driverGradient;
-
+  // ── Earnings Card ─────────────────────────────────────────────────────────
+  Widget _buildEarningsCard(AppStrings tr) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF032B1C),
+            Color(0xFF063725),
+            Color(0xFF0D5C38),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E293B).withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: AppColors.darkGreen.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                tr.todaysEarnings,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.trending_up_rounded,
+                      color: AppColors.accentOrange,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '+18%',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accentOrange,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Rs. 4,860',
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Stats 3 Columns ───────────────────────────────────────────────────────
+  Widget _buildStatsRow(AppStrings tr) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _statCol(Icons.route_rounded, '6', tr.trips),
+          Container(width: 1, height: 32, color: const Color(0xFFE5E7EB)),
+          _statCol(Icons.straighten_rounded, '58 km', tr.distance),
+          Container(width: 1, height: 32, color: const Color(0xFFE5E7EB)),
+          _statCol(Icons.star_rounded, '4.9 ★', tr.rating),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCol(IconData icon, String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Order Card matching Product / Order Cards in existing screens ─────────
+  Widget _buildOrderCard(_DeliveryOrder order, AppStrings tr) {
+    final isDone = _accepted.contains(order.id);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDone ? AppColors.primaryGreen : const Color(0xFFE5E7EB),
+          width: isDone ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(order.emoji, style: const TextStyle(fontSize: 24)),
+                child: Text(order.emoji, style: const TextStyle(fontSize: 22)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -479,17 +509,17 @@ class _OrderCard extends StatelessWidget {
                   children: [
                     Text(
                       order.produce,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
+                      style: GoogleFonts.poppins(
                         fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textDark,
                       ),
                     ),
                     Text(
-                      '${order.id}  •  ${order.weightKg.toStringAsFixed(0)} kg  •  ${order.km} km',
-                      style: const TextStyle(
+                      '${order.id}  •  ${order.weightKg.toInt()} kg  •  ${order.km} km',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.5,
                         color: AppColors.textSecondary,
-                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -497,77 +527,151 @@ class _OrderCard extends StatelessWidget {
               ),
               Text(
                 'Rs. ${order.payout}',
-                style: TextStyle(
-                  color: g.last,
-                  fontSize: 17,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
+                  color: AppColors.primaryGreen,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          // Route timeline
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          const SizedBox(height: 12),
+
+          // Route Timeline
           Row(
             children: [
               Column(
                 children: [
-                  _dot(const Color(0xFF22C55E)),
-                  Container(width: 2, height: 22, color: AppColors.divider),
-                  _dot(g.last),
+                  const Icon(
+                    Icons.circle,
+                    size: 10,
+                    color: AppColors.primaryGreen,
+                  ),
+                  Container(
+                    width: 2,
+                    height: 18,
+                    color: const Color(0xFFE5E7EB),
+                  ),
+                  const Icon(
+                    Icons.location_on_rounded,
+                    size: 13,
+                    color: AppColors.accentOrange,
+                  ),
                 ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _place(tr.pickup, order.pickup),
-                    const SizedBox(height: 10),
-                    _place(tr.dropoff, order.dropoff),
+                    Text(
+                      order.pickup,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      order.dropoff,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
+
+          // Action Button
           SizedBox(
+            height: 42,
             width: double.infinity,
-            height: 48,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: accepted
-                  ? Container(
-                      key: const ValueKey('ok'),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF22C55E).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.check_circle_rounded,
-                              color: Color(0xFF16A34A), size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            tr.accepted,
-                            style: const TextStyle(
-                              color: Color(0xFF16A34A),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GradientButton(
-                      key: const ValueKey('accept'),
-                      label: tr.accept,
-                      colors: g,
-                      foreground: Colors.white,
-                      height: 48,
-                      icon: Icons.check_rounded,
-                      onPressed: onAccept,
+            child: isDone
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F8EF),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: AppColors.primaryGreen,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          tr.accepted,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      setState(() => _accepted.add(order.id));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(tr.orderAccepted),
+                          backgroundColor: AppColors.darkGreen,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      tr.accept,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineNotice(AppStrings tr) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          const Icon(
+            Icons.power_settings_new_rounded,
+            size: 48,
+            color: Color(0xFF9CA3AF),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            tr.offlineHint,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -575,36 +679,59 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _dot(Color c) => Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(color: c, width: 3),
-        ),
-      );
+  // ── Bottom Navigation matching FarmerDashboard ───────────────────────────
+  Widget _buildBottomNav(AppStrings tr) {
+    const activeColor = Color(0xFF1E8342);
+    const inactiveColor = Color(0xFF9CA3AF);
 
-  Widget _place(String label, String value) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: const TextStyle(
-              color: AppColors.textHint,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-            ),
+          _navItem(0, Icons.home_rounded, tr.navHome, activeColor, inactiveColor),
+          _navItem(1, Icons.receipt_long_rounded, tr.navOrders, activeColor, inactiveColor),
+          _navItem(2, Icons.account_balance_wallet_rounded, tr.navEarnings, activeColor, inactiveColor),
+          _navItem(3, Icons.person_rounded, tr.navProfile, activeColor, inactiveColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(
+    int index,
+    IconData icon,
+    String label,
+    Color activeColor,
+    Color inactiveColor,
+  ) {
+    final isSelected = _selectedNav == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedNav = index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 22,
+            color: isSelected ? activeColor : inactiveColor,
           ),
+          const SizedBox(height: 4),
           Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10.5,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? activeColor : inactiveColor,
             ),
           ),
         ],
-      );
+      ),
+    );
+  }
 }

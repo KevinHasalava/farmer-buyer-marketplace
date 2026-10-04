@@ -1,7 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
@@ -9,7 +9,7 @@ import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
-/// Step 0 — Splash: animated logo + tagline, then routes to the right step.
+/// Step 1: Splash Screen — matching original WelcomeScreen design system.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -18,21 +18,16 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with TickerProviderStateMixin {
-  late final AnimationController _intro = AnimationController(
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1800),
+    duration: const Duration(milliseconds: 1400),
   )..forward();
-
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  )..repeat();
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 3000), _routeNext);
+    Future.delayed(const Duration(milliseconds: 2200), _routeNext);
   }
 
   void _routeNext() {
@@ -44,7 +39,6 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    // Already signed in? Jump straight to their dashboard.
     bool hasSession = false;
     try {
       hasSession = SupabaseConfig.auth.currentSession != null;
@@ -59,232 +53,163 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _intro.dispose();
-    _pulse.dispose();
+    _anim.dispose();
     super.dispose();
   }
-
-  Animation<double> _interval(double a, double b, [Curve c = Curves.easeOutCubic]) =>
-      CurvedAnimation(parent: _intro, curve: Interval(a, b, curve: c));
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    final logoScale = _interval(0.0, 0.55, Curves.elasticOut);
-    final logoFade = _interval(0.0, 0.3);
-    final titleFade = _interval(0.35, 0.7);
-    final tagFade = _interval(0.55, 0.9);
 
-    return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 3),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: SafeArea(
+          child: Padding(
+            padding: AppDimensions.screenPadding,
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
 
-              // ── Logo with pulsing rings ─────────────────────────────────
-              SizedBox(
-                width: 220,
-                height: 220,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _pulse,
-                      builder: (context, _) => CustomPaint(
-                        size: const Size(220, 220),
-                        painter: _PulseRingsPainter(_pulse.value),
+                // ── Brand Logo (matching WelcomeScreen) ───────────────────
+                ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: _anim,
+                    curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+                  ),
+                  child: const AppBrandLogo(size: 96),
+                ),
+
+                const SizedBox(height: AppDimensions.spaceLG),
+
+                // ── Tagline Badge ─────────────────────────────────────────
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _anim,
+                    curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.spaceMD,
+                      vertical: AppDimensions.spaceXXS + 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusFull),
+                      border: Border.all(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.3),
                       ),
                     ),
-                    FadeTransition(
-                      opacity: logoFade,
-                      child: ScaleTransition(
-                        scale: logoScale,
-                        child: const _LogoMark(size: 112),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 14,
+                        ),
+                        const SizedBox(width: AppDimensions.spaceXXS),
+                        Text(
+                          '100% ETHICAL & DIRECT',
+                          style: GoogleFonts.poppins(
+                            color: AppColors.primaryGreen,
+                            letterSpacing: AppTextStyles.trackingWidest,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 18),
+                const SizedBox(height: AppDimensions.spaceMD),
 
-              // ── Wordmark ─────────────────────────────────────────────────
-              FadeTransition(
-                opacity: titleFade,
-                child: SlideTransition(
-                  position: Tween(begin: const Offset(0, 0.4), end: Offset.zero)
-                      .animate(titleFade),
-                  child: const _Wordmark(fontSize: 40),
+                // ── Wordmark Headline ──────────────────────────────────────
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _anim,
+                    curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+                  ),
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: GoogleFonts.poppins(
+                        fontSize: 34,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.5,
+                      ),
+                      children: const [
+                        TextSpan(
+                          text: 'Farm',
+                          style: TextStyle(fontWeight: FontWeight.w400),
+                        ),
+                        TextSpan(
+                          text: '2',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.accentOrange,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Home',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: AppDimensions.spaceSM),
 
-              // ── Tagline ──────────────────────────────────────────────────
-              FadeTransition(
-                opacity: tagFade,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                // ── Localized Tagline ───────────────────────────────────────
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _anim,
+                    curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+                  ),
                   child: Text(
                     tr.tagline,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.72),
-                      fontSize: 15,
+                    style: GoogleFonts.poppins(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
                       height: 1.5,
                     ),
                   ),
                 ),
-              ),
 
-              const Spacer(flex: 4),
+                const Spacer(flex: 3),
 
-              // ── Loader + footer ──────────────────────────────────────────
-              FadeTransition(
-                opacity: tagFade,
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          minHeight: 3,
-                          backgroundColor: Colors.white.withValues(alpha: 0.1),
-                          valueColor:
-                              const AlwaysStoppedAnimation(AppColors.gold),
-                        ),
+                // ── Loader / Indicator ───────────────────────────────────────
+                SizedBox(
+                  width: 90,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      minHeight: 3,
+                      backgroundColor:
+                          AppColors.primaryGreen.withValues(alpha: 0.15),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryGreen,
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'FRESH  •  DIRECT  •  FAIR',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 11,
-                        letterSpacing: 3,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: AppDimensions.spaceXL),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
-
-/// App logo mark — gradient squircle with leaf + glow. Reused across screens.
-class _LogoMark extends StatelessWidget {
-  const _LogoMark({required this.size});
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.32),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF3EE09F), Color(0xFF0B8A55), Color(0xFF05603A)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.emeraldGlow.withValues(alpha: 0.55),
-            blurRadius: 48,
-            spreadRadius: 2,
-          ),
-        ],
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.eco_rounded, color: Colors.white, size: size * 0.52),
-          Positioned(
-            right: size * 0.16,
-            top: size * 0.16,
-            child: Container(
-              width: size * 0.16,
-              height: size * 0.16,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: AppColors.goldGradient),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Wordmark extends StatelessWidget {
-  const _Wordmark({required this.fontSize});
-  final double fontSize;
-
-  @override
-  Widget build(BuildContext context) {
-    final base = TextStyle(
-      fontSize: fontSize,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -1,
-      color: Colors.white,
-    );
-    return RichText(
-      text: TextSpan(
-        style: base,
-        children: [
-          const TextSpan(text: 'Farm'),
-          TextSpan(
-            text: '2',
-            style: base.copyWith(
-              foreground: Paint()
-                ..shader = const LinearGradient(colors: AppColors.goldGradient)
-                    .createShader(Rect.fromLTWH(0, 0, fontSize, fontSize)),
-            ),
-          ),
-          const TextSpan(text: 'Home'),
-        ],
-      ),
-    );
-  }
-}
-
-class _PulseRingsPainter extends CustomPainter {
-  _PulseRingsPainter(this.t);
-  final double t;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = size.center(Offset.zero);
-    final maxR = size.width / 2;
-    for (var i = 0; i < 3; i++) {
-      final p = (t + i / 3) % 1.0;
-      final r = 60 + (maxR - 60) * p;
-      final paint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4
-        ..color = AppColors.emeraldGlow.withValues(alpha: (1 - p) * 0.45);
-      canvas.drawCircle(c, r, paint);
-    }
-    // Orbiting gold dot
-    final a = t * 2 * math.pi;
-    canvas.drawCircle(
-      c + Offset(math.cos(a), math.sin(a)) * (maxR - 18),
-      3.5,
-      Paint()..color = AppColors.gold,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_PulseRingsPainter old) => old.t != t;
 }
