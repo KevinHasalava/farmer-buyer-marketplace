@@ -1,9 +1,15 @@
 import 'package:go_router/go_router.dart';
 
+import '../localization/app_settings.dart';
+import '../../features/onboarding/presentation/splash_screen.dart';
+import '../../features/onboarding/presentation/language_selection_screen.dart';
 import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/role_selection_screen.dart';
+import '../../features/auth/presentation/phone_auth_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
 import '../../features/farmer/presentation/add_edit_product_screen.dart';
@@ -14,26 +20,63 @@ import '../../features/orders_chat/presentation/orders_chat_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
+  static const String splash          = '/';
+  static const String language        = '/language';
   static const String welcome         = '/welcome';
   static const String onboarding      = '/onboarding';
+  static const String roleSelection   = '/role';
+  static const String phoneAuth       = '/phone-auth';
   static const String login           = '/login';
   static const String dashboard       = '/dashboard';
   static const String farmerDashboard = '/farmer-dashboard';
+  static const String driverDashboard = '/driver-dashboard';
   static const String farmerProducts  = '/farmer-products';
   static const String addEditProduct  = '/add-edit-product';
   static const String searchFilter    = '/search-filter';
   static const String ordersChat      = '/orders-chat';
   static const String cart            = '/cart';
   static const String checkout        = '/checkout';
+
+  /// Role-based home dashboard.
+  static String homeFor(UserRole role) => switch (role) {
+        UserRole.buyer  => dashboard,
+        UserRole.farmer => farmerDashboard,
+        UserRole.driver => driverDashboard,
+      };
 }
 
 /// Application-level [GoRouter] instance.
 ///
-/// Initial location is `/welcome` (splash / landing).
+/// Flow: Splash → Language → Onboarding → Role → Phone OTP → Dashboard.
 final appRouter = GoRouter(
-  initialLocation: AppRoutes.welcome,
+  initialLocation: AppRoutes.splash,
   debugLogDiagnostics: true,
   routes: [
+    GoRoute(
+      path: AppRoutes.splash,
+      name: 'splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.language,
+      name: 'language',
+      builder: (context, state) => const LanguageSelectionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.roleSelection,
+      name: 'roleSelection',
+      builder: (context, state) => const RoleSelectionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.phoneAuth,
+      name: 'phoneAuth',
+      builder: (context, state) => const PhoneAuthScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverDashboard,
+      name: 'driverDashboard',
+      builder: (context, state) => const DriverDashboardScreen(),
+    ),
     GoRoute(
       path: AppRoutes.welcome,
       name: 'welcome',

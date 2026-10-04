@@ -26,7 +26,7 @@ class AuthService {
     return UserModel(
       id: user.id,
       name: user.userMetadata?['full_name'] as String? ?? '',
-      email: user.email ?? '',
+      email: user.email ?? user.phone ?? '',
       isFarmer: user.userMetadata?['is_farmer'] as bool? ?? false,
     );
   }
@@ -68,6 +68,45 @@ class AuthService {
       password: password,
     );
     return _toUserModel(response.user);
+  }
+
+  // ── Phone OTP (password-less) ──────────────────────────────────────────
+
+  /// Sends a 6-digit SMS code to [phone] (E.164 format, e.g. `+94771234567`).
+  ///
+  /// Requires an SMS provider (Twilio, MessageBird, Vonage…) to be enabled in
+  /// Supabase → Authentication → Providers → Phone.
+  Future<void> sendPhoneOtp(String phone) async {
+    await _auth.signInWithOtp(phone: phone, shouldCreateUser: true);
+  }
+
+  /// Verifies the SMS [token] for [phone] and signs the user in.
+  Future<User?> verifyPhoneOtp({
+    required String phone,
+    required String token,
+  }) async {
+    final response = await _auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
+    return response.user;
+  }
+
+  /// Saves the user's display name and role into `user_metadata`.
+  Future<void> updateProfile({
+    required String fullName,
+    required String role,
+  }) async {
+    await _auth.updateUser(
+      UserAttributes(
+        data: {
+          'full_name': fullName,
+          'role': role,
+          'is_farmer': role == 'farmer',
+        },
+      ),
+    );
   }
 
   // ── Sign In with OAuth ─────────────────────────────────────────────────
