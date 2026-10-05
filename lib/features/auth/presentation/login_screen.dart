@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/constants.dart';
+import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 
@@ -18,20 +20,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  bool _isBuyer = true;
+  UserRole _selectedRole = UserRole.buyer;
   bool _obscurePassword = true;
-  bool _agreedToTerms = false;
-  int _passwordStrength = 0;
-  bool _isSignInMode = false;  // toggle between Sign Up / Sign In
   bool _isLoading = false;
 
   // Form controllers
-  final _nameCtrl     = TextEditingController();
   final _emailCtrl    = TextEditingController();
-  final _phoneCtrl    = TextEditingController();
-  final _locationCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _confirmCtrl  = TextEditingController();
 
   final _authService  = const AuthService();
 
@@ -77,72 +72,45 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final role = context.read<AppSettings>().role;
+    if (role != null) {
+      _selectedRole = role;
+    }
+  }
+
+  @override
   void dispose() {
     _headerController.dispose();
     _formController.dispose();
-    _nameCtrl.dispose();
     _emailCtrl.dispose();
-    _phoneCtrl.dispose();
-    _locationCtrl.dispose();
     _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
     super.dispose();
   }
 
   // ── Supabase submit ──────────────────────────────────────────────────
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!_agreedToTerms && !_isSignInMode) {
-      _showError('Please accept the Terms & Privacy Policy.');
-      return;
-    }
 
     setState(() => _isLoading = true);
     try {
-      if (_isSignInMode) {
-        // ── Sign In ──────────────────────────────────────────────────
-        await _authService.signIn(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
-        );
-      } else {
-        // ── Sign Up ──────────────────────────────────────────────────
-        if (_passwordCtrl.text != _confirmCtrl.text) {
-          _showError('Passwords do not match.');
-          return;
-        }
-        await _authService.signUp(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
-          fullName: _nameCtrl.text.trim(),
-          isFarmer: !_isBuyer,
-        );
-      }
+      await _authService.signIn(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
 
+      if (!mounted) return;
+      await context.read<AppSettings>().setRole(_selectedRole);
       if (mounted) {
-        context.go(_isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard);
+        context.go(AppRoutes.homeFor(_selectedRole));
       }
     } on AuthException catch (e) {
       final msg = e.message.toLowerCase();
       if (msg.contains('rate limit')) {
-        // Attempt sign in in case user account was created in a previous attempt
-        try {
-          await _authService.signIn(
-            email: _emailCtrl.text.trim(),
-            password: _passwordCtrl.text,
-          );
-          if (mounted) {
-            context.go(
-              _isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard,
-            );
-            return;
-          }
-        } catch (_) {
-          // If signIn fails, show the rate limit resolution dialog with bypass
-          if (mounted) {
-            _showRateLimitDialog();
-            return;
-          }
+        if (mounted) {
+          _showRateLimitDialog();
+          return;
         }
       }
       _showError(e.message);
@@ -220,21 +188,16 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isSignInMode = true);
-            },
+            onPressed: () => Navigator.pop(ctx),
             child: const Text(
-              'Switch to Sign In',
+              'Cancel',
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context.go(
-                _isBuyer ? AppRoutes.dashboard : AppRoutes.farmerDashboard,
-              );
+              context.go(AppRoutes.homeFor(_selectedRole));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF235D3A),
@@ -262,30 +225,6 @@ class _LoginScreenState extends State<LoginScreen>
         ),
       ),
     );
-  }
-
-  void _updatePasswordStrength(String value) {
-    int strength = 0;
-    if (value.length >= 8) strength++;
-    if (value.contains(RegExp(r'[A-Z]'))) strength++;
-    if (value.contains(RegExp(r'[0-9]'))) strength++;
-    if (value.contains(RegExp(r'[!@#\$%^&*]'))) strength++;
-    setState(() => _passwordStrength = strength);
-  }
-
-  Color get _strengthColor {
-    if (_passwordStrength <= 1) return AppColors.error;
-    if (_passwordStrength == 2) return AppColors.warning;
-    if (_passwordStrength == 3) return AppColors.accentOrange;
-    return AppColors.success;
-  }
-
-  String get _strengthLabel {
-    if (_passwordStrength == 0) return '';
-    if (_passwordStrength <= 1) return 'Weak';
-    if (_passwordStrength == 2) return 'Fair';
-    if (_passwordStrength == 3) return 'Good';
-    return 'Strong';
   }
 
   @override
@@ -322,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen>
                       children: [
                         // Title
                         const Text(
-                          'Create your account',
+                          'Sign in to your account',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -331,8 +270,8 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          'Takes less than a minute',
+                        const Text(
+                          'Enter your email & password to continue',
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -348,21 +287,34 @@ class _LoginScreenState extends State<LoginScreen>
                           children: [
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "I'm Buying",
-                                sublabel: 'Household & Dining',
+                                label: "Buyer",
+                                sublabel: 'Household',
                                 icon: Icons.shopping_basket_rounded,
-                                isSelected: _isBuyer,
-                                onTap: () => setState(() => _isBuyer = true),
+                                isSelected: _selectedRole == UserRole.buyer,
+                                onTap: () =>
+                                    setState(() => _selectedRole = UserRole.buyer),
                               ),
                             ),
-                            const SizedBox(width: AppDimensions.spaceSM),
+                            const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "I'm Farming",
-                                sublabel: 'Sell Direct Harvest',
+                                label: "Farmer",
+                                sublabel: 'Producer',
                                 icon: Icons.agriculture_rounded,
-                                isSelected: !_isBuyer,
-                                onTap: () => setState(() => _isBuyer = false),
+                                isSelected: _selectedRole == UserRole.farmer,
+                                onTap: () =>
+                                    setState(() => _selectedRole = UserRole.farmer),
+                              ),
+                            ),
+                            const SizedBox(width: AppDimensions.spaceXS),
+                            Expanded(
+                              child: _PremiumAccountCard(
+                                label: "Driver",
+                                sublabel: 'Transit',
+                                icon: Icons.delivery_dining_rounded,
+                                isSelected: _selectedRole == UserRole.driver,
+                                onTap: () =>
+                                    setState(() => _selectedRole = UserRole.driver),
                               ),
                             ),
                           ],
@@ -371,44 +323,16 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: AppDimensions.spaceLG),
 
                         // ── Fields ────────────────────────────────────
-                        if (!_isSignInMode) ...[
-                          _PremiumField(
-                            label: 'Full Name',
-                            hint: 'Kasun Perera',
-                            icon: Icons.person_outline_rounded,
-                            controller: _nameCtrl,
-                            validator: (v) =>
-                                (v == null || v.isEmpty) ? 'Enter your name' : null,
-                          ),
-                          const SizedBox(height: AppDimensions.spaceSM),
-                        ],
-
                         _PremiumField(
                           label: 'Email Address',
-                          hint: 'kasun.perera@gmail.com',
+                          hint: 'your.email@example.com',
                           icon: Icons.mail_outline_rounded,
                           keyboardType: TextInputType.emailAddress,
                           controller: _emailCtrl,
                           validator: (v) =>
                               (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                         ),
-                        const SizedBox(height: AppDimensions.spaceSM),
-
-                        if (!_isSignInMode) ...[
-                          // Phone with country code
-                          _PremiumPhoneField(controller: _phoneCtrl),
-                          const SizedBox(height: AppDimensions.spaceSM),
-
-                          // Delivery Location
-                          _PremiumField(
-                            label: 'Delivery Location',
-                            hint: 'Colombo, Western Province',
-                            icon: Icons.location_on_outlined,
-                            suffixIcon: Icons.keyboard_arrow_down_rounded,
-                            controller: _locationCtrl,
-                          ),
-                          const SizedBox(height: AppDimensions.spaceSM),
-                        ],
+                        const SizedBox(height: AppDimensions.spaceMD),
 
                         // Password
                         _PremiumPasswordField(
@@ -416,114 +340,73 @@ class _LoginScreenState extends State<LoginScreen>
                           controller: _passwordCtrl,
                           onToggle: () =>
                               setState(() => _obscurePassword = !_obscurePassword),
-                          onChanged: _isSignInMode ? null : _updatePasswordStrength,
                           validator: (v) =>
                               (v == null || v.length < 6) ? 'Min. 6 characters' : null,
-                        ),
-
-                        // Strength bar
-                        if (_passwordStrength > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              ...List.generate(4, (i) {
-                                return Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 300),
-                                      height: 4,
-                                      decoration: BoxDecoration(
-                                        color: i < _passwordStrength
-                                            ? _strengthColor
-                                            : AppColors.border,
-                                        borderRadius:
-                                            BorderRadius.circular(2),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Strength: $_strengthLabel',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: _strengthColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        const SizedBox(height: AppDimensions.spaceSM),
-
-                        // Confirm Password (sign-up only)
-                        if (!_isSignInMode) _PremiumField(
-                          label: 'Confirm Password',
-                          hint: '••••••••••••',
-                          icon: Icons.shield_outlined,
-                          obscureText: true,
-                          controller: _confirmCtrl,
-                          suffixIcon: Icons.check_circle_rounded,
-                          suffixColor: AppColors.success,
-                        ),
-
-                        const SizedBox(height: AppDimensions.spaceMD),
-
-                        // Terms
-                        _TermsRow(
-                          agreed: _agreedToTerms,
-                          onChanged: (v) =>
-                              setState(() => _agreedToTerms = v ?? false),
                         ),
 
                         const SizedBox(height: AppDimensions.spaceLG),
 
                         // CTA Button
                         _PremiumCTAButton(
-                          label: _isSignInMode ? 'Sign In' : 'Create Account',
+                          label: 'Sign In',
                           isLoading: _isLoading,
                           onPressed: _submit,
                         ),
 
                         const SizedBox(height: AppDimensions.spaceMD),
 
-                        // Mode toggle link
+                        // Register / Sign Up Navigation to NEW Forms
                         Center(
-                          child: GestureDetector(
-                            onTap: () => setState(() {
-                              _isSignInMode = !_isSignInMode;
-                              _formKey.currentState?.reset();
-                            }),
-                            child: RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                "Don't have an account? ",
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text: _isSignInMode
-                                        ? "Don't have an account? "
-                                        : 'Already have an account? ',
+                              ),
+                              GestureDetector(
+                                onTap: () =>
+                                    context.push(AppRoutes.registerFor(_selectedRole)),
+                                child: Text(
+                                  switch (_selectedRole) {
+                                    UserRole.buyer => 'Register as Buyer',
+                                    UserRole.farmer => 'Register as Farmer',
+                                    UserRole.driver => 'Register as Driver',
+                                  },
+                                  style: const TextStyle(
+                                    color: AppColors.primaryGreen,
+                                    fontWeight: FontWeight.w700,
+                                    decoration: TextDecoration.underline,
+                                    fontSize: 13,
                                   ),
-                                  TextSpan(
-                                    text: _isSignInMode ? 'Create Account' : 'Sign In',
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGreen,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Mobile OTP Alternative
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: () => context.go(AppRoutes.phoneAuth),
+                            icon: const Icon(Icons.phone_iphone_rounded, size: 16),
+                            label: const Text(
+                              'Sign in with Mobile OTP instead',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryGreen,
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceLG),
+                        const SizedBox(height: AppDimensions.spaceMD),
 
                         // ── Demo / Skip Mode ────────────────────────────
                         Row(
@@ -551,9 +434,7 @@ class _LoginScreenState extends State<LoginScreen>
                           height: 48,
                           child: OutlinedButton.icon(
                             onPressed: () => context.go(
-                              _isBuyer
-                                  ? AppRoutes.dashboard
-                                  : AppRoutes.farmerDashboard,
+                              AppRoutes.homeFor(_selectedRole),
                             ),
                             icon: const Icon(
                               Icons.flash_on_rounded,
@@ -957,9 +838,6 @@ class _PremiumField extends StatelessWidget {
     this.controller,
     this.validator,
     this.keyboardType,
-    this.suffixIcon,
-    this.suffixColor,
-    this.obscureText = false,
   });
 
   final String label;
@@ -968,9 +846,6 @@ class _PremiumField extends StatelessWidget {
   final TextEditingController? controller;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
-  final IconData? suffixIcon;
-  final Color? suffixColor;
-  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -990,7 +865,6 @@ class _PremiumField extends StatelessWidget {
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
-          obscureText: obscureText,
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textDark,
@@ -1002,13 +876,6 @@ class _PremiumField extends StatelessWidget {
               color: AppColors.textHint,
             ),
             prefixIcon: Icon(icon, size: 18, color: AppColors.textSecondary),
-            suffixIcon: suffixIcon != null
-                ? Icon(
-                    suffixIcon,
-                    size: 18,
-                    color: suffixColor ?? AppColors.textSecondary,
-                  )
-                : null,
             filled: true,
             fillColor: AppColors.surfaceWhite,
             contentPadding: const EdgeInsets.symmetric(
@@ -1038,85 +905,6 @@ class _PremiumField extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone field with LK flag prefix
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumPhoneField extends StatelessWidget {
-  const _PremiumPhoneField({this.controller});
-  final TextEditingController? controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Phone Number',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-          decoration: InputDecoration(
-            hintText: '77 123 4567',
-            hintStyle: const TextStyle(fontSize: 14, color: AppColors.textHint),
-            prefixIcon: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundLight,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text('🇱🇰', style: TextStyle(fontSize: 14)),
-                  SizedBox(width: 4),
-                  Text(
-                    '+94',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  SizedBox(width: 2),
-                  Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 14, color: AppColors.textSecondary),
-                ],
-              ),
-            ),
-            filled: true,
-            fillColor: AppColors.surfaceWhite,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryGreen, width: 2),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Password field
 // ─────────────────────────────────────────────────────────────────────────────
 class _PremiumPasswordField extends StatelessWidget {
@@ -1124,14 +912,12 @@ class _PremiumPasswordField extends StatelessWidget {
     required this.obscure,
     required this.onToggle,
     this.controller,
-    this.onChanged,
     this.validator,
   });
 
   final bool obscure;
   final VoidCallback onToggle;
   final TextEditingController? controller;
-  final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
 
   @override
@@ -1151,7 +937,6 @@ class _PremiumPasswordField extends StatelessWidget {
         TextFormField(
           controller: controller,
           obscureText: obscure,
-          onChanged: onChanged,
           validator: validator,
           style: const TextStyle(fontSize: 14, color: AppColors.textDark),
           decoration: InputDecoration(
@@ -1186,62 +971,6 @@ class _PremiumPasswordField extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               borderSide:
                   const BorderSide(color: AppColors.primaryGreen, width: 2),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Terms Row
-// ─────────────────────────────────────────────────────────────────────────────
-class _TermsRow extends StatelessWidget {
-  const _TermsRow({required this.agreed, required this.onChanged});
-
-  final bool agreed;
-  final ValueChanged<bool?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: () => onChanged(!agreed),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: agreed ? AppColors.primaryGreen : Colors.transparent,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(
-                color: agreed ? AppColors.primaryGreen : AppColors.border,
-                width: 1.5,
-              ),
-            ),
-            child: agreed
-                ? const Icon(Icons.check_rounded, size: 13, color: Colors.white)
-                : null,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: RichText(
-            text: const TextSpan(
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              children: [
-                TextSpan(text: 'I agree to the '),
-                TextSpan(
-                  text: 'Terms & Privacy Policy',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
             ),
           ),
         ),
