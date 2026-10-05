@@ -17,6 +17,9 @@ import '../../features/search/presentation/search_filter_screen.dart';
 import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
+import '../../features/auth/presentation/buyer_registration_screen.dart';
+import '../../features/auth/presentation/farmer_registration_screen.dart';
+import '../../features/auth/presentation/driver_registration_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
@@ -27,6 +30,9 @@ abstract final class AppRoutes {
   static const String roleSelection   = '/role';
   static const String phoneAuth       = '/phone-auth';
   static const String login           = '/login';
+  static const String buyerRegister   = '/register-buyer';
+  static const String farmerRegister  = '/register-farmer';
+  static const String driverRegister  = '/register-driver';
   static const String dashboard       = '/dashboard';
   static const String farmerDashboard = '/farmer-dashboard';
   static const String driverDashboard = '/driver-dashboard';
@@ -42,6 +48,13 @@ abstract final class AppRoutes {
         UserRole.buyer  => dashboard,
         UserRole.farmer => farmerDashboard,
         UserRole.driver => driverDashboard,
+      };
+
+  /// Role-based registration screen.
+  static String registerFor(UserRole role) => switch (role) {
+        UserRole.buyer  => buyerRegister,
+        UserRole.farmer => farmerRegister,
+        UserRole.driver => driverRegister,
       };
 }
 
@@ -71,6 +84,21 @@ final appRouter = GoRouter(
       path: AppRoutes.phoneAuth,
       name: 'phoneAuth',
       builder: (context, state) => const PhoneAuthScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.buyerRegister,
+      name: 'buyerRegister',
+      builder: (context, state) => const BuyerRegistrationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.farmerRegister,
+      name: 'farmerRegister',
+      builder: (context, state) => const FarmerRegistrationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverRegister,
+      name: 'driverRegister',
+      builder: (context, state) => const DriverRegistrationScreen(),
     ),
     GoRoute(
       path: AppRoutes.driverDashboard,

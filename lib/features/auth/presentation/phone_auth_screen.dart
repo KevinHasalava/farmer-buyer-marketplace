@@ -300,7 +300,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
 
                     const SizedBox(height: AppDimensions.spaceLG),
 
-                    // Legacy Email Sign In Link
+                    // Legacy Email Sign In Link & Sign Up Navigation
                     if (_step == _AuthStep.phone) ...[
                       Center(
                         child: TextButton.icon(
@@ -312,6 +312,92 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account? ",
+                              style: GoogleFonts.poppins(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                final currentRole =
+                                    context.read<AppSettings>().role ??
+                                        UserRole.buyer;
+                                context.push(AppRoutes.registerFor(currentRole));
+                              },
+                              child: Text(
+                                'Sign Up',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryGreen,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Center(
+                        child: InkWell(
+                          onTap: () {
+                            final currentRole =
+                                context.read<AppSettings>().role ??
+                                    UserRole.buyer;
+                            context.push(AppRoutes.registerFor(currentRole));
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  role.icon,
+                                  size: 16,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  switch (role) {
+                                    UserRole.buyer => 'Register as a Buyer',
+                                    UserRole.farmer => 'Register as a Farm Producer',
+                                    UserRole.driver => 'Register as a Transit Driver',
+                                  },
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ],
                             ),
                           ),
                         ),

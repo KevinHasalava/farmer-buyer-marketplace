@@ -1,0 +1,85 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d chrome
+
+## exception
+
+OutOfMemoryError: Out of Memory
+
+```
+#0      new Uint8List (dart:typed_data-patch/typed_data_patch.dart:2403:3)
+#1      _File.readAsBytesSync (dart:io/file_impl.dart:675:16)
+#2      ForwardingFile.readAsBytesSync (package:file/src/forwarding/forwarding_file.dart:91:43)
+#3      ErrorHandlingFile.readAsBytesSync.<anonymous closure> (package:flutter_tools/src/base/error_handling_io.dart:563:22)
+#4      _runSync (package:flutter_tools/src/base/error_handling_io.dart:1118:16)
+#5      ErrorHandlingFile.readAsBytesSync (package:flutter_tools/src/base/error_handling_io.dart:562:12)
+#6      WebMemoryFS.write (package:flutter_tools/src/web/memory_fs.dart:29:42)
+#7      WebDevFS.update (package:flutter_tools/src/isolated/devfs_web.dart:458:44)
+#8      _rootRunUnary (dart:async/zone_root.dart:48:47)
+#9      _CustomZone.runUnary (dart:async/zone.dart:816:35)
+#10     Future._propagateToListeners.handleValueCallback (dart:async/future_impl.dart:948:45)
+#11     Future._propagateToListeners (dart:async/future_impl.dart:977:13)
+#12     Future._completeWithValue (dart:async/future_impl.dart:720:5)
+#13     Future._asyncCompleteWithValue.<anonymous closure> (dart:async/future_impl.dart:804:7)
+#14     _rootRun (dart:async/zone_root.dart:35:13)
+#15     _CustomZone.run (dart:async/zone.dart:810:35)
+#16     _CustomZone.runGuarded (dart:async/zone.dart:702:7)
+#17     _CustomZone.bindCallbackGuarded.<anonymous closure> (dart:async/zone.dart:743:23)
+#18     _microtaskLoop (dart:async/schedule_microtask.dart:40:35)
+#19     _startMicrotaskLoop (dart:async/schedule_microtask.dart:49:5)
+#20     _runPendingImmediateCallback (dart:isolate-patch/isolate_patch.dart:127:13)
+#21     _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:193:5)
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.47.4, on Microsoft Windows [Version 10.0.26200.9457], locale en-US) [566ms]
+    [32m•[39m Flutter version 3.47.4 on channel stable at C:\src\flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision 9584c6713b (3 weeks ago), 2026-09-10 15:25:10 -0700
+    [32m•[39m Engine revision 06a2e2a110
+    [32m•[39m Dart version 3.13.3
+    [32m•[39m DevTools version 2.60.0
+    [32m•[39m Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android,
+      enable-ios, cli-animations, enable-native-assets, enable-record-use, enable-swift-package-manager,
+      omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[33m[!][39m Windows Version (Problem detected with Windows installation) [477ms]
+    [33m![39m Get-Process failed to complete
+
+[33m[!][39m Android toolchain - develop for Android devices (Android SDK version 36.0.0) [976ms]
+    [32m•[39m Android SDK at C:\Users\USER\AppData\Local\Android\sdk
+    [32m•[39m Emulator version 37.1.11.0 (build_id 15917651) (CL:N/A)
+    [32m•[39m Platform android-36, build-tools 36.0.0
+    [32m•[39m Java binary at: C:\Program Files\Java\jdk-25\bin\java
+      This JDK is specified by the JAVA_HOME environment variable.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    [31m✗[39m Could not determine java version
+
+[32m[✓][39m Chrome - develop for the web [274ms]
+    [32m•[39m Chrome at C:\Users\USER\AppData\Local\Google\Chrome\Application\chrome.exe
+
+[33m[!][39m Visual Studio - develop Windows apps (Visual Studio Community 2022 17.14.7) [274ms]
+    [32m•[39m Visual Studio at C:\Program Files\Microsoft Visual Studio\2022\Community
+    [32m•[39m Visual Studio Community 2022 version 17.14.36221.1
+    [31m✗[39m Visual Studio is missing necessary components. Please re-run the Visual Studio installer for the "Desktop development
+      with C++" workload, and include these components:
+        MSVC v142 - VS 2019 C++ x64/x86 build tools
+         - If there are multiple build tool versions available, install the latest
+        C++ CMake tools for Windows
+        Windows 10 SDK
+
+[32m[✓][39m Connected device (3 available) [162ms]
+    [32m•[39m Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.26200.9457]
+    [32m•[39m Chrome (web)      • chrome  • web-javascript • Google Chrome 154.0.8037.95
+    [32m•[39m Edge (web)        • edge    • web-javascript • Microsoft Edge 154.0.4258.53
+
+[32m[✓][39m Network resources [1,011ms]
+    [32m•[39m All expected network resources are available.
+
+[33m![39m Doctor found issues in 3 categories.
+```
