@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
+import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_dashboard_screen.dart';
 
@@ -23,7 +24,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
-  static const _farmer = FarmerData.defaultFarmer;
+  FarmerData get _farmer => FarmerProfileManager.instance.profile.toFarmerData();
   static const _filters = ['All Products', 'Active', 'Out of Stock'];
 
   late List<ProductData> _products;
@@ -414,7 +415,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+          builder: (_) => FarmerProfileScreen(farmer: _farmer),
         ),
       ),
       child: Container(
@@ -957,7 +958,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+                  builder: (_) => FarmerProfileScreen(farmer: _farmer),
                 ),
               );
             },

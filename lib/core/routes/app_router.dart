@@ -12,14 +12,12 @@ import '../../features/auth/presentation/buyer_registration_screen.dart';
 import '../../features/auth/presentation/farmer_registration_screen.dart';
 import '../../features/auth/presentation/driver_registration_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
 import '../../features/farmer/presentation/add_edit_product_screen.dart';
-import '../../features/search/presentation/search_filter_screen.dart';
-import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
-import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/driver/presentation/delivery_details_screen.dart';
 import '../../features/driver/presentation/deliveries_screen.dart';
 import '../../features/driver/presentation/pickup_verification_screen.dart';
@@ -27,6 +25,7 @@ import '../../features/driver/presentation/delivery_tracking_screen.dart';
 import '../../features/driver/presentation/delivery_completed_screen.dart';
 import '../../features/driver/presentation/driver_profile_screen.dart';
 import '../../features/driver/presentation/delivery_history_screen.dart';
+import '../../features/buyer/buyer.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
@@ -60,6 +59,8 @@ abstract final class AppRoutes {
   static const String ordersChat         = '/orders-chat';
   static const String cart               = '/cart';
   static const String checkout           = '/checkout';
+  static const String buyerProfile       = '/buyer-profile';
+  static const String buyerNotifications = '/buyer-notifications';
 
   /// Role-based home dashboard.
   static String homeFor(UserRole role) => switch (role) {
@@ -151,7 +152,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.dashboard,
       name: 'dashboard',
-      builder: (context, state) => const DashboardScreen(),
+      builder: (context, state) => const BuyerHomeScreen(),
     ),
     GoRoute(
       path: AppRoutes.farmerDashboard,
@@ -256,7 +257,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.searchFilter,
       name: 'searchFilter',
-      builder: (context, state) => const SearchFilterScreen(),
+      builder: (context, state) => const BuyerFilterScreen(),
     ),
     GoRoute(
       path: AppRoutes.ordersChat,
@@ -266,12 +267,22 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.cart,
       name: 'cart',
-      builder: (context, state) => const MyCartScreen(),
+      builder: (context, state) => const BuyerCartScreen(),
     ),
     GoRoute(
       path: AppRoutes.checkout,
       name: 'checkout',
       builder: (context, state) => const CheckoutDeliveryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.buyerProfile,
+      name: 'buyerProfile',
+      builder: (context, state) => const BuyerProfileScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.buyerNotifications,
+      name: 'buyerNotifications',
+      builder: (context, state) => const BuyerNotificationsScreen(),
     ),
   ],
 );

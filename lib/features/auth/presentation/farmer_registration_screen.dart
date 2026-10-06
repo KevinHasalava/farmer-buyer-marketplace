@@ -8,6 +8,7 @@ import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 
 /// Farmer / Producer Registration Screen — matching Farm2Home design.
 class FarmerRegistrationScreen extends StatefulWidget {
@@ -112,6 +113,21 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
     try {
       final name = _nameCtrl.text.trim();
+
+      // Persist real farmer registration details to Supabase & cache
+      await FarmerProfileManager.instance.saveRegistrationData(
+        name: name,
+        phone: _phoneCtrl.text.trim(),
+        farmName: _farmNameCtrl.text.trim(),
+        district: _selectedDistrict ?? 'Nuwara Eliya',
+        agrarianCenter: _agrarianCenterCtrl.text.trim(),
+        scale: _selectedScale,
+        practice: _selectedPractice,
+        crops: _selectedCrops.toList(),
+        nic: _nicCtrl.text.trim(),
+        bankName: _bankCtrl.text.trim(),
+        accountNumber: _accountNumberCtrl.text.trim(),
+      );
 
       if (name.isNotEmpty) {
         await _authService.updateProfile(

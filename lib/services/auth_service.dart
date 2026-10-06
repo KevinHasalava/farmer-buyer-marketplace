@@ -42,6 +42,7 @@ class AuthService {
     required String password,
     required String fullName,
     required bool isFarmer,
+    Map<String, dynamic>? extraData,
   }) async {
     final response = await _auth.signUp(
       email: email,
@@ -49,6 +50,7 @@ class AuthService {
       data: {
         'full_name': fullName,
         'is_farmer': isFarmer,
+        if (extraData != null) ...extraData,
       },
     );
     return _toUserModel(response.user);

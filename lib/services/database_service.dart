@@ -90,6 +90,20 @@ class DatabaseService {
 
   // ── Domain-specific helpers ────────────────────────────────────────────
 
+  /// Fetch a user profile from the `profiles` table.
+  Future<Map<String, dynamic>?> fetchUserProfile(String userId) async {
+    try {
+      final result = await _db
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+      return result;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Save or update a user profile in the `profiles` table.
   Future<void> upsertUserProfile({
     required String userId,

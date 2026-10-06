@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../farmer/presentation/add_edit_product_screen.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 import 'product_detail_screen.dart';
 
 /// Premium Farmer Profile Screen matching Image 2 with dynamic edit capabilities
@@ -84,10 +85,15 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
         ),
       ];
 
+  final FarmerProfileManager _profileManager = FarmerProfileManager.instance;
+
   @override
   void initState() {
     super.initState();
-    _farmer = widget.farmer;
+    _profileManager.addListener(_onProfileChanged);
+    _farmer = _profileManager.profile.toFarmerData();
+    _profileManager.loadProfile();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -102,8 +108,17 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
   @override
   void dispose() {
+    _profileManager.removeListener(_onProfileChanged);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onProfileChanged() {
+    if (mounted) {
+      setState(() {
+        _farmer = _profileManager.profile.toFarmerData();
+      });
+    }
   }
 
   void _showEditProfileModal() {
@@ -215,27 +230,49 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       HapticFeedback.mediumImpact();
+                      final newName = nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : _farmer.name;
+                      final newRole = roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : _farmer.role;
+                      final newLoc = locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _farmer.location;
+                      final newPhone = phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : _farmer.phone;
+                      final newExp = expCtrl.text.trim().isNotEmpty ? expCtrl.text.trim() : _farmer.yearsExperience;
+                      final newCust = custCtrl.text.trim().isNotEmpty ? custCtrl.text.trim() : _farmer.happyCustomers;
+                      final newAbout = aboutCtrl.text.trim().isNotEmpty ? aboutCtrl.text.trim() : _farmer.about;
+
                       setState(() {
                         _farmer = _farmer.copyWith(
-                          name: nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : _farmer.name,
-                          role: roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : _farmer.role,
-                          location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _farmer.location,
-                          phone: phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : _farmer.phone,
-                          yearsExperience: expCtrl.text.trim().isNotEmpty ? expCtrl.text.trim() : _farmer.yearsExperience,
-                          happyCustomers: custCtrl.text.trim().isNotEmpty ? custCtrl.text.trim() : _farmer.happyCustomers,
-                          about: aboutCtrl.text.trim().isNotEmpty ? aboutCtrl.text.trim() : _farmer.about,
+                          name: newName,
+                          role: newRole,
+                          location: newLoc,
+                          phone: newPhone,
+                          yearsExperience: newExp,
+                          happyCustomers: newCust,
+                          about: newAbout,
                         );
                       });
+
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Profile details updated successfully!'),
-                          backgroundColor: _forestGreen,
-                          behavior: SnackBarBehavior.floating,
-                        ),
+
+                      _profileManager.updateProfile(
+                        name: newName,
+                        role: newRole,
+                        location: newLoc,
+                        phone: newPhone,
+                        yearsExperience: newExp,
+                        happyCustomers: newCust,
+                        about: newAbout,
                       );
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile details updated successfully!'),
+                            backgroundColor: _forestGreen,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
                     },
                     child: const Text(
                       'Save Changes',
