@@ -2,90 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
-import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../widgets/premium/premium_widgets.dart';
 
-class _OnboardSlide {
-  const _OnboardSlide({
+class _OnboardSlideData {
+  const _OnboardSlideData({
     required this.tag,
-    required this.badge,
-    required this.topRightBadge,
     required this.title,
-    required this.body,
-    required this.imageUrl,
-    required this.quote,
-    required this.fallbackIcon,
-    required this.chipA,
-    required this.chipB,
-    required this.chipC,
+    required this.subtitle,
+    required this.assetPath,
+    required this.networkFallbackUrl,
+    required this.buttonText,
   });
 
   final String tag;
-  final String badge;
-  final String topRightBadge;
   final String title;
-  final String body;
-  final String imageUrl;
-  final String quote;
-  final IconData fallbackIcon;
-  final String chipA;
-  final String chipB;
-  final String chipC;
+  final String subtitle;
+  final String assetPath;
+  final String networkFallbackUrl;
+  final String buttonText;
 }
 
-List<_OnboardSlide> _getSlides(AppStrings tr) => [
-      _OnboardSlide(
-        tag: tr.onb1Tag,
-        badge: '🌾 100% කෙළින්ම ගොවිබිමෙන්',
-        topRightBadge: '0% MIDDLEMEN',
-        title: tr.onb1Title,
-        body: tr.onb1Body,
-        // High quality smiling Sri Lankan / Asian farmer in lush farm field
-        imageUrl:
-            'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=900&auto=format&fit=crop&q=85',
-        quote: tr.onb1Quote,
-        fallbackIcon: Icons.agriculture_rounded,
-        chipA: tr.onb1ChipA,
-        chipB: tr.onb1ChipB,
-        chipC: tr.onb1ChipC,
-      ),
-      _OnboardSlide(
-        tag: tr.onb2Tag,
-        badge: '🥕 දිනපතා නැවුම් අස්වැන්න',
-        topRightBadge: 'FAIR RATES',
-        title: tr.onb2Title,
-        body: tr.onb2Body,
-        // Fresh farm vegetables and produce basket direct from soil
-        imageUrl:
-            'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=900&auto=format&fit=crop&q=85',
-        quote: tr.onb2Quote,
-        fallbackIcon: Icons.shopping_basket_rounded,
-        chipA: tr.onb2ChipA,
-        chipB: tr.onb2ChipB,
-        chipC: tr.onb2ChipC,
-      ),
-      _OnboardSlide(
-        tag: tr.onb3Tag,
-        badge: '🚚 ප්‍රදේශයේ ගොවි ප්‍රවාහනය',
-        topRightBadge: 'DAILY CASH',
-        title: tr.onb3Title,
-        body: tr.onb3Body,
-        // Farm-to-home fresh deliveries & transport
-        imageUrl:
-            'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900&auto=format&fit=crop&q=85',
-        quote: tr.onb3Quote,
-        fallbackIcon: Icons.local_shipping_rounded,
-        chipA: tr.onb3ChipA,
-        chipB: tr.onb3ChipB,
-        chipC: tr.onb3ChipC,
-      ),
-    ];
-
-/// Premium Onboarding with rich agricultural imagery, badges & farmer-market aesthetic.
+/// Fullscreen premium Onboarding screens matching the custom design
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -104,462 +45,194 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finish() async {
-    await context.settings.completeOnboarding();
+    await context.read<AppSettings>().completeOnboarding();
     if (mounted) context.go(AppRoutes.roleSelection);
   }
 
-  void _nextPage(int total) {
+  void _onNextTap(int totalSlides) {
     HapticFeedback.lightImpact();
-    if (_currentPage < total - 1) {
+    if (_currentPage < totalSlides - 1) {
       _controller.nextPage(
         duration: const Duration(milliseconds: 380),
-        curve: Curves.easeOutCubic,
+        curve: Curves.easeInOutCubic,
       );
     } else {
       _finish();
     }
   }
 
+  void _onBackTap() {
+    HapticFeedback.selectionClick();
+    if (_currentPage > 0) {
+      _controller.previousPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
+      );
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  List<_OnboardSlideData> _getSlides(AppStrings tr) => [
+        _OnboardSlideData(
+          tag: tr.onb1Tag,
+          title: tr.onb1Title,
+          subtitle: tr.onb1Body,
+          assetPath: 'assets/images/onboarding_1.jpg',
+          networkFallbackUrl:
+              'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=1200&auto=format&fit=crop&q=85',
+          buttonText: tr.continueBtn,
+        ),
+        _OnboardSlideData(
+          tag: tr.onb2Tag,
+          title: tr.onb2Title,
+          subtitle: tr.onb2Body,
+          assetPath: 'assets/images/onboarding_2.jpg',
+          networkFallbackUrl:
+              'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=85',
+          buttonText: tr.getStarted,
+        ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
     final slides = _getSlides(tr);
-    final isLast = _currentPage == slides.length - 1;
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Top Bar with Language Pill and Skip ─────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.spaceMD,
-                vertical: AppDimensions.spaceXS,
-              ),
-              child: Row(
-                children: [
-                  const AppLanguagePill(isDarkHeader: false),
-                  const Spacer(),
-                  if (!isLast)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: TextButton(
-                        onPressed: _finish,
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          tr.skip,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 38),
-                ],
-              ),
-            ),
-
-            // ── Carousel Slider ─────────────────────────────────────────────
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: slides.length,
-                onPageChanged: (i) => setState(() => _currentPage = i),
-                itemBuilder: (context, i) {
-                  final slide = slides[i];
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.spaceLG,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 4),
-
-                        // ── Rich Agricultural Image Card ────────────────────
-                        _buildHeroImageCard(slide),
-
-                        const SizedBox(height: 18),
-
-                        // ── Tag Badge with Pulse Dot ────────────────────────
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                AppColors.primaryGreen.withValues(alpha: 0.10),
-                            borderRadius:
-                                BorderRadius.circular(AppDimensions.radiusFull),
-                            border: Border.all(
-                              color: AppColors.primaryGreen
-                                  .withValues(alpha: 0.28),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                slide.tag.toUpperCase(),
-                                style: GoogleFonts.poppins(
-                                  color: AppColors.primaryGreen,
-                                  fontSize: 11,
-                                  letterSpacing: 1.2,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // ── Headline ────────────────────────────────────────
-                        Text(
-                          slide.title,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
-                            height: 1.24,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // ── Subtitle ────────────────────────────────────────
-                        Text(
-                          slide.body,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                            height: 1.5,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // ── 3 Agricultural Feature Chips ─────────────────────
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            _featureChip(slide.chipA, Icons.verified_rounded),
-                            _featureChip(slide.chipB, Icons.payments_rounded),
-                            _featureChip(slide.chipC, Icons.bolt_rounded),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // ── Bottom Controls & Indicators ─────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.spaceLG,
-                0,
-                AppDimensions.spaceLG,
-                AppDimensions.spaceMD,
-              ),
-              child: Column(
-                children: [
-                  // Modern Animated Leaf / Pill Indicators
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      slides.length,
-                      (i) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 320),
-                        curve: Curves.easeOutCubic,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: i == _currentPage ? 32 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          gradient: i == _currentPage
-                              ? const LinearGradient(
-                                  colors: [
-                                    Color(0xFF22C55E),
-                                    Color(0xFF15803D),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          color: i == _currentPage
-                              ? null
-                              : const Color(0xFFD1D5DB),
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusFull),
-                          boxShadow: i == _currentPage
-                              ? [
-                                  BoxShadow(
-                                    color: AppColors.primaryGreen
-                                        .withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ]
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: AppDimensions.spaceMD),
-
-                  // Button
-                  AppPrimaryButton(
-                    label: isLast ? tr.getStarted : tr.next,
-                    onPressed: () => _nextPage(slides.length),
-                    icon: Icons.arrow_forward_rounded,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Reassuring Local Agricultural Heritage Tag
-                  Text(
-                    '🇱🇰 ශ්‍රී ලාංකික ගොවි ජනතාව සවිබල ගන්වන විශ්වාසනීය වෙළඳපොළ',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
       ),
-    );
-  }
-
-  // ── Hero Image Card with Nature Gradient Overlay & Badges ────────────────
-  Widget _buildHeroImageCard(_OnboardSlide slide) {
-    return Container(
-      width: double.infinity,
-      height: 255,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: AppColors.darkGreen.withValues(alpha: 0.12),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.darkGreen.withValues(alpha: 0.18),
-            blurRadius: 26,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: Stack(
+      child: Scaffold(
+        backgroundColor: const Color(0xFF05170C),
+        body: Stack(
           fit: StackFit.expand,
           children: [
-            // Background Image with smooth fade & fallback
-            Image.network(
-              slide.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF032B1C), Color(0xFF0F5A2C)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        slide.fallbackIcon,
-                        size: 72,
-                        color: AppColors.accentOrange,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Farm2Home Agriculture',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return Container(
-                  color: const Color(0xFFF1F5F9),
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                );
+            // ── Background Carousel ─────────────────────────────────────────
+            PageView.builder(
+              controller: _controller,
+              itemCount: slides.length,
+              onPageChanged: (i) => setState(() => _currentPage = i),
+              itemBuilder: (context, index) {
+                final slide = slides[index];
+                return _buildBackground(slide);
               },
             ),
 
-            // Subtle dark gradients for pristine badge & quote contrast
+            // ── Dark Lush Agricultural Gradient Overlay ─────────────────────
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.45, 1.0],
+                    stops: const [0.0, 0.20, 0.48, 0.76, 1.0],
                     colors: [
                       Colors.black.withValues(alpha: 0.40),
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.70),
+                      Colors.black.withValues(alpha: 0.25),
+                      const Color(0xD9062313), // Deep natural forest green
+                      const Color(0xFA04170C),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // Top-Left Floating Trust Badge
-            Positioned(
-              top: 14,
-              left: 14,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.darkGreen.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
+            // ── Top Navigation Bar ──────────────────────────────────────────
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                    ),
-                  ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Left Item: Back arrow on slide 1, or Language switcher on slide 2
+                      if (_currentPage == 0)
+                        _buildBackButton()
+                      else
+                        _buildLanguageTogglePill(),
+
+                      // Right Item: Translucent "Skip" pill
+                      _buildSkipButton(tr.skip),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.eco_rounded,
-                      color: AppColors.accentOrange,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      slide.badge,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+              ),
+            ),
+
+            // ── Bottom Content: Tag, Title, Subtitle, Indicator, Button ─────
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tag with glowing mint dot
+                      _buildTagPill(slides[_currentPage].tag),
+
+                      const SizedBox(height: 14),
+
+                      // Headline
+                      Text(
+                        slides[_currentPage].title,
+                        style: GoogleFonts.poppins(
+                          fontSize: 29,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1.22,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
-            // Top-Right Agro Tag
-            Positioned(
-              top: 14,
-              right: 14,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accentOrange.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: Text(
-                  slide.topRightBadge,
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ),
+                      const SizedBox(height: 10),
 
-            // Bottom Floating Agro Quote Banner
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.58),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.20),
-                  ),
-                ),
-                child: Text(
-                  slide.quote,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    height: 1.35,
+                      // Subtitle
+                      Text(
+                        slides[_currentPage].subtitle,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.45,
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // Animated Page Indicators (matching reference mockup)
+                      _buildIndicators(slides.length),
+
+                      const SizedBox(height: 24),
+
+                      // Action Button (Continue / Get Started)
+                      _buildActionButton(
+                        label: slides[_currentPage].buttonText,
+                        onPressed: () => _onNextTap(slides.length),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Home indicator line
+                      Center(
+                        child: Container(
+                          width: 140,
+                          height: 4.5,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -570,39 +243,264 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _featureChip(String text, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceWhite,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+  // ── Background Image Widget (Asset with Network & Gradient Fallback) ──────
+  Widget _buildBackground(_OnboardSlideData slide) {
+    return Image.asset(
+      slide.assetPath,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => Image.network(
+        slide.networkFallbackUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0F3B25), Color(0xFF061E11)],
+            ),
           ),
-        ],
+          child: const Center(
+            child: Icon(
+              Icons.agriculture_rounded,
+              size: 80,
+              color: Colors.white24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Back Button (Slide 1) ────────────────────────────────────────────────
+  Widget _buildBackButton() {
+    return GestureDetector(
+      onTap: _onBackTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.20),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.chevron_left_rounded,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
+    );
+  }
+
+  // ── Language Toggle Pill [ EN | සිං ] (Slide 2) ──────────────────────────
+  Widget _buildLanguageTogglePill() {
+    final settings = context.watch<AppSettings>();
+    final isSinhala = settings.language == AppLanguage.sinhala;
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.28),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.22),
+          width: 0.8,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: AppColors.primaryGreen,
+          // English Pill
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              settings.setLanguage(AppLanguage.english);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: !isSinhala ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                'EN',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: !isSinhala
+                      ? const Color(0xFF0A2E1A)
+                      : Colors.white.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: GoogleFonts.poppins(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+
+          // Sinhala Pill
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              settings.setLanguage(AppLanguage.sinhala);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSinhala ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                'සිං',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSinhala
+                      ? const Color(0xFF0A2E1A)
+                      : Colors.white.withValues(alpha: 0.75),
+                ),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Frosted "Skip" Pill ──────────────────────────────────────────────────
+  Widget _buildSkipButton(String label) {
+    return GestureDetector(
+      onTap: _finish,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.20),
+            width: 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tag Badge with mint dot ──────────────────────────────────────────────
+  Widget _buildTagPill(String tag) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF6EE7B7), // Mint green dot
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          tag.toUpperCase(),
+          style: GoogleFonts.poppins(
+            color: const Color(0xFF6EE7B7),
+            fontSize: 12,
+            letterSpacing: 1.3,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Left-Aligned Animated Page Indicators ────────────────────────────────
+  Widget _buildIndicators(int total) {
+    return Row(
+      children: List.generate(total, (i) {
+        final isActive = i == _currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(right: 6),
+          width: isActive ? 26 : 6,
+          height: 4.5,
+          decoration: BoxDecoration(
+            color: isActive
+                ? const Color(0xFF6EE7B7)
+                : Colors.white.withValues(alpha: 0.40),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+
+  // ── Full-Width White Pill Action Button with Circular Arrow ──────────────
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 58,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(30),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 28, right: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F2B1D),
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF0D2E1C), // Deep forest green circle
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 21,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -43,44 +43,44 @@ class AppStrings {
       );
 
   // ── Onboarding ──────────────────────────────────────────────────────────
-  String get onb1Tag => _t('FOR FARMERS', 'ගොවීන් සඳහා', 'விவசாயிகளுக்கு');
+  String get onb1Tag => _t('FARM DIRECT', 'ගොවිබිමෙන්ම සෘජුව', 'நேரடி பண்ணை');
   String get onb1Title => _t(
-        'Sell your harvest\ndirectly',
-        'ඔබේ අස්වැන්න\nකෙළින්ම විකුණන්න',
-        'உங்கள் அறுவடையை\nநேரடியாக விற்கவும்',
+        'Grown this morning.\nYours by evening.',
+        'උදෑසන නෙළාගත් අස්වැන්න.\nසවසට ඔබේ නිවසටම.',
+        'காலையில் அறுவடை.\nமாலையில் உங்களிடம்.',
       );
   String get onb1Body => _t(
-        'No middlemen. Set your own price and earn what your hard work truly deserves.',
-        'අතරමැදියන් නැත. ඔබේම මිල තීරණය කර, ඔබේ මහන්සියට සරිලන ආදායමක් ලබන්න.',
-        'இடைத்தரகர்கள் இல்லை. உங்கள் விலையை நீங்களே நிர்ணயித்து, உழைப்புக்கேற்ற வருமானம் பெறுங்கள்.',
+        'Skip the middleman. Pay the farmer, not the warehouse.',
+        'අතරමැදියන් මඟහරින්න. ගබඩාවට නොව, සෘජුවම ගොවියාට ගෙවන්න.',
+        'இடைத்தரகர்களைத் தவிர்த்து, விவசாயிக்கு நேரடியாகச் செலுத்துங்கள்.',
       );
   String get onb1ChipA => _t('0% Middlemen', 'අතරමැදියන් නැත', 'இடைத்தரகர் இல்லை');
   String get onb1ChipB => _t('Your price', 'ඔබේම මිල', 'உங்கள் விலை');
   String get onb1ChipC => _t('Instant cash', 'ක්ෂණික මුදල්', 'உடனடி பணம்');
   String get onb1Quote => _t(
-        '🌾 "Set your own price for your hard-earned harvest"',
-        '🌾 "මහන්සියෙන් වගාකළ අස්වැන්නට ඔබේම මිලක්"',
-        '🌾 "உங்கள் உழைப்புக்கான அறுவடைக்கு உங்கள் சொந்த விலை"',
+        '🌾 "Grown this morning. Yours by evening."',
+        '🌾 "උදෑසන නෙළාගත් අස්වැන්න. සවසට ඔබේ නිවසටම."',
+        '🌾 "காலையில் அறுவடை. மாலையில் உங்களிடம்."',
       );
 
-  String get onb2Tag => _t('FOR BUYERS', 'ගැණුම්කරුවන් සඳහා', 'வாங்குபவர்களுக்கு');
+  String get onb2Tag => _t('UNDER 24 HOURS', 'පැය 24ක් ඇතුළත', '24 மணி நேரத்திற்குள்');
   String get onb2Title => _t(
-        'Fresh produce at\nfair prices',
-        'නැවුම් එළවළු, පළතුරු\nසාධාරණ මිලට',
-        'புதிய காய்கறி, பழங்கள்\nநியாயமான விலையில்',
+        'From soil to doorstep,\novernight.',
+        'ගොවිබිමේ සිට දොරකඩට,\nඑක රැයකින්.',
+        'மண்ணிலிருந்து வீட்டு வாசலுக்கு,\nஒரே இரவில்.',
       );
   String get onb2Body => _t(
-        'Vegetables and fruits harvested today, delivered straight from the farm to your door.',
-        'අද නෙළාගත් එළවළු සහ පළතුරු, ගොවිපොළේ සිට කෙළින්ම ඔබේ දොරකඩටම.',
-        'இன்று அறுவடை செய்த காய்கறிகள், பழங்கள் பண்ணையிலிருந்து நேராக உங்கள் வீட்டு வாசலுக்கு.',
+        "Order by 6pm and it's at your door before breakfast.",
+        'සවස 6ට පෙර ඇණවුම් කරන්න, උදෑසන ආහාරයට පෙර ඔබේ දොරකඩටම.',
+        'மாலை 6 மணிக்குள் ஆர்டர் செய்யுங்கள், காலை உணவுக்கு முன் உங்கள் வாசலில்.',
       );
-  String get onb2ChipA => _t('Harvested today', 'අද නෙළූ', 'இன்று அறுவடை');
-  String get onb2ChipB => _t('Fair price', 'සාධාරණ මිල', 'நியாய விலை');
-  String get onb2ChipC => _t('Doorstep delivery', 'නිවසටම ප්‍රවාහනය', 'வீட்டு வாசலில் டெலிவரி');
+  String get onb2ChipA => _t('Overnight delivery', 'එක රැයකින් බෙදාහැරීම', 'ஒரே இரவில் டெலிவரி');
+  String get onb2ChipB => _t('Farm direct', 'ගොවිබිමෙන්ම', 'பண்ணையிலிருந்து');
+  String get onb2ChipC => _t('Before breakfast', 'උදෑසනට පෙර', 'காலை உணவுக்கு முன்');
   String get onb2Quote => _t(
-        '🥬 "Fresh crops from the soil directly to your kitchen table"',
-        '🥬 "ගොවිබිමෙන්ම නෙළූ නැවුම් අස්වැන්න ඔබේ නිවසටම"',
-        '🥬 "பண்ணையிலிருந்து புதிய விளைபொருட்கள் உங்கள் சமையலறைக்கு"',
+        '🥬 "From soil to doorstep, overnight."',
+        '🥬 "ගොවිබිමේ සිට දොරකඩට, එක රැයකින්."',
+        '🥬 "மண்ணிலிருந்து வீட்டு வாசலுக்கு, ஒரே இரவில்."',
       );
 
   String get onb3Tag => _t('FOR DRIVERS', 'රියදුරන් සඳහා', 'ஓட்டுநர்களுக்கு');
