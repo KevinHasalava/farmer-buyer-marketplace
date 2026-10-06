@@ -9,6 +9,7 @@ build/
 .idea/
 .vscode/
 *.iml
+*.log
 
 # Flutter tooling
 .flutter-plugins

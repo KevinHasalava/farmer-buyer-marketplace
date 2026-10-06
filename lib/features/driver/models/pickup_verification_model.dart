@@ -1,6 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-/// Data model representing a Pickup Verification Audit Log entry in Cloud Firestore.
+/// Data model representing a Pickup Verification Audit Log entry.
 /// Used for CREATE (C) and READ (R) on the Pickup Verification Screen.
 class PickupVerificationModel {
   final String id;
@@ -50,8 +48,17 @@ class PickupVerificationModel {
       'verifiedWeight': verifiedWeight,
       'checklistItems': checklistItems,
       'status': status,
-      'verifiedAt': Timestamp.fromDate(verifiedAt),
+      'verifiedAt': verifiedAt.toIso8601String(),
     };
+  }
+
+  static DateTime _parseDate(dynamic val) {
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
   }
 
   factory PickupVerificationModel.fromMap(Map<String, dynamic> map, String docId) {
@@ -69,7 +76,7 @@ class PickupVerificationModel {
       verifiedWeight: map['verifiedWeight']?.toString() ?? '5.0 kg',
       checklistItems: List<String>.from(map['checklistItems'] ?? []),
       status: map['status']?.toString() ?? 'VERIFIED_AND_LOADED',
-      verifiedAt: (map['verifiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      verifiedAt: _parseDate(map['verifiedAt']),
     );
   }
 

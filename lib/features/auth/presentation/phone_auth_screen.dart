@@ -137,7 +137,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
 
       final user =
           await _authService.verifyPhoneOtp(phone: _e164!, token: code);
-      final existingName = user?.userMetadata?['full_name'] as String?;
+      final existingName = user.userMetadata?['full_name'] as String?;
       if (!mounted) return;
       if (existingName != null && existingName.trim().isNotEmpty) {
         await _authService.updateProfile(

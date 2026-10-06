@@ -1,52 +1,37 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Centralised Supabase client accessor.
-///
-/// Call [SupabaseConfig.initialize] once inside [main] before [runApp].
-/// After that, use [SupabaseConfig.client] anywhere in the app.
+/// Uses the project credentials directly for seamless startup without .env file dependencies.
 abstract final class SupabaseConfig {
-  static String get _url {
-    final raw = dotenv.env['SUPABASE_URL'] ?? (throw StateError('SUPABASE_URL not set'));
-    return raw
-        .replaceAll('/rest/v1/', '')
-        .replaceAll('/rest/v1', '')
-        .replaceAll(RegExp(r'/+$'), '');
-  }
+  static const String url = 'https://tyuogpbtxudhtxhfmezm.supabase.co';
+  static const String anonKey =
+      'sb_publishable_qOC4hvCWUdqOyHunlBLXCg_pvUvtb4E';
 
-  static String get _anonKey =>
-      dotenv.env['SUPABASE_ANON_KEY'] ??
-      dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ??
-      (throw StateError('SUPABASE_ANON_KEY not set'));
+  static bool _initialized = false;
+  static bool get isInitialized => _initialized;
 
-  // ── Initializer ─────────────────────────────────────────────────────────
-
-  /// Must be called once before [runApp].
-  ///
-  /// Loads [.env] via flutter_dotenv, then initialises the Supabase SDK.
-  /// The secret service-role key is **never** loaded here.
+  /// Initializes Supabase client safely before [runApp].
   static Future<void> initialize() async {
-    // Load client-safe .env (URL + anon key only)
-    await dotenv.load(fileName: '.env');
-
-    await Supabase.initialize(
-      url: _url,
-      publishableKey: _anonKey,
-      // authOptions configure persistent session storage automatically
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-      ),
-      realtimeClientOptions: const RealtimeClientOptions(
-        logLevel: RealtimeLogLevel.info,
-      ),
-    );
+    try {
+      await Supabase.initialize(
+        url: url,
+        publishableKey: anonKey,
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+        realtimeClientOptions: const RealtimeClientOptions(
+          logLevel: RealtimeLogLevel.info,
+        ),
+      );
+      _initialized = true;
+      debugPrint('[SupabaseConfig] Connected to Supabase successfully.');
+    } catch (e) {
+      debugPrint('[SupabaseConfig] Failed to initialize Supabase: $e');
+    }
   }
-
-  // ── Client accessor ──────────────────────────────────────────────────────
 
   /// The pre-initialised [SupabaseClient].
-  ///
-  /// Uses the anon key — all requests are scoped by Row Level Security (RLS).
   static SupabaseClient get client => Supabase.instance.client;
 
   /// Convenience accessor for [GoTrueClient] (auth).

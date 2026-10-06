@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Delivery order data model for Assigned Deliveries (CRUD 2).
 class DeliveryOrderModel {
   final String id;
@@ -50,9 +48,18 @@ class DeliveryOrderModel {
       'producePackageType': producePackageType,
       'driverFee': driverFee,
       'isPriority': isPriority,
-      'createdAt': Timestamp.fromDate(createdAt ?? DateTime.now()),
-      'updatedAt': Timestamp.fromDate(updatedAt ?? DateTime.now()),
+      'createdAt': (createdAt ?? DateTime.now()).toIso8601String(),
+      'updatedAt': (updatedAt ?? DateTime.now()).toIso8601String(),
     };
+  }
+
+  static DateTime _parseDate(dynamic val) {
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
   }
 
   factory DeliveryOrderModel.fromMap(Map<String, dynamic> map, String docId) {
@@ -70,8 +77,8 @@ class DeliveryOrderModel {
       producePackageType: map['producePackageType'] as String? ?? 'Cool storage packed',
       driverFee: (map['driverFee'] as num?)?.toDouble() ?? 1450.0,
       isPriority: map['isPriority'] as bool? ?? false,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseDate(map['createdAt']),
+      updatedAt: _parseDate(map['updatedAt']),
     );
   }
 

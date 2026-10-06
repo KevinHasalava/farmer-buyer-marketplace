@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Driver data model representing an enrolled Agri-Transit logistics driver.
 class DriverModel {
   final String id;
@@ -76,8 +74,8 @@ class DriverModel {
       'isOnDuty': isOnDuty,
       'rating': rating,
       'completedTrips': completedTrips,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
       'scheduledDeliveries': scheduledDeliveries,
       'deliveredToday': deliveredToday,
       'netEarnings': netEarnings,
@@ -91,7 +89,16 @@ class DriverModel {
     };
   }
 
-  /// Create a DriverModel from Firestore Document Snapshot or Map.
+  static DateTime _parseDate(dynamic val) {
+    if (val is DateTime) return val;
+    if (val is String) {
+      final parsed = DateTime.tryParse(val);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
+  }
+
+  /// Create a DriverModel from Document Snapshot or Map.
   factory DriverModel.fromMap(Map<String, dynamic> map, String docId) {
     return DriverModel(
       id: docId,
@@ -108,8 +115,8 @@ class DriverModel {
       isOnDuty: map['isOnDuty'] as bool? ?? true,
       rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
       completedTrips: (map['completedTrips'] as num?)?.toInt() ?? 0,
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseDate(map['createdAt']),
+      updatedAt: _parseDate(map['updatedAt']),
       scheduledDeliveries: (map['scheduledDeliveries'] as num?)?.toInt() ?? 6,
       deliveredToday: (map['deliveredToday'] as num?)?.toInt() ?? 4,
       netEarnings: (map['netEarnings'] as num?)?.toDouble() ?? 7850.0,

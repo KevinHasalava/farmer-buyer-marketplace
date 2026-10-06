@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../models/driver_model.dart';
 import '../services/driver_firestore_service.dart';
 import 'deliveries_screen.dart';
 import 'delivery_history_screen.dart';

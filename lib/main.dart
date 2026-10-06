@@ -13,10 +13,10 @@ Future<void> main() async {
 
   final AppSettings settings;
   try {
-    // ── Supabase init (loads .env → initialises client) ────────────────
+    // ── Supabase single-database initialization ───────────────────────
     await SupabaseConfig.initialize();
 
-    // ── Persisted language / onboarding / role ─────────────────────────
+    // Persisted language / onboarding / role
     settings = await AppSettings.load();
   } catch (e, st) {
     debugPrint('Startup failed: $e\n$st');
@@ -82,12 +82,12 @@ class FarmTrustApp extends StatelessWidget {
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
 
-      // ── Theme ──────────────────────────────────────────────────────────
+      // ── Theme ─────────────────────────────────────────────────────────────
       theme: _withScriptFallback(AppTheme.lightTheme),
       darkTheme: _withScriptFallback(AppTheme.darkTheme),
       themeMode: ThemeMode.system,
 
-      // ── Navigation ─────────────────────────────────────────────────────
+      // ── Navigation ────────────────────────────────────────────────────────
       routerConfig: appRouter,
     );
   }

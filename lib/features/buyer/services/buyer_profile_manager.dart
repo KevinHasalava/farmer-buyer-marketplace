@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
-import '../../../services/database_service.dart';
 import '../models/buyer_profile_model.dart';
 
 class BuyerProfileManager extends ChangeNotifier {
@@ -15,8 +14,6 @@ class BuyerProfileManager extends ChangeNotifier {
   static final BuyerProfileManager instance = BuyerProfileManager._internal();
   factory BuyerProfileManager() => instance;
 
-  final DatabaseService _dbService = const DatabaseService();
-
   BuyerProfileModel _profile = BuyerProfileModel.defaultBuyer;
   bool _isLoading = false;
 
@@ -25,7 +22,7 @@ class BuyerProfileManager extends ChangeNotifier {
 
   static const String _kBuyerProfileKey = 'buyer_profile_cache_v1';
 
-  /// Loads profile from Supabase Database, Auth session, and SharedPreferences
+  /// Loads profile from SharedPreferences cache, and synchronizes with Supabase if online
   Future<void> loadProfile() async {
     _isLoading = true;
     notifyListeners();
@@ -41,87 +38,24 @@ class BuyerProfileManager extends ChangeNotifier {
         } catch (_) {}
       }
 
-      // Check Supabase Auth and Database
-      final user = SupabaseConfig.auth.currentUser;
-      if (user != null) {
-        String name = _profile.name;
-        String email = user.email ?? _profile.email;
-        String phone = user.phone ?? _profile.phone;
-        String address = _profile.deliveryAddress;
-        String hub = _profile.deliveryHub;
-        String buyerType = _profile.buyerType;
-        List<String> userPrefs = _profile.preferences;
-
-        // 1. Check user_metadata
-        final metadata = user.userMetadata;
-        if (metadata != null) {
-          if (metadata['full_name'] != null &&
-              metadata['full_name'].toString().trim().isNotEmpty) {
-            name = metadata['full_name'].toString().trim();
+      // Check Supabase Auth
+      if (SupabaseConfig.isInitialized) {
+        final user = SupabaseConfig.auth.currentUser;
+        if (user != null) {
+          final metadata = user.userMetadata;
+          if (metadata != null) {
+            _profile = _profile.copyWith(
+              id: user.id,
+              name: metadata['full_name'] as String? ?? _profile.name,
+              phone: metadata['phone'] as String? ?? user.phone ?? _profile.phone,
+              email: user.email ?? _profile.email,
+              deliveryAddress: metadata['address'] as String? ?? _profile.deliveryAddress,
+              deliveryHub: metadata['hub'] as String? ?? _profile.deliveryHub,
+              buyerType: metadata['buyer_type'] as String? ?? _profile.buyerType,
+            );
           }
-          if (metadata['phone'] != null &&
-              metadata['phone'].toString().trim().isNotEmpty) {
-            phone = metadata['phone'].toString().trim();
-          }
-          if (metadata['address'] != null &&
-              metadata['address'].toString().trim().isNotEmpty) {
-            address = metadata['address'].toString().trim();
-          }
-          if (metadata['hub'] != null &&
-              metadata['hub'].toString().trim().isNotEmpty) {
-            hub = metadata['hub'].toString().trim();
-          }
-          if (metadata['buyer_type'] != null &&
-              metadata['buyer_type'].toString().trim().isNotEmpty) {
-            buyerType = metadata['buyer_type'].toString().trim();
-          }
-          if (metadata['preferences'] is List) {
-            userPrefs = (metadata['preferences'] as List)
-                .map((e) => e.toString())
-                .toList();
-          }
+          await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
         }
-
-        // 2. Check Supabase profiles table in DB
-        try {
-          final profileRow = await _dbService.fetchUserProfile(user.id);
-          if (profileRow != null) {
-            if (profileRow['full_name'] != null &&
-                profileRow['full_name'].toString().trim().isNotEmpty) {
-              name = profileRow['full_name'].toString().trim();
-            }
-            if (profileRow['email'] != null &&
-                profileRow['email'].toString().trim().isNotEmpty) {
-              email = profileRow['email'].toString().trim();
-            }
-            if (profileRow['phone'] != null &&
-                profileRow['phone'].toString().trim().isNotEmpty) {
-              phone = profileRow['phone'].toString().trim();
-            }
-            if (profileRow['location'] != null &&
-                profileRow['location'].toString().trim().isNotEmpty) {
-              address = profileRow['location'].toString().trim();
-            }
-          }
-        } catch (_) {}
-
-        final shortId = user.id.length >= 4
-            ? '#B-${user.id.substring(user.id.length - 4).toUpperCase()}'
-            : '#B-0034';
-
-        _profile = _profile.copyWith(
-          id: user.id,
-          name: name,
-          email: email,
-          phone: phone,
-          deliveryAddress: address,
-          deliveryHub: hub,
-          buyerType: buyerType,
-          preferences: userPrefs,
-          buyerCode: shortId,
-        );
-
-        await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
       }
     } catch (e) {
       debugPrint('Error loading buyer profile: $e');
@@ -143,7 +77,7 @@ class BuyerProfileManager extends ChangeNotifier {
     String? userId,
   }) async {
     final effectiveId = userId ??
-        SupabaseConfig.auth.currentUser?.id ??
+        (SupabaseConfig.isInitialized ? SupabaseConfig.auth.currentUser?.id : null) ??
         'b-${DateTime.now().millisecondsSinceEpoch % 10000}';
     final shortCode = effectiveId.length >= 4
         ? '#B-${effectiveId.substring(effectiveId.length - 4).toUpperCase()}'
@@ -168,23 +102,9 @@ class BuyerProfileManager extends ChangeNotifier {
       await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
     } catch (_) {}
 
-    // Save to Supabase DB if user is available
-    final curUser = SupabaseConfig.auth.currentUser;
-    if (curUser != null) {
-      try {
-        await _dbService.upsertUserProfile(
-          userId: curUser.id,
-          fullName: _profile.name,
-          email: _profile.email,
-          isFarmer: false,
-          phone: _profile.phone,
-          location: _profile.deliveryAddress,
-        );
-      } catch (e) {
-        debugPrint('Error upserting DB profile: $e');
-      }
-
-      try {
+    // Dual-sync to Supabase if authenticated
+    try {
+      if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
         await SupabaseConfig.auth.updateUser(
           UserAttributes(
             data: {
@@ -198,7 +118,9 @@ class BuyerProfileManager extends ChangeNotifier {
             },
           ),
         );
-      } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('[BuyerProfileManager] Supabase update note: $e');
     }
 
     notifyListeners();
@@ -229,19 +151,22 @@ class BuyerProfileManager extends ChangeNotifier {
       await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
     } catch (_) {}
 
-    final user = SupabaseConfig.auth.currentUser;
-    if (user != null) {
-      try {
-        await _dbService.upsertUserProfile(
-          userId: user.id,
-          fullName: _profile.name,
-          email: _profile.email,
-          isFarmer: false,
-          phone: _profile.phone,
-          location: _profile.deliveryAddress,
+    try {
+      if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
+        await SupabaseConfig.auth.updateUser(
+          UserAttributes(
+            data: {
+              'full_name': _profile.name,
+              'phone': _profile.phone,
+              'address': _profile.deliveryAddress,
+              'hub': _profile.deliveryHub,
+              'buyer_type': _profile.buyerType,
+              'preferences': _profile.preferences,
+            },
+          ),
         );
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     notifyListeners();
   }

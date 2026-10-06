@@ -65,26 +65,28 @@ class BuyerNotificationService extends ChangeNotifier {
       }
 
       // Check Supabase if user is logged in
-      final user = SupabaseConfig.auth.currentUser;
-      if (user != null) {
-        try {
-          final res = await SupabaseConfig.client
-              .from('notifications')
-              .select()
-              .eq('user_id', user.id)
-              .order('created_at', ascending: false);
+      if (SupabaseConfig.isInitialized) {
+        final user = SupabaseConfig.auth.currentUser;
+        if (user != null) {
+          try {
+            final res = await SupabaseConfig.client
+                .from('notifications')
+                .select()
+                .eq('user_id', user.id)
+                .order('created_at', ascending: false);
 
-          final dbItems = (res as List)
-              .map((e) =>
-                  BuyerNotificationItem.fromJson(e as Map<String, dynamic>))
-              .toList();
+            final dbItems = (res as List)
+                .map((e) =>
+                    BuyerNotificationItem.fromJson(e as Map<String, dynamic>))
+                .toList();
 
-          if (dbItems.isNotEmpty) {
-            _items = dbItems;
-            await _saveToCache();
+            if (dbItems.isNotEmpty) {
+              _items = dbItems;
+              await _saveToCache();
+            }
+          } catch (_) {
+            // Table may not exist yet in environment, fallback to defaults
           }
-        } catch (_) {
-          // Table may not exist yet in demo environment, fallback to defaults
         }
       }
 
@@ -111,12 +113,14 @@ class BuyerNotificationService extends ChangeNotifier {
       await _saveToCache();
 
       // Try updating in Supabase
-      try {
-        await SupabaseConfig.client
-            .from('notifications')
-            .update({'is_read': true})
-            .eq('id', id);
-      } catch (_) {}
+      if (SupabaseConfig.isInitialized) {
+        try {
+          await SupabaseConfig.client
+              .from('notifications')
+              .update({'is_read': true})
+              .eq('id', id);
+        } catch (_) {}
+      }
     }
   }
 
@@ -126,15 +130,17 @@ class BuyerNotificationService extends ChangeNotifier {
     notifyListeners();
     await _saveToCache();
 
-    try {
-      final user = SupabaseConfig.auth.currentUser;
-      if (user != null) {
-        await SupabaseConfig.client
-            .from('notifications')
-            .update({'is_read': true})
-            .eq('user_id', user.id);
-      }
-    } catch (_) {}
+    if (SupabaseConfig.isInitialized) {
+      try {
+        final user = SupabaseConfig.auth.currentUser;
+        if (user != null) {
+          await SupabaseConfig.client
+              .from('notifications')
+              .update({'is_read': true})
+              .eq('user_id', user.id);
+        }
+      } catch (_) {}
+    }
   }
 
   /// Rate delivered order
@@ -174,7 +180,6 @@ class BuyerNotificationService extends ChangeNotifier {
   List<BuyerNotificationItem> _getDefaultNotifications() {
     final now = DateTime.now();
     return [
-      // 1. Driver Approaching Card
       BuyerNotificationItem(
         id: 'notif-1',
         type: BuyerNotificationType.driverAlert,
@@ -194,8 +199,6 @@ class BuyerNotificationService extends ChangeNotifier {
         vanNumber: '#WP-NC-4882',
         driverPhone: '+94 77 982 1450',
       ),
-
-      // 2. Strawberries Just Listed Harvest Alert
       BuyerNotificationItem(
         id: 'notif-2',
         type: BuyerNotificationType.harvestAlert,
@@ -215,8 +218,6 @@ class BuyerNotificationService extends ChangeNotifier {
         harvestTimeText: 'Harvested at 6:00 AM today',
         productId: 'strawberries-01',
       ),
-
-      // 3. Dispatched Order Card
       BuyerNotificationItem(
         id: 'notif-3',
         type: BuyerNotificationType.dispatched,
@@ -232,8 +233,6 @@ class BuyerNotificationService extends ChangeNotifier {
           'Eco-crate sealed',
         ],
       ),
-
-      // 4. Delivered & Review Card
       BuyerNotificationItem(
         id: 'notif-4',
         type: BuyerNotificationType.delivered,
@@ -247,8 +246,6 @@ class BuyerNotificationService extends ChangeNotifier {
         userRating: 0,
         coinsReward: 50,
       ),
-
-      // 5. Price Drop Alert Card
       BuyerNotificationItem(
         id: 'notif-5',
         type: BuyerNotificationType.priceDrop,

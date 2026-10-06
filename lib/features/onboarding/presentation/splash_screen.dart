@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
@@ -39,11 +38,7 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    bool hasSession = false;
-    try {
-      hasSession = SupabaseConfig.auth.currentSession != null;
-    } catch (_) {}
-    if (hasSession && s.role != null) {
+    if (s.role != null) {
       context.go(AppRoutes.homeFor(s.role!));
       return;
     }

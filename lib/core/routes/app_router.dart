@@ -11,7 +11,6 @@ import '../../features/auth/presentation/phone_auth_screen.dart';
 import '../../features/auth/presentation/buyer_registration_screen.dart';
 import '../../features/auth/presentation/farmer_registration_screen.dart';
 import '../../features/auth/presentation/driver_registration_screen.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';

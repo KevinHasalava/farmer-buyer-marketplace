@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../core/supabase/supabase_config.dart';
+import '../../../services/auth_service.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
@@ -306,7 +306,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     if (confirm != true) return;
 
     try {
-      await SupabaseConfig.auth.signOut();
+      await const AuthService().signOut();
     } catch (_) {}
 
     if (!mounted) return;

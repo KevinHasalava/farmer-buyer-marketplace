@@ -8,7 +8,6 @@ import 'driver_chat_screen.dart';
 import 'driver_profile_photo_data.dart';
 import 'driver_profile_screen.dart';
 import 'pickup_navigation_map_data.dart';
-import '../models/driver_model.dart';
 import '../services/driver_firestore_service.dart';
 
 /// Pixel-perfect Driver Dashboard Screen matching the Farm2Home Driver reference design.
