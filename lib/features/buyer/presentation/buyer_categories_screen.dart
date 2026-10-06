@@ -8,7 +8,7 @@ import 'buyer_product_list_screen.dart';
 import 'buyer_search_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 
-/// 10. Categories Screen — matching Screenshot 10
+/// 10. Categories Screen — matching Screenshot 10 with interactive search & direct category filtering
 class BuyerCategoriesScreen extends StatefulWidget {
   const BuyerCategoriesScreen({super.key});
 
@@ -25,10 +25,17 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
   static const Color _textDark = Color(0xFF0F172A);
   static const Color _textMuted = Color(0xFF64748B);
 
+  String _searchFilter = '';
+
   @override
   void initState() {
     super.initState();
     _cartState.addListener(_onCartChanged);
+    _searchController.addListener(() {
+      setState(() {
+        _searchFilter = _searchController.text.trim().toLowerCase();
+      });
+    });
   }
 
   @override
@@ -54,6 +61,13 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final cartCount = _cartState.totalItemCount;
+    final allCategories = BuyerMockData.categories;
+    final filteredCategories = _searchFilter.isEmpty
+        ? allCategories
+        : allCategories.where((c) {
+            return c.name.toLowerCase().contains(_searchFilter) ||
+                c.description.toLowerCase().contains(_searchFilter);
+          }).toList();
 
     return Scaffold(
       backgroundColor: _bgSoft,
@@ -71,7 +85,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                       Icon(Icons.eco_rounded, color: _forestGreen, size: 24),
                       SizedBox(width: 6),
                       Text(
-                        'Farm2Home',
+                        'Farm2Home Direct',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -83,21 +97,29 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                   ),
                   Row(
                     children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BuyerSearchScreen(),
+                          ),
                         ),
-                        child: const Icon(Icons.notifications_none_rounded, size: 20, color: _textDark),
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.search_rounded, size: 20, color: _textDark),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       GestureDetector(
@@ -170,7 +192,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                             Icon(Icons.eco_rounded, size: 12, color: _forestGreen),
                             SizedBox(width: 4),
                             Text(
-                              'Daily Harvests',
+                              'Verified Sri Lankan Harvests',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -186,7 +208,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
 
                   // Big Title
                   const Text(
-                    'All Categories',
+                    'All Produce Categories',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
@@ -196,7 +218,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Fresh farm produce sorted by harvest category',
+                    'Direct from 60+ family farms across Nuwara Eliya, Jaffna & Dambulla',
                     style: TextStyle(
                       fontSize: 12,
                       color: _textMuted,
@@ -204,49 +226,96 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Search Bar
-                  GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const BuyerSearchScreen()),
+                  // Search Bar inside Categories Screen
+                  Container(
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(23),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Container(
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(23),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.search_rounded, color: _textMuted, size: 20),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Search crops, spices, grains...',
-                              style: TextStyle(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search_rounded, color: _forestGreen, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(fontSize: 13, color: _textDark, fontWeight: FontWeight.w600),
+                            decoration: const InputDecoration(
+                              hintText: 'Filter category or crop name...',
+                              hintStyle: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 13,
                               ),
+                              border: InputBorder.none,
+                              isDense: true,
                             ),
+                            onSubmitted: (val) {
+                              if (val.trim().isNotEmpty) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BuyerSearchScreen(initialQuery: val.trim()),
+                                  ),
+                                );
+                              }
+                            },
                           ),
-                          Icon(Icons.mic_none_rounded, color: _textMuted, size: 20),
-                        ],
-                      ),
+                        ),
+                        if (_searchController.text.isNotEmpty)
+                          GestureDetector(
+                            onTap: () => _searchController.clear(),
+                            child: const Icon(Icons.close_rounded, color: _textMuted, size: 18),
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward_rounded, color: _forestGreen, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BuyerSearchScreen(initialQuery: _searchController.text.trim()),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Category Cards List matching Screenshot 10
-                  ...BuyerMockData.categories.map((cat) => _buildCategoryCard(cat)),
+                  // Category Cards List
+                  if (filteredCategories.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 30),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.search_off_rounded, size: 40, color: _textMuted),
+                            const SizedBox(height: 10),
+                            Text('No categories match "$_searchFilter"'),
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: () => _searchController.clear(),
+                              child: const Text('Show All Categories'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ...filteredCategories.map((cat) => _buildCategoryCard(cat)),
 
                   const SizedBox(height: 16),
 
@@ -266,7 +335,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                             Icon(Icons.verified_user_rounded, color: _forestGreen, size: 18),
                             SizedBox(width: 8),
                             Text(
-                              'Direct Sourcing Guarantee',
+                              'Direct Farm Gate Guarantee',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -277,7 +346,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Every category comes straight from registered local farmers across Sri Lanka. Fair prices, no middlemen, zero-shelf storage delay.',
+                          'Every product is harvested upon order confirmation from registered cooperative farms across Sri Lanka. Fair trade farmer pricing, zero warehouse spoilage.',
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF166534),
@@ -364,7 +433,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                             cat.itemCountText,
                             style: const TextStyle(
                               fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: _textMuted,
                             ),
                           ),
@@ -401,6 +470,8 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                               color: _forestGreen,
                             ),
                           ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_rounded, size: 12, color: _forestGreen),
                         ],
                       ),
                     ],
@@ -413,6 +484,27 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                 width: 100,
                 height: 110,
                 fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 100,
+                    height: 110,
+                    color: const Color(0xFFF1F5F9),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: _forestGreen),
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 100,
+                  height: 110,
+                  color: const Color(0xFFF1F5F9),
+                  child: const Icon(Icons.eco_rounded, color: _forestGreen, size: 30),
+                ),
               ),
             ],
           ),

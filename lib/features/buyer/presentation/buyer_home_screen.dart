@@ -378,102 +378,152 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               ),
             ),
 
-            // Hero Promo Banner matching Screenshot 9
+            // Hero Promo Banner matching User's Reference
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
-                  height: 168,
+                  height: 205,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF14532D),
-                    borderRadius: BorderRadius.circular(20),
-                    image: DecorationImage(
-                      image: const NetworkImage(
-                        'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=600&auto=format&fit=crop&q=80',
+                    color: const Color(0xFF0D3820),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0D3820).withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        const Color(0xFF14532D).withValues(alpha: 0.75),
-                        BlendMode.darken,
-                      ),
-                    ),
+                    ],
                   ),
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
+                      // Background Image: Freshly harvested carrots in wooden crate on field
+                      Positioned.fill(
+                        child: Image.network(
+                          'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=1000&auto=format&fit=crop&q=80',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.centerRight,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFF0D3820),
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.eco_rounded, size: 12, color: Color(0xFF86EFAC)),
-                            SizedBox(width: 4),
-                            Text(
-                              'Farm Direct',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                      ),
+                      // Smooth gradient overlay from dark green on left to translucent on right
+                      Positioned.fill(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFF0D3820),
+                                Color(0xFF0D3820),
+                                Color(0xE60D3820),
+                                Color(0x800D3820),
+                                Color(0x260D3820),
+                              ],
+                              stops: [0.0, 0.40, 0.60, 0.82, 1.0],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Top Pill Badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E5232).withValues(alpha: 0.95),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF3B7A50),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'SPRING HARVEST FEST',
+                                    style: TextStyle(
+                                      color: Color(0xFF86EFAC),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Headline & Subheading
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Up to 25% Off Fresh\nGreens',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.15,
+                                    letterSpacing: -0.4,
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  'Hand-cut at dawn from local organic\nfarmers across the valley.',
+                                  style: TextStyle(
+                                    color: Color(0xFFD1FAE5),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // CTA Button
+                            GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const BuyerProductListScreen(
+                                    categoryTitle: 'Season Specials',
+                                  ),
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(22),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const Text(
+                                  'Shop Season Specials',
+                                  style: TextStyle(
+                                    color: Color(0xFF0D3820),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.1,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Fresh Morning Harvest\nfrom Nuwara Eliya',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              height: 1.2,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Up to 25% OFF dew-kissed cool climate crops harvested at 6:00',
-                            style: TextStyle(
-                              color: Color(0xFFBBF7D0),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BuyerProductListScreen()),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                'Shop Fresh',
-                                style: TextStyle(
-                                  color: Color(0xFF14532D),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF14532D)),
-                            ],
-                          ),
                         ),
                       ),
                     ],
@@ -585,6 +635,18 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         ),
                       ),
                     ),
+                    _buildCategoryRoundItem(
+                      icon: Icons.water_drop_rounded,
+                      label: 'Dairy & Fresh',
+                      color: const Color(0xFFE0F2FE),
+                      iconColor: const Color(0xFF0284C7),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const BuyerProductListScreen(categoryTitle: 'Dairy & Farm Fresh'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -638,7 +700,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               ),
             ),
 
-            // Daily Harvest Deals Horizontal Cards (Carrots & Tomatoes)
+            // Daily Harvest Deals Horizontal Cards
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 220,
@@ -646,19 +708,16 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _buildDealCard(
-                      product: BuyerMockData.carrotProduct,
-                      discountTag: '20% Fresh',
-                      onAdd: () => _addBuyerProductToCart(BuyerMockData.carrotProduct),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildDealCard(
-                      product: BuyerMockData.tomatoProduct,
-                      discountTag: 'Just In',
-                      onAdd: () => _addBuyerProductToCart(BuyerMockData.tomatoProduct),
-                    ),
-                  ],
+                  children: BuyerMockData.dailyDeals.map((prod) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _buildDealCard(
+                        product: prod,
+                        discountTag: prod.badge ?? 'Fresh Pick',
+                        onAdd: () => _addBuyerProductToCart(prod),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ),

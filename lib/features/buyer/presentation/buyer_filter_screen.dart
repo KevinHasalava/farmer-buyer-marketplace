@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../data/buyer_mock_data.dart';
+import '../models/buyer_models.dart';
 import 'buyer_product_list_screen.dart';
 
-/// 12. Search & Filter Screen / Modal — matching Screenshot 12
+/// 12. Search & Filter Screen / Modal — matching Screenshot 12 with live dynamic filtering
 class BuyerFilterScreen extends StatefulWidget {
-  const BuyerFilterScreen({super.key});
+  const BuyerFilterScreen({
+    super.key,
+    this.initialCriteria,
+  });
+
+  final BuyerFilterCriteria? initialCriteria;
 
   @override
   State<BuyerFilterScreen> createState() => _BuyerFilterScreenState();
@@ -16,54 +23,126 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
   static const Color _textDark = Color(0xFF0F172A);
   static const Color _textMuted = Color(0xFF64748B);
 
-  int _selectedCategoryIndex = 0;
+  late int _selectedCategoryIndex;
   final List<String> _categories = [
     'All',
     'Vegetables',
     'Fruits',
     'Grains & Rice',
-    'Spices',
-    'Organic Only',
+    'Spices & Herbs',
+    'Organic & Traditional',
+    'Dairy & Farm Fresh',
   ];
 
-  RangeValues _priceRange = const RangeValues(200, 800);
+  late RangeValues _priceRange;
 
-  int _selectedRegionIndex = 0;
+  late int _selectedRegionIndex;
   final List<(String, String)> _regions = [
-    ('All Sri Lanka', 'Direct from cooperative hubs'),
+    ('All Sri Lanka', 'Direct from all 9 provinces'),
     ('Nuwara Eliya', 'Highland Cool-Climate'),
-    ('Dambulla', 'North Central'),
-    ('Jaffna', 'Northern Produce'),
+    ('Dambulla', 'North Central Veg Hub'),
     ('Kandy', 'Mid-Country Run'),
-    ('Kalutara', 'Low-Country Wet'),
+    ('Welimada', 'Highland Valley Farmlands'),
+    ('Matale', 'Spices & Mountain Slopes'),
+    ('Jaffna', 'Northern Red Soil Produce'),
+    ('Kurunegala', 'Coconut Triangle & Fruits'),
+    ('Monaragala', 'Dry Zone Chena & Honey'),
   ];
 
-  bool _freshHarvestOnly = true;
-  bool _certifiedOrganic = false;
-  bool _directFarmDispatch = true;
+  late bool _freshHarvestOnly;
+  late bool _certifiedOrganic;
+  late bool _directFarmDispatch;
 
-  int _selectedSortIndex = 0;
+  late int _selectedSortIndex;
   final List<(String, String)> _sortOptions = [
     ('Distance (Closest Farm First)', 'Lowest transit carbon footprint'),
     ('Price (Low to High)', 'Best budget values per 1 kg'),
+    ('Price (High to Low)', 'Premium export & whole packs'),
     ('Highest Rated Farmer (4.5+ ★)', 'Consistently verified freshness'),
-    ('Newest Harvest First', 'Uploaded in the last few hours'),
+    ('Newest Harvest First', 'Uploaded within today'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final init = widget.initialCriteria ?? const BuyerFilterCriteria();
+
+    // Match category
+    final catIdx = _categories.indexWhere(
+      (c) => c.toLowerCase() == init.category.toLowerCase(),
+    );
+    _selectedCategoryIndex = catIdx >= 0 ? catIdx : 0;
+
+    // Price range
+    _priceRange = RangeValues(
+      init.priceRange.start.clamp(50, 2000),
+      init.priceRange.end.clamp(50, 2000),
+    );
+
+    // Region
+    final regIdx = _regions.indexWhere(
+      (r) => r.$1.toLowerCase().contains(init.region.toLowerCase()) ||
+          init.region.toLowerCase().contains(r.$1.toLowerCase()),
+    );
+    _selectedRegionIndex = regIdx >= 0 ? regIdx : 0;
+
+    _freshHarvestOnly = init.freshHarvestOnly;
+    _certifiedOrganic = init.certifiedOrganicOnly;
+    _directFarmDispatch = init.directFarmDispatch;
+
+    // Sort
+    final sortIdx = _sortOptions.indexWhere((s) => s.$1 == init.sortBy);
+    _selectedSortIndex = sortIdx >= 0 ? sortIdx : 0;
+  }
+
+  BuyerFilterCriteria _buildCurrentCriteria() {
+    return BuyerFilterCriteria(
+      category: _categories[_selectedCategoryIndex],
+      priceRange: _priceRange,
+      region: _regions[_selectedRegionIndex].$1,
+      freshHarvestOnly: _freshHarvestOnly,
+      certifiedOrganicOnly: _certifiedOrganic,
+      directFarmDispatch: _directFarmDispatch,
+      sortBy: _sortOptions[_selectedSortIndex].$1,
+      searchQuery: widget.initialCriteria?.searchQuery ?? '',
+    );
+  }
 
   void _resetAll() {
     setState(() {
       _selectedCategoryIndex = 0;
-      _priceRange = const RangeValues(200, 800);
+      _priceRange = const RangeValues(50, 2000);
       _selectedRegionIndex = 0;
-      _freshHarvestOnly = true;
+      _freshHarvestOnly = false;
       _certifiedOrganic = false;
-      _directFarmDispatch = true;
+      _directFarmDispatch = false;
       _selectedSortIndex = 0;
     });
   }
 
+  void _applyAndReturn() {
+    final criteria = _buildCurrentCriteria();
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, criteria);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuyerProductListScreen(
+            categoryTitle: criteria.category == 'All' ? 'Filtered Harvests' : criteria.category,
+            filterCriteria: criteria,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final criteria = _buildCurrentCriteria();
+    final matchingProducts = BuyerMockData.filterProducts(criteria);
+    final activeCount = criteria.activeFiltersCount;
+
     return Scaffold(
       backgroundColor: _bgSoft,
       appBar: AppBar(
@@ -77,7 +156,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Filters',
+              'Filters & Sorting',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -91,9 +170,9 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 color: const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
-                '4 Active',
-                style: TextStyle(
+              child: Text(
+                '$activeCount Active',
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: _forestGreen,
@@ -122,7 +201,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
         children: [
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 160),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -152,7 +231,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Refine harvest origins, delivery times, and producer standards.',
+                              'Refine harvest origins, organic purity, price per kg, and dispatch hub.',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF166534),
@@ -169,14 +248,14 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 // Categories Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      'Categories',
+                  children: [
+                    const Text(
+                      'Category',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Tap to pick',
-                      style: TextStyle(fontSize: 11, color: _textMuted),
+                      _categories[_selectedCategoryIndex],
+                      style: const TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -196,6 +275,15 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                           border: Border.all(
                             color: isSel ? _forestGreen : const Color(0xFFE2E8F0),
                           ),
+                          boxShadow: isSel
+                              ? [
+                                  BoxShadow(
+                                    color: _forestGreen.withValues(alpha: 0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : null,
                         ),
                         child: Text(
                           _categories[i],
@@ -214,14 +302,14 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 // Price Range Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Price Range',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Avg. Rs. 380/kg',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _forestGreen),
+                      'Rs. ${_priceRange.start.round()} - Rs. ${_priceRange.end.round()}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _forestGreen),
                     ),
                   ],
                 ),
@@ -278,8 +366,9 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 ),
                 RangeSlider(
                   values: _priceRange,
-                  min: 100,
-                  max: 1500,
+                  min: 50,
+                  max: 2000,
+                  divisions: 39,
                   activeColor: _forestGreen,
                   inactiveColor: const Color(0xFFE2E8F0),
                   onChanged: (values) => setState(() => _priceRange = values),
@@ -289,9 +378,9 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
-                      Text('Rs. 100', style: TextStyle(fontSize: 10, color: _textMuted)),
-                      Text('Rs. 760', style: TextStyle(fontSize: 10, color: _textMuted)),
-                      Text('Rs. 1,500+', style: TextStyle(fontSize: 10, color: _textMuted)),
+                      Text('Rs. 50', style: TextStyle(fontSize: 10, color: _textMuted)),
+                      Text('Rs. 1,000', style: TextStyle(fontSize: 10, color: _textMuted)),
+                      Text('Rs. 2,000+', style: TextStyle(fontSize: 10, color: _textMuted)),
                     ],
                   ),
                 ),
@@ -300,14 +389,14 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 // Sourcing Region
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Sourcing Region',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Select: All',
-                      style: TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w600),
+                      _regions[_selectedRegionIndex].$1,
+                      style: const TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -378,29 +467,29 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Quality & authenticity verified',
+                      'Verified quality badge',
                       style: TextStyle(fontSize: 11, color: _textMuted),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 _buildToggleCard(
-                  title: 'Fresh Harvest Only',
-                  subtitle: 'Picked within the last 24 hours',
+                  title: 'Fresh Harvest Today',
+                  subtitle: 'Plucked from fields at dawn within 24 hours',
                   value: _freshHarvestOnly,
                   onChanged: (val) => setState(() => _freshHarvestOnly = val),
                 ),
                 const SizedBox(height: 8),
                 _buildToggleCard(
-                  title: '100% Certified Organic',
-                  subtitle: 'Zero synthetic chemicals or pests',
+                  title: '100% Certified Organic Only',
+                  subtitle: 'Zero synthetic chemical sprays or fertilizers',
                   value: _certifiedOrganic,
                   onChanged: (val) => setState(() => _certifiedOrganic = val),
                 ),
                 const SizedBox(height: 8),
                 _buildToggleCard(
                   title: 'Direct Farm Dispatch',
-                  subtitle: 'Farm-made straight from collective',
+                  subtitle: 'Direct cold transit straight to your doorstep',
                   value: _directFarmDispatch,
                   onChanged: (val) => setState(() => _directFarmDispatch = val),
                 ),
@@ -415,7 +504,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Default: nearest by farm distance',
+                      'Live ordering',
                       style: TextStyle(fontSize: 11, color: _textMuted),
                     ),
                   ],
@@ -451,14 +540,18 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                                 Text(
                                   title,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: isSel ? _forestGreen : _textDark,
                                   ),
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
                                   desc,
-                                  style: const TextStyle(fontSize: 10, color: _textMuted),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: isSel ? const Color(0xFF166534) : _textMuted,
+                                  ),
                                 ),
                               ],
                             ),
@@ -472,13 +565,13 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
             ),
           ),
 
-          // Floating Bottom Filter Summary & Apply Bar matching Screenshot 12
+          // Bottom Floating Apply Filter bar
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -491,87 +584,46 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: Row(
                   children: [
-                    // Mini summary card
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                    // Clear / Reset
+                    OutlinedButton(
+                      onPressed: _resetAll,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _textDark,
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                      child: Row(
-                        children: const [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundImage: NetworkImage(
-                              'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=100&auto=format&fit=crop&q=80',
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '4.8 • Green Valley Collective\n34 matching products ready (Dispatches from Welimada & Kandy at 3:00 PM)',
-                              style: TextStyle(fontSize: 10, color: _textMuted, height: 1.25),
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: const Text('Reset', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFCBD5E1)),
-                            ),
-                            child: const Icon(Icons.close_rounded, color: _textDark, size: 20),
-                          ),
+                    const SizedBox(width: 10),
+                    // Apply button with live count
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _applyAndReturn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _forestGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const BuyerProductListScreen(categoryTitle: 'Filtered Harvests'),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: _forestGreen,
-                                borderRadius: BorderRadius.circular(23),
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Text(
-                                    'Apply Filters (34 Products)',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
-                                ],
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Apply Filters (${matchingProducts.length} ${matchingProducts.length == 1 ? 'Product' : 'Products'})',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -599,19 +651,21 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _textDark),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 10, color: _textMuted),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _textDark),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 10, color: _textMuted),
+                ),
+              ],
+            ),
           ),
           Switch.adaptive(
             value: value,

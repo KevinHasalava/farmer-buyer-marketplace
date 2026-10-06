@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
-import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_farmer_profile_screen.dart';
@@ -196,12 +195,12 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF16A34A),
+                                color: prod.isOrganic ? const Color(0xFF16A34A) : const Color(0xFF0284C7),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                '100% Organic',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              child: Text(
+                                prod.isOrganic ? '100% Organic' : 'Farm Direct Produce',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -211,9 +210,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 color: const Color(0xFFEA580C),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'Harvested Yesterday',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              child: Text(
+                                prod.harvestTime,
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                               ),
                             ),
                           ],
@@ -364,8 +363,24 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const BuyerFarmerProfileScreen(
-                              farmer: BuyerMockData.primaryFarmer,
+                            builder: (_) => BuyerFarmerProfileScreen(
+                              farmer: BuyerFarmer(
+                                name: prod.farmerName,
+                                farmName: prod.farmName,
+                                location: prod.farmLocation,
+                                altitude: '1,200m alt',
+                                rating: prod.rating,
+                                reviewsCount: prod.reviewsCount,
+                                yearsExperience: '16 yrs',
+                                bio: prod.farmerBio,
+                                ordersFulfilled: '850+',
+                                onTimeRate: '98.5%',
+                                directTrace: '100%',
+                                avatarUrl: prod.farmerAvatarUrl,
+                                landscapeUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&auto=format&fit=crop&q=80',
+                                phone: '076 323 8225',
+                                isCertifiedOrganic: prod.isOrganic,
+                              ),
                             ),
                           ),
                         ),

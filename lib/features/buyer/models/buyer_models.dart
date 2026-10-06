@@ -55,6 +55,8 @@ class BuyerProduct {
 
   String get formattedPrice => 'Rs. ${price.toStringAsFixed(0)}';
   String get formattedOriginalPrice => originalPrice != null ? 'Rs. ${originalPrice!.toStringAsFixed(0)}' : '';
+  bool get hasDiscount => originalPrice != null && originalPrice! > price;
+  int get discountPercent => hasDiscount ? (((originalPrice! - price) / originalPrice!) * 100).round() : 0;
 }
 
 class BuyerFarmer {
@@ -131,4 +133,60 @@ class BuyerCategoryItem {
   final String? badge;
   final Color? badgeColor;
   final String actionText;
+}
+
+class BuyerFilterCriteria {
+  const BuyerFilterCriteria({
+    this.category = 'All',
+    this.priceRange = const RangeValues(50, 2000),
+    this.region = 'All Sri Lanka',
+    this.freshHarvestOnly = false,
+    this.certifiedOrganicOnly = false,
+    this.directFarmDispatch = false,
+    this.sortBy = 'Distance (Closest Farm First)',
+    this.searchQuery = '',
+  });
+
+  final String category;
+  final RangeValues priceRange;
+  final String region;
+  final bool freshHarvestOnly;
+  final bool certifiedOrganicOnly;
+  final bool directFarmDispatch;
+  final String sortBy;
+  final String searchQuery;
+
+  int get activeFiltersCount {
+    int count = 0;
+    if (category != 'All' && category.isNotEmpty) count++;
+    if (priceRange.start > 50 || priceRange.end < 2000) count++;
+    if (region != 'All Sri Lanka' && region.isNotEmpty) count++;
+    if (freshHarvestOnly) count++;
+    if (certifiedOrganicOnly) count++;
+    if (directFarmDispatch) count++;
+    if (searchQuery.trim().isNotEmpty) count++;
+    return count;
+  }
+
+  BuyerFilterCriteria copyWith({
+    String? category,
+    RangeValues? priceRange,
+    String? region,
+    bool? freshHarvestOnly,
+    bool? certifiedOrganicOnly,
+    bool? directFarmDispatch,
+    String? sortBy,
+    String? searchQuery,
+  }) {
+    return BuyerFilterCriteria(
+      category: category ?? this.category,
+      priceRange: priceRange ?? this.priceRange,
+      region: region ?? this.region,
+      freshHarvestOnly: freshHarvestOnly ?? this.freshHarvestOnly,
+      certifiedOrganicOnly: certifiedOrganicOnly ?? this.certifiedOrganicOnly,
+      directFarmDispatch: directFarmDispatch ?? this.directFarmDispatch,
+      sortBy: sortBy ?? this.sortBy,
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
+  }
 }

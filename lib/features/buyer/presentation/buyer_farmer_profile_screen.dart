@@ -74,7 +74,7 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final farmer = widget.farmer;
-    final products = BuyerMockData.bandaraProducts;
+    final products = BuyerMockData.getFarmerProducts(farmer.name);
     final cartCount = _cartState.totalItemCount;
 
     return Scaffold(
