@@ -8,18 +8,16 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/role_selection_screen.dart';
 import '../../features/auth/presentation/phone_auth_screen.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
 import '../../features/farmer/presentation/add_edit_product_screen.dart';
-import '../../features/search/presentation/search_filter_screen.dart';
-import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
 import '../../features/auth/presentation/buyer_registration_screen.dart';
 import '../../features/auth/presentation/farmer_registration_screen.dart';
 import '../../features/auth/presentation/driver_registration_screen.dart';
+import '../../features/buyer/buyer.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
@@ -123,7 +121,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.dashboard,
       name: 'dashboard',
-      builder: (context, state) => const DashboardScreen(),
+      builder: (context, state) => const BuyerHomeScreen(),
     ),
     GoRoute(
       path: AppRoutes.farmerDashboard,
@@ -143,7 +141,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.searchFilter,
       name: 'searchFilter',
-      builder: (context, state) => const SearchFilterScreen(),
+      builder: (context, state) => const BuyerFilterScreen(),
     ),
     GoRoute(
       path: AppRoutes.ordersChat,
@@ -153,7 +151,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.cart,
       name: 'cart',
-      builder: (context, state) => const MyCartScreen(),
+      builder: (context, state) => const BuyerCartScreen(),
     ),
     GoRoute(
       path: AppRoutes.checkout,
