@@ -397,19 +397,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       ),
                       child: const Icon(Icons.notifications_none_rounded, color: _textDark, size: 20),
                     ),
-                    const SizedBox(width: 8),
 
-                    // Settings / Hexagon Button
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _borderColor),
-                      ),
-                      child: const Icon(Icons.settings_outlined, color: _textDark, size: 19),
-                    ),
                   ],
                 ),
               ),
@@ -957,31 +945,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
 
-                      // Produce & Harvest Preferences
-                      const Text(
-                        'Produce & Harvest Preferences:',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF334155),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Preference Chips
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          _buildPrefChip('100% Organic', isSelected: true, icon: Icons.check_circle_rounded),
-                          _buildPrefChip('Pesticide-Free', isSelected: false, icon: Icons.shield_outlined),
-                          _buildPrefChip('Highland Veggies', isSelected: true, icon: Icons.eco_rounded),
-                          _buildPrefChip('Low-Country Fruits', isSelected: false, icon: Icons.spa_outlined),
-                          _buildPrefChip('Heirloom Rice', isSelected: false),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -1269,39 +1233,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     );
   }
 
-  Widget _buildPrefChip(String label, {bool isSelected = false, IconData? icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isSelected ? _forestGreen : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? _forestGreen : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(
-              icon,
-              size: 11,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
-            ),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMenuItem({
     required IconData icon,

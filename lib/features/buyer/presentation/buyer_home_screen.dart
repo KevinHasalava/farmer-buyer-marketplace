@@ -259,30 +259,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       ),
                     ),
 
-                    // Morning Express Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFC8E6C9)),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.eco_rounded, size: 13, color: _forestGreen),
-                          SizedBox(width: 4),
-                          Text(
-                            'Morning Express',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: _forestGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+
 
                     // Notification Bell Button
                     Container(
