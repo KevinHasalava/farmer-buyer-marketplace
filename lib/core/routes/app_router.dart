@@ -5,12 +5,13 @@ import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/language_selection_screen.dart';
 import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
-import '../../features/onboarding/presentation/choose_role_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/role_selection_screen.dart';
 import '../../features/auth/presentation/phone_auth_screen.dart';
+import '../../features/auth/presentation/buyer_registration_screen.dart';
+import '../../features/auth/presentation/farmer_registration_screen.dart';
+import '../../features/auth/presentation/driver_registration_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
-import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
 import '../../features/farmer/presentation/add_edit_product_screen.dart';
@@ -18,24 +19,30 @@ import '../../features/search/presentation/search_filter_screen.dart';
 import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
-import '../../features/Driver/presentation/driver_registration_screen.dart';
-import '../../features/Driver/presentation/driver_dashboard_screen.dart';
-import '../../features/Driver/presentation/delivery_details_screen.dart';
-import '../../features/Driver/presentation/deliveries_screen.dart';
-import '../../features/Driver/presentation/pickup_verification_screen.dart';
-import '../../features/Driver/presentation/delivery_tracking_screen.dart';
-import '../../features/Driver/presentation/delivery_completed_screen.dart';
-import '../../features/Driver/presentation/driver_profile_screen.dart';
-import '../../features/Driver/presentation/delivery_history_screen.dart';
+import '../../features/driver/presentation/driver_dashboard_screen.dart';
+import '../../features/driver/presentation/delivery_details_screen.dart';
+import '../../features/driver/presentation/deliveries_screen.dart';
+import '../../features/driver/presentation/pickup_verification_screen.dart';
+import '../../features/driver/presentation/delivery_tracking_screen.dart';
+import '../../features/driver/presentation/delivery_completed_screen.dart';
+import '../../features/driver/presentation/driver_profile_screen.dart';
+import '../../features/driver/presentation/delivery_history_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
+  static const String splash             = '/';
+  static const String language           = '/language';
   static const String welcome            = '/welcome';
   static const String onboarding         = '/onboarding';
   static const String onboarding2        = '/onboarding-2';
   static const String onboarding3        = '/onboarding-3';
-  static const String chooseRole         = '/choose-role';
+  static const String roleSelection      = '/role';
+  static const String chooseRole         = '/role';
+  static const String phoneAuth          = '/phone-auth';
   static const String login              = '/login';
+  static const String buyerRegister      = '/register-buyer';
+  static const String farmerRegister     = '/register-farmer';
+  static const String driverRegister     = '/register-driver';
   static const String dashboard          = '/dashboard';
   static const String farmerDashboard    = '/farmer-dashboard';
   static const String driverDashboard    = '/driver-dashboard';
@@ -48,11 +55,11 @@ abstract final class AppRoutes {
   static const String deliveryTracking   = '/delivery-tracking';
   static const String deliveryCompleted  = '/delivery-completed';
   static const String farmerProducts     = '/farmer-products';
-  static const String addEditProduct  = '/add-edit-product';
-  static const String searchFilter    = '/search-filter';
-  static const String ordersChat      = '/orders-chat';
-  static const String cart            = '/cart';
-  static const String checkout        = '/checkout';
+  static const String addEditProduct     = '/add-edit-product';
+  static const String searchFilter       = '/search-filter';
+  static const String ordersChat         = '/orders-chat';
+  static const String cart               = '/cart';
+  static const String checkout           = '/checkout';
 
   /// Role-based home dashboard.
   static String homeFor(UserRole role) => switch (role) {
@@ -112,11 +119,6 @@ final appRouter = GoRouter(
       builder: (context, state) => const DriverRegistrationScreen(),
     ),
     GoRoute(
-      path: AppRoutes.driverDashboard,
-      name: 'driverDashboard',
-      builder: (context, state) => const DriverDashboardScreen(),
-    ),
-    GoRoute(
       path: AppRoutes.welcome,
       name: 'welcome',
       builder: (context, state) => const WelcomeScreen(),
@@ -124,22 +126,22 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.onboarding,
       name: 'onboarding',
-      builder: (context, state) => const OnboardingScreen(initialPage: 0),
+      builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
       path: AppRoutes.onboarding2,
       name: 'onboarding2',
-      builder: (context, state) => const OnboardingScreen(initialPage: 1),
+      builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
       path: AppRoutes.onboarding3,
       name: 'onboarding3',
-      builder: (context, state) => const OnboardingScreen(initialPage: 2),
+      builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
       path: AppRoutes.chooseRole,
       name: 'chooseRole',
-      builder: (context, state) => const ChooseRoleScreen(),
+      builder: (context, state) => const RoleSelectionScreen(),
     ),
     GoRoute(
       path: AppRoutes.login,
