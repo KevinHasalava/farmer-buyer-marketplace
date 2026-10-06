@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../orders_chat/presentation/orders_chat_screen.dart';
 import '../buyer_home_screen.dart';
 import '../buyer_categories_screen.dart';
-import '../buyer_farmer_profile_screen.dart';
-import '../../data/buyer_mock_data.dart';
+import '../buyer_profile_screen.dart';
 
 class BuyerBottomNav extends StatelessWidget {
   const BuyerBottomNav({
@@ -56,9 +55,7 @@ class BuyerBottomNav extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const BuyerFarmerProfileScreen(
-              farmer: BuyerMockData.primaryFarmer,
-            ),
+            builder: (_) => const BuyerProfileScreen(),
           ),
         );
         break;

@@ -40,6 +40,7 @@ abstract final class AppRoutes {
   static const String ordersChat      = '/orders-chat';
   static const String cart            = '/cart';
   static const String checkout        = '/checkout';
+  static const String buyerProfile    = '/buyer-profile';
 
   /// Role-based home dashboard.
   static String homeFor(UserRole role) => switch (role) {
@@ -157,6 +158,11 @@ final appRouter = GoRouter(
       path: AppRoutes.checkout,
       name: 'checkout',
       builder: (context, state) => const CheckoutDeliveryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.buyerProfile,
+      name: 'buyerProfile',
+      builder: (context, state) => const BuyerProfileScreen(),
     ),
   ],
 );

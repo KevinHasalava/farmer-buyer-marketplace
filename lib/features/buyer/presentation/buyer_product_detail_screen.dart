@@ -484,23 +484,6 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-
-                      // Batch log inspect link
-                      Row(
-                        children: const [
-                          Text(
-                            'Inspect Farm Soil Certifications & Batch Log',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: _forestGreen,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(Icons.chevron_right_rounded, size: 16, color: _forestGreen),
-                        ],
-                      ),
                     ],
                   ),
                 ),

@@ -1,4 +1,6 @@
 export 'models/buyer_models.dart';
+export 'models/buyer_profile_model.dart';
+export 'services/buyer_profile_manager.dart';
 export 'data/buyer_mock_data.dart';
 export 'presentation/buyer_home_screen.dart';
 export 'presentation/buyer_categories_screen.dart';
@@ -7,4 +9,5 @@ export 'presentation/buyer_filter_screen.dart';
 export 'presentation/buyer_product_list_screen.dart';
 export 'presentation/buyer_product_detail_screen.dart';
 export 'presentation/buyer_farmer_profile_screen.dart';
+export 'presentation/buyer_profile_screen.dart';
 export 'presentation/buyer_cart_screen.dart';

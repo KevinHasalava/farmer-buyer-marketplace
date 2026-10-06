@@ -9,9 +9,10 @@ import 'buyer_categories_screen.dart';
 import 'buyer_search_screen.dart';
 import 'buyer_product_list_screen.dart';
 import 'buyer_product_detail_screen.dart';
-import 'buyer_farmer_profile_screen.dart';
+import 'buyer_profile_screen.dart';
 import 'buyer_cart_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
+import '../services/buyer_profile_manager.dart';
 
 /// 9. Buyer Home Screen — matching Screenshot 9
 class BuyerHomeScreen extends StatefulWidget {
@@ -23,7 +24,8 @@ class BuyerHomeScreen extends StatefulWidget {
 
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   final MarketplaceState _cartState = MarketplaceState.instance;
-  String _selectedCity = 'Colombo 02, Western';
+  final BuyerProfileManager _profileManager = BuyerProfileManager.instance;
+  late String _selectedCity;
 
   static const Color _forestGreen = Color(0xFF1B5E38);
   static const Color _bgSoft = Color(0xFFF8FAFC);
@@ -33,17 +35,29 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedCity = _profileManager.profile.topBarLocationDisplay;
     _cartState.addListener(_onCartChanged);
+    _profileManager.addListener(_onProfileChanged);
+    _profileManager.loadProfile();
   }
 
   @override
   void dispose() {
     _cartState.removeListener(_onCartChanged);
+    _profileManager.removeListener(_onProfileChanged);
     super.dispose();
   }
 
   void _onCartChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _onProfileChanged() {
+    if (mounted) {
+      setState(() {
+        _selectedCity = _profileManager.profile.topBarLocationDisplay;
+      });
+    }
   }
 
   void _addBuyerProductToCart(BuyerProduct prod) {
@@ -128,6 +142,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     : null,
                 onTap: () {
                   setState(() => _selectedCity = c);
+                  _profileManager.updateProfile(address: c, hub: c);
                   Navigator.pop(ctx);
                 },
               ),
@@ -141,6 +156,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final cartCount = _cartState.totalItemCount;
+    final profile = _profileManager.profile;
 
     return Scaffold(
       backgroundColor: _bgSoft,
@@ -154,14 +170,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Row(
                   children: [
-                    // Profile Avatar with green online dot
+                    // Profile Avatar with initials and green online dot (opens BuyerProfileScreen)
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const BuyerFarmerProfileScreen(
-                            farmer: BuyerMockData.primaryFarmer,
-                          ),
+                          builder: (_) => const BuyerProfileScreen(),
                         ),
                       ),
                       child: Stack(
@@ -171,7 +185,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                             height: 44,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              color: const Color(0xFFE8F5E9),
+                              border: Border.all(color: const Color(0xFF16A34A), width: 2),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.08),
@@ -179,11 +194,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                                   offset: const Offset(0, 2),
                                 ),
                               ],
-                              image: const DecorationImage(
-                                image: NetworkImage(
-                                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+                            ),
+                            child: Center(
+                              child: Text(
+                                profile.initials,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: _forestGreen,
                                 ),
-                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
@@ -782,7 +801,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
             // Popular Right Now Grid (2x2 matching Screenshot 9)
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -805,63 +824,6 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     );
                   },
                   childCount: BuyerMockData.popularProducts.length,
-                ),
-              ),
-            ),
-
-            // Fair Pay Guarantee Footer Banner
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFDCFCE7)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.verified_user_rounded, color: _forestGreen, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            '100% Guaranteed Farmer Fair Pay',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: _forestGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Zero middlemen cut. Your purchase directly supports 1,400+ Sri Lankan rural grower families.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF166534),
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text('Jaffna', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted)),
-                          SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, size: 10, color: _forestGreen),
-                          SizedBox(width: 6),
-                          Text('Nuwara Eliya', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted)),
-                          SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, size: 10, color: _forestGreen),
-                          SizedBox(width: 6),
-                          Text('Colombo Hub', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen)),
-                        ],
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),

@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
 
 /// Buyer Registration Screen — matching Farm2Home design.
 class BuyerRegistrationScreen extends StatefulWidget {
@@ -91,17 +93,43 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       final name = _nameCtrl.text.trim();
       final email = _emailCtrl.text.trim();
       final password = _passwordCtrl.text;
+      final phone = _phoneCtrl.text.trim();
+      final address = _addressCtrl.text.trim();
+      final buyerType = _buyerType;
+      final hub = _selectedHub ?? 'Colombo Regional Hub (Western Province)';
+      final prefs = _producePreferences.toList();
 
+      UserModel? user;
       if (email.isNotEmpty && password.isNotEmpty) {
-        await _authService.signUp(
+        user = await _authService.signUp(
           email: email,
           password: password,
           fullName: name.isNotEmpty ? name : 'Chaminda Perera',
           isFarmer: false,
+          extraData: {
+            'phone': phone,
+            'address': address,
+            'hub': hub,
+            'buyer_type': buyerType,
+            'preferences': prefs,
+            'role': 'buyer',
+          },
         );
       } else {
         await Future.delayed(const Duration(milliseconds: 600));
       }
+
+      // Persist real registration data into profile manager & DB
+      await BuyerProfileManager.instance.saveRegistrationData(
+        name: name,
+        email: email,
+        phone: phone,
+        address: address,
+        buyerType: buyerType,
+        hub: hub,
+        preferences: prefs,
+        userId: user?.id,
+      );
 
       if (!mounted) return;
       await context.read<AppSettings>().setRole(UserRole.buyer);
@@ -110,7 +138,19 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         _showSuccessDialog();
       }
     } catch (e) {
-      // In demo mode or if Supabase gives rate limit/error, still allow proceeding smoothly
+      // In demo mode or if Supabase gives rate limit/error, still save local profile and proceed
+      try {
+        await BuyerProfileManager.instance.saveRegistrationData(
+          name: _nameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          phone: _phoneCtrl.text.trim(),
+          address: _addressCtrl.text.trim(),
+          buyerType: _buyerType,
+          hub: _selectedHub ?? 'Colombo Regional Hub (Western Province)',
+          preferences: _producePreferences.toList(),
+        );
+      } catch (_) {}
+
       if (mounted) {
         await context.read<AppSettings>().setRole(UserRole.buyer);
         if (mounted) _showSuccessDialog();

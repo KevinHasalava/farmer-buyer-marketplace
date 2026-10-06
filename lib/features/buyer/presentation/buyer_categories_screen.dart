@@ -176,35 +176,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                 children: [
-                  // Daily Harvests badge
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5E9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFC8E6C9)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.eco_rounded, size: 12, color: _forestGreen),
-                            SizedBox(width: 4),
-                            Text(
-                              'Verified Sri Lankan Harvests',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: _forestGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
+
 
                   // Big Title
                   const Text(
@@ -317,60 +289,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                   else
                     ...filteredCategories.map((cat) => _buildCategoryCard(cat)),
 
-                  const SizedBox(height: 16),
 
-                  // Direct Sourcing Guarantee Container matching Screenshot 10
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFDCFCE7)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: const [
-                            Icon(Icons.verified_user_rounded, color: _forestGreen, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Direct Farm Gate Guarantee',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: _forestGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Every product is harvested upon order confirmation from registered cooperative farms across Sri Lanka. Fair trade farmer pricing, zero warehouse spoilage.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF166534),
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text('Jaffna', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted)),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 12, color: _forestGreen),
-                            SizedBox(width: 8),
-                            Text('Nuwara Eliya', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted)),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 12, color: _forestGreen),
-                            SizedBox(width: 8),
-                            Text('Colombo Hub', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
