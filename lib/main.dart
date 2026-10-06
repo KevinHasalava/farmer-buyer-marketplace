@@ -13,6 +13,7 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+<<<<<<< Updated upstream
   // ── Firebase init ────────────────────────────────────────────────────
   try {
     await Firebase.initializeApp(
@@ -24,9 +25,31 @@ Future<void> main() async {
 
   // ── Supabase init (loads .env → initialises client) ──────────────────
   await SupabaseConfig.initialize();
+=======
+  final AppSettings settings;
+  try {
+    // ── Supabase init (loads .env → initialises client) ────────────────
+    await SupabaseConfig.initialize();
+>>>>>>> Stashed changes
 
-  // ── Persisted language / onboarding / role ───────────────────────────
-  final settings = await AppSettings.load();
+    // ── Persisted language / onboarding / role ─────────────────────────
+    settings = await AppSettings.load();
+  } catch (e, st) {
+    debugPrint('Startup failed: $e\n$st');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: SelectableText('Startup failed:\n\n$e\n\n$st'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    return;
+  }
 
   // Lock to portrait orientation for a consistent mobile experience.
   await SystemChrome.setPreferredOrientations([
