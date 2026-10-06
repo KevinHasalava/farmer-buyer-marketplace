@@ -6,12 +6,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Call [SupabaseConfig.initialize] once inside [main] before [runApp].
 /// After that, use [SupabaseConfig.client] anywhere in the app.
 abstract final class SupabaseConfig {
-  // ── Public keys read from .env asset ────────────────────────────────────
-  static String get _url =>
-      dotenv.env['SUPABASE_URL'] ?? (throw StateError('SUPABASE_URL not set'));
+  static String get _url {
+    final raw = dotenv.env['SUPABASE_URL'] ?? (throw StateError('SUPABASE_URL not set'));
+    return raw
+        .replaceAll('/rest/v1/', '')
+        .replaceAll('/rest/v1', '')
+        .replaceAll(RegExp(r'/+$'), '');
+  }
 
   static String get _anonKey =>
       dotenv.env['SUPABASE_ANON_KEY'] ??
+      dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ??
       (throw StateError('SUPABASE_ANON_KEY not set'));
 
   // ── Initializer ─────────────────────────────────────────────────────────

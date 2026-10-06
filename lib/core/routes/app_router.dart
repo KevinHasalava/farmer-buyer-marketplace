@@ -5,6 +5,7 @@ import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/language_selection_screen.dart';
 import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/onboarding/presentation/choose_role_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/role_selection_screen.dart';
 import '../../features/auth/presentation/phone_auth_screen.dart';
@@ -17,26 +18,36 @@ import '../../features/search/presentation/search_filter_screen.dart';
 import '../../features/cart/presentation/my_cart_screen.dart';
 import '../../features/cart/presentation/checkout_delivery_screen.dart';
 import '../../features/orders_chat/presentation/orders_chat_screen.dart';
-import '../../features/auth/presentation/buyer_registration_screen.dart';
-import '../../features/auth/presentation/farmer_registration_screen.dart';
-import '../../features/auth/presentation/driver_registration_screen.dart';
+import '../../features/Driver/presentation/driver_registration_screen.dart';
+import '../../features/Driver/presentation/driver_dashboard_screen.dart';
+import '../../features/Driver/presentation/delivery_details_screen.dart';
+import '../../features/Driver/presentation/deliveries_screen.dart';
+import '../../features/Driver/presentation/pickup_verification_screen.dart';
+import '../../features/Driver/presentation/delivery_tracking_screen.dart';
+import '../../features/Driver/presentation/delivery_completed_screen.dart';
+import '../../features/Driver/presentation/driver_profile_screen.dart';
+import '../../features/Driver/presentation/delivery_history_screen.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
-  static const String splash          = '/';
-  static const String language        = '/language';
-  static const String welcome         = '/welcome';
-  static const String onboarding      = '/onboarding';
-  static const String roleSelection   = '/role';
-  static const String phoneAuth       = '/phone-auth';
-  static const String login           = '/login';
-  static const String buyerRegister   = '/register-buyer';
-  static const String farmerRegister  = '/register-farmer';
-  static const String driverRegister  = '/register-driver';
-  static const String dashboard       = '/dashboard';
-  static const String farmerDashboard = '/farmer-dashboard';
-  static const String driverDashboard = '/driver-dashboard';
-  static const String farmerProducts  = '/farmer-products';
+  static const String welcome            = '/welcome';
+  static const String onboarding         = '/onboarding';
+  static const String onboarding2        = '/onboarding-2';
+  static const String onboarding3        = '/onboarding-3';
+  static const String chooseRole         = '/choose-role';
+  static const String login              = '/login';
+  static const String dashboard          = '/dashboard';
+  static const String farmerDashboard    = '/farmer-dashboard';
+  static const String driverDashboard    = '/driver-dashboard';
+  static const String driverRegistration = '/driver-registration';
+  static const String driverProfile      = '/driver-profile';
+  static const String deliveryHistory    = '/delivery-history';
+  static const String deliveryDetails    = '/delivery-details';
+  static const String driverDeliveries   = '/driver-deliveries';
+  static const String pickupVerification = '/pickup-verification';
+  static const String deliveryTracking   = '/delivery-tracking';
+  static const String deliveryCompleted  = '/delivery-completed';
+  static const String farmerProducts     = '/farmer-products';
   static const String addEditProduct  = '/add-edit-product';
   static const String searchFilter    = '/search-filter';
   static const String ordersChat      = '/orders-chat';
@@ -113,7 +124,22 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.onboarding,
       name: 'onboarding',
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) => const OnboardingScreen(initialPage: 0),
+    ),
+    GoRoute(
+      path: AppRoutes.onboarding2,
+      name: 'onboarding2',
+      builder: (context, state) => const OnboardingScreen(initialPage: 1),
+    ),
+    GoRoute(
+      path: AppRoutes.onboarding3,
+      name: 'onboarding3',
+      builder: (context, state) => const OnboardingScreen(initialPage: 2),
+    ),
+    GoRoute(
+      path: AppRoutes.chooseRole,
+      name: 'chooseRole',
+      builder: (context, state) => const ChooseRoleScreen(),
     ),
     GoRoute(
       path: AppRoutes.login,
@@ -129,6 +155,91 @@ final appRouter = GoRouter(
       path: AppRoutes.farmerDashboard,
       name: 'farmerDashboard',
       builder: (context, state) => const FarmerDashboardScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverDashboard,
+      name: 'driverDashboard',
+      builder: (context, state) {
+        final extraMap = state.extra as Map<String, dynamic>?;
+        final driverId = extraMap?['driverId'] as String?;
+        final driverName = extraMap?['driverName'] as String?;
+        final vehicleType = extraMap?['vehicleType'] as String?;
+        final plateNumber = extraMap?['plateNumber'] as String?;
+        final bankName = extraMap?['bankName'] as String?;
+        final accountNumber = extraMap?['accountNumber'] as String?;
+        final cargoCapacity = extraMap?['cargoCapacity'] as String?;
+        final licenseNumber = extraMap?['licenseNumber'] as String?;
+        return DriverDashboardScreen(
+          driverId: driverId,
+          driverName: driverName,
+          vehicleType: vehicleType,
+          plateNumber: plateNumber,
+          bankName: bankName,
+          accountNumber: accountNumber,
+          cargoCapacity: cargoCapacity,
+          licenseNumber: licenseNumber,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.driverRegistration,
+      name: 'driverRegistration',
+      builder: (context, state) => const DriverRegistrationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.deliveryDetails,
+      name: 'deliveryDetails',
+      builder: (context, state) => const DeliveryDetailsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverDeliveries,
+      name: 'driverDeliveries',
+      builder: (context, state) => const DeliveriesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.pickupVerification,
+      name: 'pickupVerification',
+      builder: (context, state) => const PickupVerificationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.deliveryTracking,
+      name: 'deliveryTracking',
+      builder: (context, state) => const DeliveryTrackingScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.deliveryCompleted,
+      name: 'deliveryCompleted',
+      builder: (context, state) => const DeliveryCompletedScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.driverProfile,
+      name: 'driverProfile',
+      builder: (context, state) {
+        final extraMap = state.extra as Map<String, dynamic>?;
+        final driverId = extraMap?['driverId'] as String?;
+        final driverName = extraMap?['driverName'] as String?;
+        final vehicleType = extraMap?['vehicleType'] as String?;
+        final plateNumber = extraMap?['plateNumber'] as String?;
+        final bankName = extraMap?['bankName'] as String?;
+        final accountNumber = extraMap?['accountNumber'] as String?;
+        final cargoCapacity = extraMap?['cargoCapacity'] as String?;
+        final licenseNumber = extraMap?['licenseNumber'] as String?;
+        return DriverProfileScreen(
+          driverId: driverId,
+          driverName: driverName,
+          vehicleType: vehicleType,
+          plateNumber: plateNumber,
+          bankName: bankName,
+          accountNumber: accountNumber,
+          cargoCapacity: cargoCapacity,
+          licenseNumber: licenseNumber,
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.deliveryHistory,
+      name: 'deliveryHistory',
+      builder: (context, state) => const DeliveryHistoryScreen(),
     ),
     GoRoute(
       path: AppRoutes.farmerProducts,
