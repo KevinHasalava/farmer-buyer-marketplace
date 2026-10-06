@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../services/farmer_profile_manager.dart';
@@ -72,9 +74,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return context.tr.goodMorning;
+    if (hour < 17) return context.tr.goodAfternoon;
+    return context.tr.goodEvening;
   }
 
   void _showOrdersSheet() {
@@ -254,7 +256,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Farmer Dashboard',
+          context.tr.farmerDashboard,
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -263,6 +265,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         ),
         Row(
           children: [
+            // Quick Language Switcher Pill
+            const AppLanguagePill(),
+            const SizedBox(width: 8),
+
             // Buyer View Switcher pill button
             GestureDetector(
               onTap: () {
@@ -294,7 +300,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Buyer View',
+                      context.tr.buyerView,
                       style: GoogleFonts.poppins(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -382,7 +388,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          "Here's your farm overview",
+          context.tr.farmOverview,
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w400,
@@ -523,7 +529,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             Expanded(
               child: _buildStatCard(
                 value: '12',
-                label: 'Active Products',
+                label: context.tr.activeProducts,
                 icon: Icons.inventory_2_outlined,
                 onTap: () => Navigator.push(
                   context,
@@ -537,7 +543,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             Expanded(
               child: _buildStatCard(
                 value: '5',
-                label: 'New Orders',
+                label: context.tr.newOrders,
                 icon: Icons.assignment_outlined,
                 onTap: _showOrdersSheet,
               ),
@@ -550,7 +556,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             Expanded(
               child: _buildStatCard(
                 value: '18',
-                label: 'Completed Orders',
+                label: context.tr.completedOrdersFarmer,
                 icon: Icons.check_circle_outline_rounded,
                 onTap: _showOrdersSheet,
               ),
@@ -559,7 +565,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             Expanded(
               child: _buildStatCard(
                 value: 'Rs. 8,500',
-                label: 'This Week Earnings',
+                label: context.tr.thisWeekEarnings,
                 icon: Icons.monetization_on_outlined,
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -652,7 +658,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'QUICK ACTIONS',
+          context.tr.quickActions.toUpperCase(),
           style: GoogleFonts.poppins(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -666,7 +672,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           children: [
             _buildActionItem(
               icon: Icons.add_rounded,
-              label: 'Add Product',
+              label: context.tr.addProduct,
               isPrimary: true,
               onTap: () => Navigator.push(
                 context,
@@ -675,7 +681,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             _buildActionItem(
               icon: Icons.inventory_2_outlined,
-              label: 'My Products',
+              label: context.tr.myProducts,
               isPrimary: false,
               onTap: () => Navigator.push(
                 context,
@@ -684,13 +690,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             _buildActionItem(
               icon: Icons.assignment_outlined,
-              label: 'Orders',
+              label: context.tr.navOrders,
               isPrimary: false,
               onTap: _showOrdersSheet,
             ),
             _buildActionItem(
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'Messages',
+              label: context.tr.messages,
               isPrimary: false,
               onTap: _showMessagesSheet,
             ),
@@ -758,7 +764,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Recent Orders',
+              context.tr.recentOrders,
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -768,7 +774,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             GestureDetector(
               onTap: _showOrdersSheet,
               child: Text(
-                'See All',
+                context.tr.seeAll,
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -931,13 +937,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         children: [
           _buildNavItem(
             icon: Icons.home_rounded,
-            label: 'Home',
+            label: context.tr.navHome,
             isSelected: _selectedNav == 0,
             onTap: () => setState(() => _selectedNav = 0),
           ),
           _buildNavItem(
             icon: Icons.assignment_outlined,
-            label: 'Orders',
+            label: context.tr.navOrders,
             hasBadge: true,
             isSelected: _selectedNav == 1,
             onTap: () {
@@ -947,7 +953,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           ),
           _buildNavItem(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: context.tr.navChat,
             isSelected: _selectedNav == 2,
             onTap: () {
               setState(() => _selectedNav = 2);
@@ -956,7 +962,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           ),
           _buildNavItem(
             icon: Icons.person_outline_rounded,
-            label: 'Profile',
+            label: context.tr.navProfile,
             isSelected: _selectedNav == 3,
             onTap: () {
               setState(() => _selectedNav = 3);

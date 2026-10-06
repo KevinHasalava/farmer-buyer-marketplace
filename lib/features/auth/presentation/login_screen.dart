@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 
@@ -259,9 +260,9 @@ class _LoginScreenState extends State<LoginScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title
-                        const Text(
-                          'Sign in to your account',
-                          style: TextStyle(
+                        Text(
+                          context.tr.signInToYourAccount,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
@@ -269,9 +270,9 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Enter your email & password to continue',
-                          style: TextStyle(
+                        Text(
+                          context.tr.enterEmailPassword,
+                          style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
@@ -280,13 +281,13 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: AppDimensions.spaceLG),
 
                         // ── Account Type ───────────────────────────────
-                        _SectionLabel('SELECT YOUR ACCOUNT TYPE'),
+                        _SectionLabel(context.tr.selectAccountType),
                         const SizedBox(height: AppDimensions.spaceXS),
                         Row(
                           children: [
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Buyer",
+                                label: context.tr.buyer,
                                 sublabel: 'Household',
                                 icon: Icons.shopping_basket_rounded,
                                 isSelected: _selectedRole == UserRole.buyer,
@@ -297,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Farmer",
+                                label: context.tr.farmer,
                                 sublabel: 'Producer',
                                 icon: Icons.agriculture_rounded,
                                 isSelected: _selectedRole == UserRole.farmer,
@@ -308,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Driver",
+                                label: context.tr.driver,
                                 sublabel: 'Transit',
                                 icon: Icons.delivery_dining_rounded,
                                 isSelected: _selectedRole == UserRole.driver,
@@ -323,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                         // ── Fields ────────────────────────────────────
                         _PremiumField(
-                          label: 'Email Address',
+                          label: context.tr.email,
                           hint: 'your.email@example.com',
                           icon: Icons.mail_outline_rounded,
                           keyboardType: TextInputType.emailAddress,
@@ -347,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                         // CTA Button
                         _PremiumCTAButton(
-                          label: 'Sign In',
+                          label: context.tr.signIn,
                           isLoading: _isLoading,
                           onPressed: _submit,
                         ),
@@ -609,6 +610,15 @@ class _PremiumHeader extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+
+        // Top-right Language Selector Pill
+        const Positioned(
+          top: 12,
+          right: 16,
+          child: SafeArea(
+            child: AppLanguagePill(isDarkHeader: true),
           ),
         ),
 

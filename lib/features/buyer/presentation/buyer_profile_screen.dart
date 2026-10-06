@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
@@ -367,16 +368,16 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Buyer Profile',
-                            style: TextStyle(
+                          Text(
+                            context.tr.buyerProfile,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: _textDark,
                             ),
                           ),
                           Text(
-                            'පාරිභෝගික ගිණුම • Consumer Hub',
+                            context.tr.consumerHub,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -386,6 +387,10 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         ],
                       ),
                     ),
+
+                    // Quick Language Switcher Pill
+                    const AppLanguagePill(),
+                    const SizedBox(width: 8),
 
                     // Notification Bell Button
                     GestureDetector(
@@ -630,19 +635,19 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                   children: [
                     _buildStatCard(
                       value: '${profile.completedOrders}',
-                      label: 'Completed Orders',
+                      label: context.tr.completedOrders,
                       badge: '🛡 100% Direct',
                     ),
                     const SizedBox(width: 10),
                     _buildStatCard(
                       value: profile.formattedSpend,
-                      label: 'Direct Farm Spend',
+                      label: context.tr.directFarmSpend,
                       badge: '0% Middleman',
                     ),
                     const SizedBox(width: 10),
                     _buildStatCard(
                       value: '${profile.co2SavedKg} kg',
-                      label: 'CO₂ Footprint Saved',
+                      label: context.tr.co2FootprintSaved,
                       badge: '🍃 Eco Route',
                     ),
                   ],
@@ -675,12 +680,12 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
-                            children: const [
-                              Icon(Icons.circle, size: 9, color: Color(0xFF4ADE80)),
-                              SizedBox(width: 6),
+                            children: [
+                              const Icon(Icons.circle, size: 9, color: Color(0xFF4ADE80)),
+                              const SizedBox(width: 6),
                               Text(
-                                'WEEKLY HARVEST BOX',
-                                style: TextStyle(
+                                context.tr.weeklyHarvestBox,
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF86EFAC),
@@ -698,7 +703,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              profile.hasActiveHarvestBox ? 'Active' : 'Paused',
+                              profile.hasActiveHarvestBox ? context.tr.statusActive : context.tr.pause,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
@@ -714,7 +719,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
 
                       // Next Dispatch Text
                       Text(
-                        'Next Farm Dispatch: ${profile.nextDispatch}',
+                        '${context.tr.nextFarmDispatch}: ${profile.nextDispatch}',
                         style: const TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w800,
@@ -800,7 +805,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                                     border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                                   ),
                                   child: Text(
-                                    profile.hasActiveHarvestBox ? 'Pause' : 'Resume',
+                                    profile.hasActiveHarvestBox ? context.tr.pause : context.tr.resume,
                                     style: const TextStyle(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
@@ -826,8 +831,8 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: const Text(
-                                    'Customize',
+                                  child: Text(
+                                    context.tr.customize,
                                     style: TextStyle(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w800,
@@ -864,9 +869,9 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'DEFAULT DELIVERY HUB & ADDRESS',
-                            style: TextStyle(
+                          Text(
+                            context.tr.defaultHubAndAddress,
+                            style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w800,
                               color: _textDark,
@@ -875,9 +880,9 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                           ),
                           GestureDetector(
                             onTap: _showEditAddressModal,
-                            child: const Text(
-                              'Edit >',
-                              style: TextStyle(
+                            child: Text(
+                              '${context.tr.edit} >',
+                              style: const TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
                                 color: _emerald,
@@ -1024,11 +1029,22 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                   ),
                   child: Column(
                     children: [
+                      // Quick Language Switcher Tile in Profile
+                      _buildMenuItem(
+                        icon: Icons.translate_rounded,
+                        iconBg: const Color(0xFFEFF6FF),
+                        iconColor: const Color(0xFF2563EB),
+                        title: context.tr.language,
+                        subtitle: context.tr.chooseLanguageSub,
+                        trailingPill: context.watch<AppSettings>().language?.nativeName ?? 'English',
+                        onTap: () => showAppLanguageSheet(context),
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
                       _buildMenuItem(
                         icon: Icons.account_balance_wallet_outlined,
                         iconBg: const Color(0xFFDCFCE7),
                         iconColor: _forestGreen,
-                        title: 'Farm Direct Wallet',
+                        title: context.tr.farmDirectWallet,
                         subtitle: 'Preloaded credits & fair-trade incentives',
                         trailingPill: profile.formattedWallet,
                         onTap: () {
@@ -1046,7 +1062,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         icon: Icons.favorite_border_rounded,
                         iconBg: const Color(0xFFFEF3C7),
                         iconColor: const Color(0xFFD97706),
-                        title: 'Saved Direct Farmers',
+                        title: context.tr.savedDirectFarmers,
                         subtitle: 'K. M. Bandara & 5 favorite growers',
                         trailingText: '${profile.savedFarmersCount} Farmers',
                         onTap: () {
@@ -1065,7 +1081,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         icon: Icons.history_rounded,
                         iconBg: const Color(0xFFE0F2FE),
                         iconColor: const Color(0xFF0284C7),
-                        title: 'Order History & Live Farm Dispatch',
+                        title: context.tr.orderHistoryFarmDispatch,
                         subtitle: 'View harvest certificates & batch codes',
                         onTap: () {
                           Navigator.push(
@@ -1081,7 +1097,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         icon: Icons.handshake_outlined,
                         iconBg: const Color(0xFFCCFBF1),
                         iconColor: const Color(0xFF0D9488),
-                        title: 'Sri Lanka Rural Direct Fair-Trade Charter',
+                        title: context.tr.ruralFairTradeCharter,
                         subtitle: '84% of payment directly to rural growers',
                         onTap: () {
                           showDialog(
@@ -1107,7 +1123,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         icon: Icons.support_agent_rounded,
                         iconBg: const Color(0xFFF3E8FF),
                         iconColor: const Color(0xFF9333EA),
-                        title: 'Field Officer & Hub Support',
+                        title: context.tr.officerHubSupport,
                         subtitle: '24/7 harvest inquiries & order assistance',
                         onTap: () {
                           Navigator.push(
@@ -1134,12 +1150,12 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       onTap: _logout,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.logout_rounded, size: 16, color: Color(0xFFDC2626)),
-                          SizedBox(width: 6),
+                        children: [
+                          const Icon(Icons.logout_rounded, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 6),
                           Text(
-                            'Switch Account or Log Out',
-                            style: TextStyle(
+                            context.tr.switchAccountOrLogout,
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFFDC2626),

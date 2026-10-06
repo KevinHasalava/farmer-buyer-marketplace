@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/cart_item_model.dart';
 import '../services/cart_state.dart';
 import 'checkout_delivery_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Premium "My Cart" screen matching the exact design aesthetic of the Checkout & Delivery UI.
 class MyCartScreen extends StatefulWidget {
@@ -109,6 +110,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
         ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
+          const SizedBox(width: 4),
           if (items.isNotEmpty)
             IconButton(
               icon: const Icon(

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/cart_state.dart';
 import '../../orders_chat/presentation/order_tracking_screen.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Pixel-perfect implementation of "Checkout & Delivery" screen matching the provided UI design.
 class CheckoutDeliveryScreen extends StatefulWidget {
@@ -511,6 +512,8 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
         ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(
               Icons.notifications_none_rounded,

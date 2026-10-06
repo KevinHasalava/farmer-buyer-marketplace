@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
+import '../../core/localization/app_strings.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signature Curved Green Header (matching Login & Welcome screens)
@@ -831,8 +832,11 @@ class AppLanguagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<AppSettings>();
-    final lang = settings.language ?? AppLanguage.english;
+    AppSettings? settings;
+    try {
+      settings = context.watch<AppSettings>();
+    } catch (_) {}
+    final lang = settings?.language ?? AppLanguage.english;
 
     return GestureDetector(
       onTap: () => showAppLanguageSheet(context),
@@ -899,7 +903,13 @@ Future<void> showAppLanguageSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (ctx) {
-      final settings = ctx.watch<AppSettings>();
+      AppSettings? settings;
+      try {
+        settings = ctx.watch<AppSettings>();
+      } catch (_) {}
+      final currentLang = settings?.language ?? AppLanguage.english;
+      final strings = settings?.strings ?? const AppStrings(AppLanguage.english);
+
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         decoration: const BoxDecoration(
@@ -921,7 +931,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             ),
             const SizedBox(height: 18),
             Text(
-              settings.strings.chooseLanguage,
+              strings.chooseLanguage,
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -930,7 +940,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             ),
             const SizedBox(height: 6),
             Text(
-              settings.strings.chooseLanguageSub,
+              strings.chooseLanguageSub,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12.5,
@@ -945,7 +955,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                   borderRadius: BorderRadius.circular(14),
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    settings.setLanguage(l);
+                    settings?.setLanguage(l);
                     Navigator.pop(ctx);
                   },
                   child: Container(
@@ -955,14 +965,14 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                     ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: settings.language == l
+                      color: currentLang == l
                           ? const Color(0xFFE8F8EF)
                           : const Color(0xFFF9FBFA),
                       border: Border.all(
-                        color: settings.language == l
+                        color: currentLang == l
                             ? AppColors.primaryGreen
                             : const Color(0xFFE5E7EB),
-                        width: settings.language == l ? 1.8 : 1,
+                        width: currentLang == l ? 1.8 : 1,
                       ),
                     ),
                     child: Row(
@@ -972,12 +982,12 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           height: 38,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: settings.language == l
+                            color: currentLang == l
                                 ? AppColors.primaryGreen
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: settings.language == l
+                              color: currentLang == l
                                   ? AppColors.primaryGreen
                                   : const Color(0xFFE5E7EB),
                             ),
@@ -987,7 +997,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: settings.language == l
+                              color: currentLang == l
                                   ? Colors.white
                                   : AppColors.primaryGreen,
                             ),
@@ -1015,7 +1025,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           ],
                         ),
                         const Spacer(),
-                        if (settings.language == l)
+                        if (currentLang == l)
                           const Icon(
                             Icons.check_circle_rounded,
                             color: AppColors.primaryGreen,

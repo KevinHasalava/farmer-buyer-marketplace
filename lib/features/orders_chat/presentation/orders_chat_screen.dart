@@ -11,6 +11,8 @@ import '../models/chat_model.dart';
 import '../models/order_model.dart';
 import 'chat_detail_screen.dart';
 import 'order_tracking_screen.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Clean, beautifully organized "Orders & Chat" screen aligned with the Farm2Home design system
 class OrdersChatScreen extends StatefulWidget {
@@ -394,9 +396,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 ),
                 onChanged: (val) => setState(() => _searchQuery = val.trim()),
               )
-            : const Text(
-                'Orders & Chat',
-                style: TextStyle(
+            : Text(
+                context.tr.ordersAndChat,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: _textDark,
@@ -405,6 +407,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close_rounded : Icons.search_rounded,
@@ -522,7 +525,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Orders',
+                                context.tr.orders,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 0 ? FontWeight.w700 : FontWeight.w600,
@@ -582,7 +585,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Chat',
+                                context.tr.chat,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w600,

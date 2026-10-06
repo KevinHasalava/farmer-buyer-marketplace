@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../services/driver_firestore_service.dart';
 import 'deliveries_screen.dart';
 import 'delivery_history_screen.dart';
@@ -244,6 +247,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         ],
       ),
       actions: [
+        const Center(child: AppLanguagePill()),
+        const SizedBox(width: 6),
         // Notification Bell Icon with Red Dot Indicator
         Padding(
           padding: const EdgeInsets.only(right: 12),
@@ -957,41 +962,46 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
 
               // Tile 4: Language / සිංහල / தமிழ்
-              _buildOperationTile(
-                icon: Icons.translate_rounded,
-                iconBg: const Color(0xFFECFDF5),
-                iconColor: const Color(0xFF10B981),
-                title: 'Language / භාෂාව / மொழி',
-                subtitle: '$_selectedLanguage Active',
-                subtitleColor: const Color(0xFF059669),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _selectedLanguage,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF047857),
-                        ),
+              Builder(
+                builder: (context) {
+                  final activeLang = context.watch<AppSettings>().language ?? AppLanguage.english;
+                  return _buildOperationTile(
+                    icon: Icons.translate_rounded,
+                    iconBg: const Color(0xFFECFDF5),
+                    iconColor: const Color(0xFF10B981),
+                    title: '${context.tr.language} / Language',
+                    subtitle: '${activeLang.nativeName} (${activeLang.englishName})',
+                    subtitleColor: const Color(0xFF059669),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF047857),
-                        size: 16,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            activeLang.glyph,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF047857),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFF047857),
+                            size: 16,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                onTap: () => _showLanguageSheet(context),
+                    ),
+                    onTap: () => showAppLanguageSheet(context),
+                  );
+                },
               ),
               const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
 
@@ -1232,7 +1242,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 0,
               icon: Icons.grid_view_rounded,
-              label: 'Dashboard',
+              label: context.tr.navHome,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -1248,7 +1258,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 1,
               icon: Icons.fact_check_outlined,
-              label: 'Deliveries',
+              label: context.tr.navDeliveries,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushReplacement(
@@ -1263,7 +1273,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 2,
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chat',
+              label: context.tr.navChat,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushReplacement(
@@ -1287,7 +1297,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 3,
               icon: Icons.person_rounded,
-              label: 'Profile',
+              label: context.tr.navProfile,
               isSelected: true,
               onTap: () {},
             ),
@@ -2433,6 +2443,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             return InkWell(
               onTap: () {
                 HapticFeedback.lightImpact();
+                final appLang = id == 'si'
+                    ? AppLanguage.sinhala
+                    : id == 'ta'
+                        ? AppLanguage.tamil
+                        : AppLanguage.english;
+                context.read<AppSettings>().setLanguage(appLang);
                 setSheetState(() {
                   _selectedLanguage = title;
                 });

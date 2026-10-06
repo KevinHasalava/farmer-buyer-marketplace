@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/services/cart_state.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
@@ -97,6 +99,9 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                   ),
                   Row(
                     children: [
+                      // Quick Language Switcher Pill
+                      const AppLanguagePill(),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () => Navigator.push(
                           context,
@@ -179,9 +184,9 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
 
 
                   // Big Title
-                  const Text(
-                    'All Produce Categories',
-                    style: TextStyle(
+                  Text(
+                    context.tr.allProduceCategories,
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: _textDark,

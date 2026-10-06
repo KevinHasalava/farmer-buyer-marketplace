@@ -9,6 +9,8 @@ import 'driver_profile_photo_data.dart';
 import 'driver_profile_screen.dart';
 import 'pickup_navigation_map_data.dart';
 import '../services/driver_firestore_service.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Pixel-perfect Driver Dashboard Screen matching the Farm2Home Driver reference design.
 class DriverDashboardScreen extends StatefulWidget {
@@ -277,6 +279,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
           const Spacer(),
 
+          // Language Switcher Pill
+          const AppLanguagePill(),
+          const SizedBox(width: 6),
+
           // Notification Bell with Badge
           InkWell(
             onTap: () {
@@ -444,7 +450,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      _isOnDuty ? '• On Duty' : '• Off Duty',
+                      _isOnDuty ? '• ${context.tr.online}' : '• ${context.tr.offline}',
                       style: GoogleFonts.poppins(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
@@ -461,7 +467,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
         // Main Greeting
         Text(
-          'Subha Udhasanak, ${_getDriverFirstName()}',
+          '${context.tr.hello}, ${_getDriverFirstName()}',
           style: GoogleFonts.poppins(
             fontSize: 21,
             fontWeight: FontWeight.w700,
@@ -1140,7 +1146,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
                     // Subtitle
                     Text(
-                      'Net Earnings',
+                      context.tr.todaysEarnings,
                       style: GoogleFonts.poppins(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -1494,22 +1500,22 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           _buildNavItem(
             index: 0,
             icon: Icons.local_shipping,
-            label: 'Dashboard',
+            label: context.tr.navHome,
           ),
           _buildNavItem(
             index: 1,
             icon: Icons.shopping_bag_outlined,
-            label: 'Deliveries',
+            label: context.tr.navDeliveries,
           ),
           _buildNavItem(
             index: 2,
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: context.tr.navChat,
           ),
           _buildNavItem(
             index: 3,
             icon: Icons.person_outline_rounded,
-            label: 'Profile',
+            label: context.tr.navProfile,
           ),
         ],
       ),

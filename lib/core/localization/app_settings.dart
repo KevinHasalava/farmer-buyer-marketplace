@@ -100,8 +100,21 @@ class AppSettings extends ChangeNotifier {
 /// Convenience accessors.
 extension AppSettingsX on BuildContext {
   /// Strings that rebuild the widget when the language changes.
-  AppStrings get tr => watch<AppSettings>().strings;
+  AppStrings get tr {
+    try {
+      return watch<AppSettings>().strings;
+    } catch (_) {
+      return const AppStrings(AppLanguage.english);
+    }
+  }
 
   /// Settings without listening (use inside callbacks).
-  AppSettings get settings => read<AppSettings>();
+  AppSettings get settings {
+    try {
+      return read<AppSettings>();
+    } catch (_) {
+      throw StateError('AppSettings provider not found in context.');
+    }
+  }
 }
+

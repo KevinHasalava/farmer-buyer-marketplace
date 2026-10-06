@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/presentation/checkout_delivery_screen.dart';
 import '../../cart/services/cart_state.dart';
@@ -97,7 +99,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'My Cart ($totalCount Items)',
+          '${context.tr.myCart} ($totalCount)',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -106,6 +108,8 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
         ),
         centerTitle: true,
         actions: [
+          const AppLanguagePill(),
+          const SizedBox(width: 4),
           if (items.isNotEmpty)
             TextButton(
               onPressed: () {
