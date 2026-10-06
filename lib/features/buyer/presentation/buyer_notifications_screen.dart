@@ -362,45 +362,6 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     ),
                   ),
 
-                  // 3 Dots popup menu
-                  PopupMenuButton<String>(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    icon: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _borderColor),
-                      ),
-                      child: const Icon(Icons.more_vert_rounded, color: _textDark, size: 19),
-                    ),
-                    onSelected: (val) {
-                      if (val == 'markAll') {
-                        _notifService.markAllAsRead();
-                      } else if (val == 'clear') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Notifications are managed in real-time.'),
-                            backgroundColor: _forestGreen,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-                    itemBuilder: (ctx) => [
-                      const PopupMenuItem(
-                        value: 'markAll',
-                        child: Text('Mark all as read'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'clear',
-                        child: Text('Notification settings'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-
                   // Profile Avatar
                   GestureDetector(
                     onTap: () => Navigator.push(
@@ -527,11 +488,6 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 children: [
                   ..._filteredItems.map((item) => _buildNotificationCard(item)),
-
-                  const SizedBox(height: 14),
-
-                  // Notification Preferences Card at bottom matching Screenshot 25
-                  _buildPreferencesCard(),
                 ],
               ),
             ),
@@ -1368,137 +1324,6 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.add, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 6. Notification Preferences Card at bottom matching Screenshot 25
-  Widget _buildPreferencesCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.tune_rounded, color: _forestGreen, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Notification Preferences',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Customize notification channels: Push notifications, SMS alerts for driver arrival.',
-                      style: TextStyle(fontSize: 10.5, color: _textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          const SizedBox(height: 12),
-
-          // Switch 1: Push Notifications
-          Row(
-            children: [
-              const Icon(Icons.notifications_active_outlined, size: 18, color: _textMuted),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Push Notifications',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
-                    ),
-                    Text(
-                      'Instant harvest & status updates',
-                      style: TextStyle(fontSize: 10, color: _textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: _notifService.pushNotificationsEnabled,
-                activeThumbColor: _forestGreen,
-                onChanged: (val) => _notifService.togglePushNotifications(val),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Switch 2: SMS Driver Gate Alert
-          Row(
-            children: [
-              const Icon(Icons.sms_outlined, size: 18, color: _textMuted),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'SMS Driver Gate Alert',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
-                    ),
-                    Text(
-                      'Free SMS when driver is 500m away',
-                      style: TextStyle(fontSize: 10, color: _textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: _notifService.smsDriverAlertEnabled,
-                activeThumbColor: _forestGreen,
-                onChanged: (val) => _notifService.toggleSmsDriverAlert(val),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // 100% Freshness Guarantee note
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFDCFCE7)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Icon(Icons.shield_outlined, size: 16, color: _forestGreen),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '100% Freshness Guarantee: If fresh mountain produce arrives damaged, alert us within 4 hours for an instant replacement.',
-                    style: TextStyle(fontSize: 10.5, color: Color(0xFF166534), height: 1.35),
                   ),
                 ),
               ],

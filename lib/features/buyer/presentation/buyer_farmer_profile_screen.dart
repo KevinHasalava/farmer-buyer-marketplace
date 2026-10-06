@@ -6,6 +6,7 @@ import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_product_detail_screen.dart';
 
@@ -73,7 +74,13 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final farmer = widget.farmer;
+    final realFarmer = FarmerProfileManager.instance.profile.toBuyerFarmer();
+    final farmer = (FarmerProfileManager.instance.profile.name.isNotEmpty &&
+            (widget.farmer.name == BuyerFarmer.defaultFarmer.name ||
+                widget.farmer.name == BuyerMockData.primaryFarmer.name ||
+                widget.farmer.name == realFarmer.name))
+        ? realFarmer
+        : widget.farmer;
     final products = BuyerMockData.getFarmerProducts(farmer.name);
     final cartCount = _cartState.totalItemCount;
 

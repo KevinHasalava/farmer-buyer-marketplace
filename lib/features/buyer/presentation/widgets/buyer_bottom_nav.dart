@@ -9,11 +9,18 @@ class BuyerBottomNav extends StatelessWidget {
   const BuyerBottomNav({
     super.key,
     required this.selectedIndex,
+    this.onTabSelected,
   });
 
   final int selectedIndex;
+  final ValueChanged<int>? onTabSelected;
 
   void _onItemTapped(BuildContext context, int index) {
+    if (onTabSelected != null) {
+      onTabSelected!(index);
+      return;
+    }
+
     if (index == selectedIndex) return;
 
     switch (index) {

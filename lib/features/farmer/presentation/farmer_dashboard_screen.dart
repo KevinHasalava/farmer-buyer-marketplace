@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
+import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_products_screen.dart';
 
@@ -21,7 +22,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
-  static const _farmer = FarmerData.defaultFarmer;
+  final FarmerProfileManager _profileManager = FarmerProfileManager.instance;
+  FarmerData get _farmer => _profileManager.profile.toFarmerData();
 
   static const _recentOrders = [
     (
@@ -47,6 +49,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   @override
   void initState() {
     super.initState();
+    _profileManager.addListener(_onProfileChanged);
+    _profileManager.loadProfile();
+
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -56,8 +61,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
   @override
   void dispose() {
+    _profileManager.removeListener(_onProfileChanged);
     _fadeController.dispose();
     super.dispose();
+  }
+
+  void _onProfileChanged() {
+    if (mounted) setState(() {});
   }
 
   String _getGreeting() {
@@ -357,11 +367,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
   // ── Greeting Header ─────────────────────────────────────────────────────────
   Widget _buildGreeting() {
+    final displayName = _farmer.name.split(' ').first;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${_getGreeting()}, Sunil 🌾',
+          '${_getGreeting()}, $displayName 🌾',
           style: GoogleFonts.poppins(
             fontSize: 23,
             fontWeight: FontWeight.w800,
@@ -388,7 +399,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+          builder: (_) => FarmerProfileScreen(farmer: _farmer),
         ),
       ),
       child: Container(
@@ -412,7 +423,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Sunil Perera',
+                    _farmer.name,
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -421,7 +432,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'Small-Scale Farmer',
+                    _farmer.role,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
@@ -438,7 +449,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Hambantota',
+                        _farmer.location,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -952,7 +963,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const FarmerProfileScreen(farmer: _farmer),
+                  builder: (_) => FarmerProfileScreen(farmer: _farmer),
                 ),
               );
             },
