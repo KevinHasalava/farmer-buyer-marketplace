@@ -598,7 +598,7 @@ class AppSelectableCard extends StatelessWidget {
                         // ── Glorious Animated Agro Tick (Checkmark Seal) ────
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeOutBack,
+                          curve: Curves.easeOutCubic,
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
@@ -633,20 +633,25 @@ class AppSelectableCard extends StatelessWidget {
                                 : null,
                           ),
                           child: Center(
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    size: 19,
-                                    color: Colors.white,
-                                  )
-                                : Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Color(0xFFCBD5E1),
+                            child: AnimatedScale(
+                              scale: isSelected ? 1.0 : 0.75,
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeOutBack,
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check_rounded,
+                                      size: 19,
+                                      color: Colors.white,
+                                    )
+                                  : Container(
+                                      width: 7,
+                                      height: 7,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(0xFFCBD5E1),
+                                      ),
                                     ),
-                                  ),
+                            ),
                           ),
                         ),
                       ],
