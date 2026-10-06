@@ -9,6 +9,7 @@ import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
+import 'buyer_notifications_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 
 /// Buyer Profile Screen — matching Farm2Home "Buyer Profile - Consumer Hub" design.
@@ -387,15 +388,21 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                     ),
 
                     // Notification Bell Button
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _borderColor),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BuyerNotificationsScreen()),
                       ),
-                      child: const Icon(Icons.notifications_none_rounded, color: _textDark, size: 20),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: const Icon(Icons.notifications_none_rounded, color: _textDark, size: 20),
+                      ),
                     ),
 
                   ],

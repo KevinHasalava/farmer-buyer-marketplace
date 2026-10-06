@@ -10,9 +10,11 @@ import 'buyer_search_screen.dart';
 import 'buyer_product_list_screen.dart';
 import 'buyer_product_detail_screen.dart';
 import 'buyer_profile_screen.dart';
+import 'buyer_notifications_screen.dart';
 import 'buyer_cart_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 import '../services/buyer_profile_manager.dart';
+import '../services/buyer_notification_service.dart';
 
 /// 9. Buyer Home Screen — matching Screenshot 9
 class BuyerHomeScreen extends StatefulWidget {
@@ -25,6 +27,8 @@ class BuyerHomeScreen extends StatefulWidget {
 class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   final MarketplaceState _cartState = MarketplaceState.instance;
   final BuyerProfileManager _profileManager = BuyerProfileManager.instance;
+  final BuyerNotificationService _notifService =
+      BuyerNotificationService.instance;
   late String _selectedCity;
 
   static const Color _forestGreen = Color(0xFF1B5E38);
@@ -38,6 +42,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _selectedCity = _profileManager.profile.topBarLocationDisplay;
     _cartState.addListener(_onCartChanged);
     _profileManager.addListener(_onProfileChanged);
+    _notifService.addListener(_onNotifChanged);
     _profileManager.loadProfile();
   }
 
@@ -45,10 +50,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
   void dispose() {
     _cartState.removeListener(_onCartChanged);
     _profileManager.removeListener(_onProfileChanged);
+    _notifService.removeListener(_onNotifChanged);
     super.dispose();
   }
 
   void _onCartChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onNotifChanged() {
     if (mounted) setState(() {});
   }
 
@@ -261,22 +271,47 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
 
 
 
-                    // Notification Bell Button
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                    // Notification Bell Button with live badge
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BuyerNotificationsScreen()),
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.notifications_none_rounded, size: 20, color: _textDark),
                           ),
+                          if (_notifService.unreadCount > 0)
+                            Positioned(
+                              right: 1,
+                              top: 1,
+                              child: Container(
+                                width: 9,
+                                height: 9,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEA580C),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                      child: const Icon(Icons.notifications_none_rounded, size: 20, color: _textDark),
                     ),
                     const SizedBox(width: 8),
 

@@ -41,6 +41,7 @@ abstract final class AppRoutes {
   static const String cart            = '/cart';
   static const String checkout        = '/checkout';
   static const String buyerProfile    = '/buyer-profile';
+  static const String buyerNotifications = '/buyer-notifications';
 
   /// Role-based home dashboard.
   static String homeFor(UserRole role) => switch (role) {
@@ -163,6 +164,11 @@ final appRouter = GoRouter(
       path: AppRoutes.buyerProfile,
       name: 'buyerProfile',
       builder: (context, state) => const BuyerProfileScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.buyerNotifications,
+      name: 'buyerNotifications',
+      builder: (context, state) => const BuyerNotificationsScreen(),
     ),
   ],
 );
