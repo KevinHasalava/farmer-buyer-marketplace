@@ -198,6 +198,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
         imageUrl: prod.imageUrl,
       ),
     );
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -213,9 +214,19 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
           ],
         ),
         backgroundColor: _forestGreen,
-        duration: const Duration(milliseconds: 1600),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }

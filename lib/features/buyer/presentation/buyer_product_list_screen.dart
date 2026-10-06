@@ -85,6 +85,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
       ),
     );
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -97,9 +98,19 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
           ],
         ),
         backgroundColor: _forestGreen,
-        duration: const Duration(milliseconds: 1400),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../../cart/services/cart_state.dart';
 import '../models/buyer_notification_model.dart';
 import '../services/buyer_notification_service.dart';
 import '../services/buyer_profile_manager.dart';
+import 'buyer_cart_screen.dart';
 import 'buyer_profile_screen.dart';
 
 /// 25. Buyer Notifications Screen — matching Screenshot 25
@@ -265,11 +266,24 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
             'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=800&auto=format&fit=crop&q=80',
       ),
     );
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Added Fresh Mountain Strawberries (Rs. 950) to cart!'),
+      SnackBar(
+        content: const Text('Added Fresh Mountain Strawberries (Rs. 950) to cart!'),
         backgroundColor: _forestGreen,
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }
@@ -289,11 +303,24 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
             'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&auto=format&fit=crop&q=80',
       ),
     );
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Added Grade-A Cooking Tomatoes (Rs. 260/kg) to cart!'),
+      SnackBar(
+        content: const Text('Added Grade-A Cooking Tomatoes (Rs. 260/kg) to cart!'),
         backgroundColor: _forestGreen,
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }

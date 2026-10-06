@@ -62,11 +62,24 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
       ),
     );
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Added $_quantity ${widget.product.unit} of ${widget.product.name} to cart!'),
         backgroundColor: _forestGreen,
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }

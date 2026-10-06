@@ -62,12 +62,24 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
       ),
     );
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Added ${prod.name} from ${widget.farmer.name} to cart!'),
         backgroundColor: _forestGreen,
-        duration: const Duration(milliseconds: 1400),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }

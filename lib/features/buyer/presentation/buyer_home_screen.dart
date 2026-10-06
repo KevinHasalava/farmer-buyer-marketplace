@@ -85,12 +85,24 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
       ),
     );
 
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Added ${prod.name} to cart!'),
         backgroundColor: _forestGreen,
-        duration: const Duration(milliseconds: 1400),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'View Cart',
+          textColor: const Color(0xFFFDE68A),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BuyerCartScreen()),
+            );
+          },
+        ),
       ),
     );
   }
@@ -234,38 +246,54 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     const SizedBox(width: 10),
 
-                    // Deliver to location
+                    // Welcome Name & Deliver to location
                     Expanded(
-                      child: GestureDetector(
-                        onTap: _showLocationPicker,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: const [
-                                Text(
-                                  'Deliver to',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: _textMuted,
-                                    fontWeight: FontWeight.w500,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome, ${profile.name.trim().isNotEmpty ? profile.name.trim().split(' ').first : "Buyer"} 👋',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          GestureDetector(
+                            onTap: _showLocationPicker,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 13,
+                                  color: _forestGreen,
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    _selectedCity,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: _textMuted,
+                                    ),
                                   ),
                                 ),
-                                Icon(Icons.keyboard_arrow_down_rounded, size: 14, color: _textMuted),
+                                const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 14,
+                                  color: _textMuted,
+                                ),
                               ],
                             ),
-                            Text(
-                              _selectedCity,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: _textDark,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
 
