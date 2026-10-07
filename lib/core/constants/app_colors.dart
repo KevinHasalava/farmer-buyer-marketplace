@@ -46,4 +46,20 @@ abstract final class AppColors {
   // ── Dark theme surfaces ───────────────────────────────────────────────────
   static const Color darkSurface    = Color(0xFF0F1F18);
   static const Color darkCardSurface = Color(0xFF1A2E23);
+
+  // ── Premium (onboarding / auth flow) ──────────────────────────────────────
+  static const Color forestDeep   = Color(0xFF03140D);
+  static const Color forest       = Color(0xFF072A1C);
+  static const Color forestLight  = Color(0xFF0C3B27);
+  static const Color emeraldGlow  = Color(0xFF34D399);
+  static const Color gold         = Color(0xFFF5B942);
+  static const Color goldDeep     = Color(0xFFE08E0B);
+
+  static const List<Color> goldGradient    = [Color(0xFFFFD27A), Color(0xFFF5A623)];
+  static const List<Color> emeraldGradient = [Color(0xFF34D399), Color(0xFF059669)];
+
+  // Role accents
+  static const List<Color> buyerGradient  = [Color(0xFFFFB547), Color(0xFFF97316)];
+  static const List<Color> farmerGradient = [Color(0xFF34D399), Color(0xFF059669)];
+  static const List<Color> driverGradient = [Color(0xFF60A5FA), Color(0xFF6366F1)];
 }

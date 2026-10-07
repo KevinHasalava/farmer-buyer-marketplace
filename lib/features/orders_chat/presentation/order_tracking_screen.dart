@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/order_model.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Live Order Tracking screen showing farm-to-table progress
 class OrderTrackingScreen extends StatelessWidget {
@@ -32,9 +34,9 @@ class OrderTrackingScreen extends StatelessWidget {
         ),
         title: Column(
           children: [
-            const Text(
-              'Track Order',
-              style: TextStyle(
+            Text(
+              context.tr.trackOrder,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -51,6 +53,10 @@ class OrderTrackingScreen extends StatelessWidget {
           ],
         ),
         centerTitle: true,
+        actions: const [
+          Center(child: AppLanguagePill()),
+          SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -90,13 +96,13 @@ class OrderTrackingScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
-                          children: const [
-                            Icon(Icons.local_shipping_rounded,
+                          children: [
+                            const Icon(Icons.local_shipping_rounded,
                                 color: Colors.white, size: 14),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Text(
-                              'In Transit',
-                              style: TextStyle(
+                              order.status.localizedLabel(context),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -105,9 +111,9 @@ class OrderTrackingScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Text(
-                        'Est. Arrival: 11:30 AM',
-                        style: TextStyle(
+                      Text(
+                        order.preferredDateTime,
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -116,9 +122,9 @@ class OrderTrackingScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Fresh Harvest On The Way! 🚚',
-                    style: TextStyle(
+                  Text(
+                    context.tr.freshHarvestOnTheWay,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -126,7 +132,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Picked directly from Sunil Perera Farm, Hambantota',
+                    context.tr.pickedDirectly,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12,
@@ -169,9 +175,9 @@ class OrderTrackingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'TRACKING TIMELINE',
-                    style: TextStyle(
+                  Text(
+                    context.tr.trackingTimeline,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF8A9BA8),
@@ -283,9 +289,9 @@ class OrderTrackingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'DESTINATION & CONTACT',
-                    style: TextStyle(
+                  Text(
+                    context.tr.destinationAndContact,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF8A9BA8),

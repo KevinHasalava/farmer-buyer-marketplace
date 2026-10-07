@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
@@ -146,6 +147,32 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
     super.dispose();
   }
 
+  String _localizedCategory(BuildContext context, String cat) {
+    if (cat == 'All') return context.tr.seeAll;
+    if (cat == 'Vegetables') return context.tr.lang == AppLanguage.sinhala ? 'එළවළු' : (context.tr.lang == AppLanguage.tamil ? 'காய்கறிகள்' : cat);
+    if (cat == 'Fruits') return context.tr.lang == AppLanguage.sinhala ? 'පලතුරු' : (context.tr.lang == AppLanguage.tamil ? 'பழங்கள்' : cat);
+    if (cat == 'Grains') return context.tr.lang == AppLanguage.sinhala ? 'ධාන්‍ය' : (context.tr.lang == AppLanguage.tamil ? 'தானியங்கள்' : cat);
+    if (cat == 'Spices') return context.tr.lang == AppLanguage.sinhala ? 'කුළුබඩු' : (context.tr.lang == AppLanguage.tamil ? 'மசாலா' : cat);
+    return cat;
+  }
+
+  String _localizedLocation(BuildContext context, String loc) {
+    if (loc == 'Near me') return context.tr.nearMe;
+    return context.tr.localizedRegion(loc);
+  }
+
+  String _localizedProductName(BuildContext context, String name) {
+    final lang = context.currentLanguage;
+    if (lang == AppLanguage.english) return name;
+    final n = name.toLowerCase();
+    if (n.contains('tomato')) return lang == AppLanguage.sinhala ? 'තක්කාලි' : 'தக்காளி';
+    if (n.contains('carrot')) return lang == AppLanguage.sinhala ? 'කැරට්' : 'கேரட்';
+    if (n.contains('potato')) return lang == AppLanguage.sinhala ? 'අර්තාපල්' : 'உருளைக்கிழங்கு';
+    if (n.contains('bell pepper')) return lang == AppLanguage.sinhala ? 'මාළු මිරිස්' : 'குடைமிளகாய்';
+    if (n.contains('chili')) return lang == AppLanguage.sinhala ? 'අමු මිරිස්' : 'பச்சை மிளகாய்';
+    return name;
+  }
+
   void _applyFilters() {
     final query = _searchController.text.trim().toLowerCase();
     final selectedCategory = _categories[_selectedCategoryIndex];
@@ -258,7 +285,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                 controller: _searchController,
                 style: const TextStyle(fontSize: 14, color: AppColors.textDark),
                 decoration: InputDecoration(
-                  hintText: 'Search products...',
+                  hintText: context.tr.searchProductsHint,
                   hintStyle: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
@@ -325,7 +352,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                           borderRadius: BorderRadius.circular(99),
                         ),
                         child: Text(
-                          cat,
+                          _localizedCategory(context, cat),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: isSelected
@@ -425,7 +452,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            loc,
+                            _localizedLocation(context, loc),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -451,7 +478,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
             // ── Toggles: Only Fresh & Only Organic ───────────────────────
             _ToggleRow(
               icon: Icons.check_circle_outline_rounded,
-              title: 'Only Fresh',
+              title: context.tr.onlyFresh,
               value: _onlyFresh,
               onChanged: (val) {
                 setState(() => _onlyFresh = val);
@@ -461,7 +488,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
             const SizedBox(height: 12),
             _ToggleRow(
               icon: Icons.check_circle_outline_rounded,
-              title: 'Only Organic',
+              title: context.tr.onlyOrganic,
               value: _onlyOrganic,
               onChanged: (val) {
                 setState(() => _onlyOrganic = val);
@@ -629,7 +656,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  p.name,
+                                  _localizedProductName(context, p.name),
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,

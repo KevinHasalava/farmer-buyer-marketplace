@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/localization/app_settings.dart';
 import '../services/cart_state.dart';
 import '../../orders_chat/presentation/order_tracking_screen.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Pixel-perfect implementation of "Checkout & Delivery" screen matching the provided UI design.
 class CheckoutDeliveryScreen extends StatefulWidget {
@@ -73,9 +75,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
-                'Edit Delivery Address',
-                style: TextStyle(
+              Text(
+                context.tr.editDeliveryAddress,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: _textDark,
@@ -89,7 +91,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
-                  hintText: 'Enter complete street address, city',
+                  hintText: context.tr.enterAddressHint,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -123,9 +125,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     }
                     Navigator.pop(ctx);
                   },
-                  child: const Text(
-                    'Save Address',
-                    style: TextStyle(
+                  child: Text(
+                    context.tr.saveAddress,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
@@ -171,9 +173,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
-                'Edit Contact Number',
-                style: TextStyle(
+              Text(
+                context.tr.editContactNumber,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: _textDark,
@@ -221,9 +223,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     }
                     Navigator.pop(ctx);
                   },
-                  child: const Text(
-                    'Save Contact Number',
-                    style: TextStyle(
+                  child: Text(
+                    context.tr.saveContactNumber,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
@@ -300,9 +302,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'Select Preferred Time Slot',
-              style: TextStyle(
+            Text(
+              context.tr.selectTimeSlot,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -386,9 +388,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'Order Placed Successfully!',
-              style: TextStyle(
+            Text(
+              context.tr.orderPlacedSuccess,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: _textDark,
@@ -397,7 +399,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Order ID: #${order.id}',
+              '${context.tr.orderId}: #${order.id}',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -406,7 +408,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Your fresh farm produce is scheduled for delivery on ${order.preferredDateTime}. You can track the status live.',
+              context.tr.orderScheduledNotice(order.preferredDateTime),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
@@ -436,9 +438,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                         ),
                       );
                     },
-                    child: const Text(
-                      'View Orders',
-                      style: TextStyle(
+                    child: Text(
+                      context.tr.viewOrders,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
@@ -465,9 +467,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                         ),
                       );
                     },
-                    child: const Text(
-                      'Track Order',
-                      style: TextStyle(
+                    child: Text(
+                      context.tr.trackOrder,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
@@ -500,9 +502,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
           ),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Text(
-          'Checkout & Delivery',
-          style: TextStyle(
+        title: Text(
+          context.tr.checkoutDelivery,
+          style: const TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.w700,
             color: _textDark,
@@ -511,6 +513,8 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
         ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(
               Icons.notifications_none_rounded,
@@ -533,7 +537,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeaderRow(
-                    title: 'DELIVERY ADDRESS',
+                    title: context.tr.deliveryAddress,
                     onEdit: _showEditAddressModal,
                   ),
                   const SizedBox(height: 12),
@@ -578,7 +582,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeaderRow(
-                    title: 'CONTACT NUMBER',
+                    title: context.tr.contactNumber,
                     onEdit: _showEditContactModal,
                   ),
                   const SizedBox(height: 12),
@@ -618,10 +622,10 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('DELIVERY METHOD'),
+                  _buildSectionTitle(context.tr.deliveryMethod),
                   const SizedBox(height: 8),
                   _buildRadioOption(
-                    label: 'Home Delivery',
+                    label: context.tr.homeDelivery,
                     selected: _selectedDeliveryMethod == 'Home Delivery',
                     onTap: () {
                       setState(() => _selectedDeliveryMethod = 'Home Delivery');
@@ -629,7 +633,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     },
                   ),
                   _buildRadioOption(
-                    label: 'Self Pickup',
+                    label: context.tr.selfPickup,
                     selected: _selectedDeliveryMethod == 'Self Pickup',
                     onTap: () {
                       setState(() => _selectedDeliveryMethod = 'Self Pickup');
@@ -637,7 +641,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     },
                   ),
                   _buildRadioOption(
-                    label: 'Scheduled Delivery',
+                    label: context.tr.scheduledDelivery,
                     selected: _selectedDeliveryMethod == 'Scheduled Delivery',
                     onTap: () {
                       setState(() => _selectedDeliveryMethod = 'Scheduled Delivery');
@@ -655,7 +659,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('PREFERRED DATE & TIME'),
+                  _buildSectionTitle(context.tr.preferredDateTime),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -753,10 +757,10 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('PAYMENT METHOD'),
+                  _buildSectionTitle(context.tr.paymentMethod),
                   const SizedBox(height: 8),
                   _buildRadioOption(
-                    label: 'Cash on Delivery',
+                    label: context.tr.cashOnDelivery,
                     selected: _selectedPaymentMethod == 'Cash on Delivery',
                     onTap: () {
                       setState(() => _selectedPaymentMethod = 'Cash on Delivery');
@@ -764,7 +768,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     },
                   ),
                   _buildRadioOption(
-                    label: 'Card',
+                    label: context.tr.cardPayment,
                     selected: _selectedPaymentMethod == 'Card',
                     onTap: () {
                       setState(() => _selectedPaymentMethod = 'Card');
@@ -772,7 +776,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     },
                   ),
                   _buildRadioOption(
-                    label: 'Mobile Wallet',
+                    label: context.tr.mobileWallet,
                     selected: _selectedPaymentMethod == 'Mobile Wallet',
                     onTap: () {
                       setState(() => _selectedPaymentMethod = 'Mobile Wallet');
@@ -780,7 +784,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                     },
                   ),
                   _buildRadioOption(
-                    label: 'Bank Transfer',
+                    label: context.tr.bankTransfer,
                     selected: _selectedPaymentMethod == 'Bank Transfer',
                     onTap: () {
                       setState(() => _selectedPaymentMethod = 'Bank Transfer');
@@ -822,16 +826,16 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
-                    'Order Total',
-                    style: TextStyle(
+                    context.tr.orderTotal,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF64748B),
                     ),
                   ),
-                  Text(
+                  const Text(
                     totalDisplay,
                     style: TextStyle(
                       fontSize: 20,
@@ -864,9 +868,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Place Order',
-                          style: TextStyle(
+                      : Text(
+                          context.tr.placeOrder,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -936,11 +940,11 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
         _buildSectionTitle(title),
         GestureDetector(
           onTap: onEdit,
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Text(
-              'Edit',
-              style: TextStyle(
+              context.tr.edit,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: _forestGreen,

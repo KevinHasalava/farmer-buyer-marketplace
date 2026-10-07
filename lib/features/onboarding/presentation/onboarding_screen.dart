@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../../core/constants/constants.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
-/// Onboarding slide data model.
-class _OnboardingPage {
-  const _OnboardingPage({
+class _OnboardSlideData {
+  const _OnboardSlideData({
+    required this.tag,
     required this.title,
     required this.subtitle,
-    required this.icon,
-    required this.bgColor,
+    required this.assetPath,
+    required this.networkFallbackUrl,
+    required this.buttonText,
   });
 
+  final String tag;
   final String title;
   final String subtitle;
-  final IconData icon;
-  final Color bgColor;
+  final String assetPath;
+  final String networkFallbackUrl;
+  final String buttonText;
 }
 
-/// Multi-page onboarding carousel.
+/// Fullscreen premium Onboarding screens matching the custom design
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -31,193 +39,405 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-  static const _pages = [
-    _OnboardingPage(
-      title: 'Grown this morning.\nYours by evening.',
-      subtitle:
-          'Shop the real farmer. Pay the farmer, not the middlemen.',
-      icon: Icons.agriculture_rounded,
-      bgColor: AppColors.darkGreen,
-    ),
-    _OnboardingPage(
-      title: 'From soil to doorstep,\novernight.',
-      subtitle: 'Order by 6pm and it\'s at your door before breakfast.',
-      icon: Icons.local_shipping_rounded,
-      bgColor: AppColors.primaryGreen,
-    ),
-  ];
-
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+  Future<void> _finish() async {
+    await context.read<AppSettings>().completeOnboarding();
+    if (mounted) context.go(AppRoutes.roleSelection);
+  }
+
+  void _onNextTap(int totalSlides) {
+    HapticFeedback.lightImpact();
+    if (_currentPage < totalSlides - 1) {
       _controller.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOutCubic,
       );
     } else {
-      context.go(AppRoutes.login);
+      _finish();
     }
   }
 
+  void _onBackTap() {
+    HapticFeedback.selectionClick();
+    if (_currentPage > 0) {
+      _controller.previousPage(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
+      );
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  List<_OnboardSlideData> _getSlides(AppStrings tr) => [
+        _OnboardSlideData(
+          tag: tr.onb1Tag,
+          title: tr.onb1Title,
+          subtitle: tr.onb1Body,
+          assetPath: 'assets/images/onboarding_1.jpg',
+          networkFallbackUrl:
+              'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=1200&auto=format&fit=crop&q=85',
+          buttonText: tr.continueBtn,
+        ),
+        _OnboardSlideData(
+          tag: tr.onb2Tag,
+          title: tr.onb2Title,
+          subtitle: tr.onb2Body,
+          assetPath: 'assets/images/onboarding_2.jpg',
+          networkFallbackUrl:
+              'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=85',
+          buttonText: tr.getStarted,
+        ),
+      ];
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isLast = _currentPage == _pages.length - 1;
+    final tr = context.tr;
+    final slides = _getSlides(tr);
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // ── Page Content ────────────────────────────────────────────────
-          PageView.builder(
-            controller: _controller,
-            itemCount: _pages.length,
-            onPageChanged: (index) => setState(() => _currentPage = index),
-            itemBuilder: (context, index) {
-              final page = _pages[index];
-              return _OnboardingPageView(page: page);
-            },
-          ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF05170C),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ── Background Carousel ─────────────────────────────────────────
+            PageView.builder(
+              controller: _controller,
+              itemCount: slides.length,
+              onPageChanged: (i) => setState(() => _currentPage = i),
+              itemBuilder: (context, index) {
+                final slide = slides[index];
+                return _buildBackground(slide);
+              },
+            ),
 
-          // ── Skip Button ─────────────────────────────────────────────────
-          Positioned(
-            top: MediaQuery.of(context).padding.top + AppDimensions.spaceSM,
-            right: AppDimensions.spaceMD,
-            child: TextButton(
-              onPressed: () => context.go(AppRoutes.login),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.surfaceWhite,
-              ),
-              child: Text(
-                'Skip',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: AppColors.surfaceWhite,
+            // ── Dark Lush Agricultural Gradient Overlay ─────────────────────
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.20, 0.48, 0.76, 1.0],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.40),
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.25),
+                      const Color(0xD9062313), // Deep natural forest green
+                      const Color(0xFA04170C),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // ── Bottom Controls ─────────────────────────────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.spaceLG),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Dots indicator
-                    Row(
-                      children: List.generate(
-                        _pages.length,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(
-                              right: AppDimensions.spaceXXS),
-                          width: i == _currentPage ? 24 : 8,
-                          height: 8,
+            // ── Top Navigation Bar ──────────────────────────────────────────
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Left Item: Back arrow on slide 1, or Language switcher on slide 2
+                      if (_currentPage == 0)
+                        _buildBackButton()
+                      else
+                        _buildLanguageTogglePill(),
+
+                      // Right Item: Translucent "Skip" pill
+                      _buildSkipButton(tr.skip),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Bottom Content: Tag, Title, Subtitle, Indicator, Button ─────
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tag with glowing mint dot
+                      _buildTagPill(slides[_currentPage].tag),
+
+                      const SizedBox(height: 14),
+
+                      // Headline
+                      Text(
+                        slides[_currentPage].title,
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
+                          fontSize: 29,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1.22,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Subtitle
+                      Text(
+                        slides[_currentPage].subtitle,
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.45,
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
+
+                      // Animated Page Indicators (matching reference mockup)
+                      _buildIndicators(slides.length),
+
+                      const SizedBox(height: 24),
+
+                      // Action Button (Continue / Get Started)
+                      _buildActionButton(
+                        label: slides[_currentPage].buttonText,
+                        onPressed: () => _onNextTap(slides.length),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Home indicator line
+                      Center(
+                        child: Container(
+                          width: 140,
+                          height: 4.5,
                           decoration: BoxDecoration(
-                            color: i == _currentPage
-                                ? AppColors.surfaceWhite
-                                : AppColors.surfaceWhite.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusFull),
+                            color: Colors.white.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: AppDimensions.spaceLG),
-
-                    // Next / Get Started button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _nextPage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.surfaceWhite,
-                          foregroundColor: AppColors.darkGreen,
-                        ),
-                        child: Text(isLast ? 'Get Started' : 'Continue'),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
 
-class _OnboardingPageView extends StatelessWidget {
-  const _OnboardingPageView({required this.page});
-  final _OnboardingPage page;
+  // ── Background Image Widget (Asset with Network & Gradient Fallback) ──────
+  Widget _buildBackground(_OnboardSlideData slide) {
+    return Image.asset(
+      slide.assetPath,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (_, __, ___) => Image.network(
+        slide.networkFallbackUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0F3B25), Color(0xFF061E11)],
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.agriculture_rounded,
+              size: 80,
+              color: Colors.white24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  // ── Back Button (Slide 1) ────────────────────────────────────────────────
+  Widget _buildBackButton() {
+    return GestureDetector(
+      onTap: _onBackTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.20),
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.chevron_left_rounded,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
+    );
+  }
 
+  // ── Language Toggle Pill (Slide 2) ──────────────────────────
+  Widget _buildLanguageTogglePill() {
+    return const AppLanguagePill(isDarkHeader: true);
+  }
+
+  // ── Frosted "Skip" Pill ──────────────────────────────────────────────────
+  Widget _buildSkipButton(String label) {
+    return GestureDetector(
+      onTap: _finish,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.20),
+            width: 0.8,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tag Badge with mint dot ──────────────────────────────────────────────
+  Widget _buildTagPill(String tag) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF6EE7B7), // Mint green dot
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          tag.toUpperCase(),
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
+            color: const Color(0xFF6EE7B7),
+            fontSize: 12,
+            letterSpacing: 1.3,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Left-Aligned Animated Page Indicators ────────────────────────────────
+  Widget _buildIndicators(int total) {
+    return Row(
+      children: List.generate(total, (i) {
+        final isActive = i == _currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(right: 6),
+          width: isActive ? 26 : 6,
+          height: 4.5,
+          decoration: BoxDecoration(
+            color: isActive
+                ? const Color(0xFF6EE7B7)
+                : Colors.white.withValues(alpha: 0.40),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+
+  // ── Full-Width White Pill Action Button with Circular Arrow ──────────────
+  Widget _buildActionButton({
+    required String label,
+    required VoidCallback onPressed,
+  }) {
     return Container(
-      color: page.bgColor,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(page.icon, size: 120, color: AppColors.surfaceWhite.withValues(alpha: 0.2)),
-          const SizedBox(height: AppDimensions.spaceXL),
-          Padding(
-            padding: AppDimensions.screenPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      width: double.infinity,
+      height: 58,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(30),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 28, right: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.spaceSM,
-                    vertical: AppDimensions.spaceXXS,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceWhite.withValues(alpha: 0.15),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusFull),
-                  ),
-                  child: Text(
-                    '• FARM DIRECT',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.surfaceWhite,
-                      letterSpacing: AppTextStyles.trackingWidest,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spaceMD),
                 Text(
-                  page.title,
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: AppColors.surfaceWhite,
+                  label,
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.w700,
-                    height: AppTextStyles.lineHeightTight,
+                    color: const Color(0xFF0F2B1D),
+                    letterSpacing: -0.2,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.spaceMD),
-                Text(
-                  page.subtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.surfaceWhite.withValues(alpha: 0.8),
-                    height: AppTextStyles.lineHeightLoose,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF0D2E1C), // Deep forest green circle
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 21,
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import 'core/localization/app_settings.dart';
 import 'core/routes/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
@@ -8,8 +10,29 @@ import 'core/theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ── Supabase init (loads .env → initialises client) ──────────────────
-  await SupabaseConfig.initialize();
+  final AppSettings settings;
+  try {
+    // ── Supabase single-database initialization ───────────────────────
+    await SupabaseConfig.initialize();
+
+    // Persisted language / onboarding / role
+    settings = await AppSettings.load();
+  } catch (e, st) {
+    debugPrint('Startup failed: $e\n$st');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: SelectableText('Startup failed:\n\n$e\n\n$st'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    return;
+  }
 
   // Lock to portrait orientation for a consistent mobile experience.
   await SystemChrome.setPreferredOrientations([
@@ -25,7 +48,12 @@ Future<void> main() async {
     ),
   );
 
-  runApp(const FarmTrustApp());
+  runApp(
+    ChangeNotifierProvider<AppSettings>.value(
+      value: settings,
+      child: const FarmTrustApp(),
+    ),
+  );
 }
 
 /// Root widget for the Farm Trust marketplace application.
@@ -34,16 +62,20 @@ class FarmTrustApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild the whole app when the language changes.
+    final settings = context.watch<AppSettings>();
+    final currentLang = settings.language ?? AppLanguage.english;
+
     return MaterialApp.router(
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
 
-      // ── Theme ──────────────────────────────────────────────────────────
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      // ── Theme (Dynamic Typography for Sinhala, Tamil, English) ───────
+      theme: AppTheme.lightTheme(currentLang),
+      darkTheme: AppTheme.darkTheme(currentLang),
       themeMode: ThemeMode.system,
 
-      // ── Navigation ─────────────────────────────────────────────────────
+      // ── Navigation ───────────────────────────────────────────────────
       routerConfig: appRouter,
     );
   }
