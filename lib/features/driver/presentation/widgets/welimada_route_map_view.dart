@@ -58,7 +58,7 @@ class WelimadaRouteMapView extends StatelessWidget {
                     const Icon(Icons.navigation_rounded, size: 12, color: Color(0xFF047857)),
                     const SizedBox(width: 4),
                     Text(
-                      'Corridor A5/B509 • Live',
+                      'Corridor A5/B509 • Live'.trAuto(context),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -98,7 +98,7 @@ class WelimadaRouteMapView extends StatelessWidget {
                           const Icon(Icons.storefront_rounded, size: 11, color: Colors.white),
                           const SizedBox(width: 3),
                           Text(
-                            'Welimada Depot',
+                            'Welimada Depot'.trAuto(context),
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
@@ -144,7 +144,7 @@ class WelimadaRouteMapView extends StatelessWidget {
                         const Icon(Icons.local_shipping_rounded, size: 11, color: Colors.white),
                         const SizedBox(width: 3),
                         Text(
-                          'Dehiwala Hub',
+                          'Dehiwala Hub'.trAuto(context),
                           style: TextStyle(
                             fontSize: 9.5,
                             fontWeight: FontWeight.w700,
@@ -175,7 +175,7 @@ class WelimadaRouteMapView extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFCBD5E1), width: 0.8),
                 ),
                 child: Text(
-                  'Nuwara Eliya A5',
+                  'Nuwara Eliya A5'.trAuto(context),
                   style: TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w600,

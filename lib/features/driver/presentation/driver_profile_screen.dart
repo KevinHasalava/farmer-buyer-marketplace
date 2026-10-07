@@ -235,7 +235,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              'DRIVER',
+              'DRIVER'.trAuto(context),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
@@ -369,7 +369,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          '$_plateNumber • $_vehicleType',
+                          '$_plateNumber • ${_vehicleType.trAuto(context)}',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
@@ -401,7 +401,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          'On Duty',
+                          'On Duty'.trAuto(context),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
@@ -425,7 +425,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _accountHolder,
+                    _accountHolder.trAuto(context),
                     style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w700,
@@ -446,7 +446,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Agri-Transit Logistics Partner • Central Highlands',
+                        'Agri-Transit Logistics Partner • Central Highlands'.trAuto(context),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -559,7 +559,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
 
           // Driver Name
           Text(
-            _accountHolder,
+            _accountHolder.trAuto(context),
             style: TextStyle(
               fontSize: 17.5,
               fontWeight: FontWeight.w700,
@@ -586,7 +586,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  'Verified Agri-Transit Partner',
+                  'Verified Agri-Transit Partner'.trAuto(context),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -615,7 +615,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     color: const Color(0xFF64748B),
                   ),
                   children: [
-                    TextSpan(text: '$_vehicleType • '),
+                    TextSpan(text: '${_vehicleType.trAuto(context)} • '),
                     TextSpan(
                       text: _plateNumber,
                       style: TextStyle(
@@ -674,7 +674,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '340 Reviews',
+                        '340 Reviews'.trAuto(context),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -717,7 +717,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '6 Yrs',
+                            '6 Yrs'.trAuto(context),
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -728,7 +728,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '1,840+ Trips Finished',
+                        '1,840+ Trips Finished'.trAuto(context),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -788,7 +788,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cold Chain Hardware',
+                    'Cold Chain Hardware'.trAuto(context),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -796,7 +796,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     ),
                   ),
                   Text(
-                    'Active Telematics Monitoring',
+                    'Active Telematics Monitoring'.trAuto(context),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -814,8 +814,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 1: Vehicle Model
           _buildHardwareSpecRow(
             icon: Icons.local_shipping_outlined,
-            label: 'Vehicle Model',
-            value: '$_vehicleType ($_plateNumber)',
+            label: 'Vehicle Model'.trAuto(context),
+            value: '${_vehicleType.trAuto(context)} ($_plateNumber)',
             valueColor: const Color(0xFF0F172A),
           ),
           const SizedBox(height: 12),
@@ -823,8 +823,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 2: Cargo Capacity
           _buildHardwareSpecRow(
             icon: Icons.inventory_2_outlined,
-            label: 'Cargo Capacity',
-            value: _cargoCapacity.isNotEmpty ? _cargoCapacity : '1,200 kg',
+            label: 'Cargo Capacity'.trAuto(context),
+            value: (_cargoCapacity.isNotEmpty ? _cargoCapacity : '1,200 kg').trAuto(context),
             valueColor: const Color(0xFF0F172A),
           ),
           const SizedBox(height: 12),
@@ -832,8 +832,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 3: Climate Sensor -> Active (10°C - 16°C) ✓
           _buildHardwareSpecRow(
             icon: Icons.device_thermostat_rounded,
-            label: 'Climate Sensor',
-            value: 'Active (10°C - 16°C) ✓',
+            label: 'Climate Sensor'.trAuto(context),
+            value: 'Active (10°C - 16°C) ✓'.trAuto(context),
             valueColor: const Color(0xFF059669),
             isBold: true,
           ),
@@ -842,8 +842,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 4: Roadworthy Status -> Valid until Nov 2025
           _buildHardwareSpecRow(
             icon: Icons.verified_user_outlined,
-            label: 'Roadworthy Status',
-            value: 'Valid until Nov 2025',
+            label: 'Roadworthy Status'.trAuto(context),
+            value: 'Valid until Nov 2025'.trAuto(context),
             valueColor: const Color(0xFF059669),
             isBold: true,
           ),
@@ -896,7 +896,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            'DRIVER OPERATIONS',
+            'DRIVER OPERATIONS'.trAuto(context),
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
@@ -944,7 +944,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 iconBg: const Color(0xFFEEF2FF),
                 iconColor: const Color(0xFF6366F1),
                 title: context.tr.earningsAndBankTitle,
-                subtitle: _maskedAccount,
+                subtitle: _maskedAccount.trAuto(context),
                 subtitleColor: const Color(0xFF94A3B8),
                 highlightBorder: true,
                 onTap: () => _showEarningsAndBankSheet(context),
@@ -1020,7 +1020,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '2 NEW',
+                          '2 NEW'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -1146,7 +1146,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Switch Role (Farmer / Buyer Mode)',
+                  'Switch Role (Farmer / Buyer Mode)'.trAuto(context),
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -1186,7 +1186,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Sign Out of Driver Hub',
+                  'Sign Out of Driver Hub'.trAuto(context),
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -1215,7 +1215,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          'Empowering Sri Lankan Transit & Agri-Cold Chain',
+          'Empowering Sri Lankan Transit & Agri-Cold Chain'.trAuto(context),
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w400,
@@ -3033,12 +3033,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Switch Active Role',
+              'Switch Active Role'.trAuto(context),
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Select which portal mode you wish to switch into:',
+              'Select which portal mode you wish to switch into:'.trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: const Color(0xFF64748B)),
             ),
@@ -3047,12 +3047,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               tileColor: const Color(0xFFF8FAFC),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: const Icon(Icons.eco_rounded, color: Color(0xFF059669)),
-              title: Text('Farmer Marketplace Portal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              title: Text('Farmer Marketplace Portal'.trAuto(context), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Switched to Farmer Portal', style: TextStyle())),
+                  SnackBar(content: Text('Switched to Farmer Portal'.trAuto(context), style: TextStyle())),
                 );
               },
             ),
@@ -3061,12 +3061,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               tileColor: const Color(0xFFF8FAFC),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB)),
-              title: Text('Buyer / Wholesale Portal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              title: Text('Buyer / Wholesale Portal'.trAuto(context), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Switched to Buyer Portal', style: TextStyle())),
+                  SnackBar(content: Text('Switched to Buyer Portal'.trAuto(context), style: TextStyle())),
                 );
               },
             ),
@@ -3082,17 +3082,17 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Sign Out of Driver Hub?',
+          'Sign Out of Driver Hub?'.trAuto(context),
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         content: Text(
-          'You will be put offline and will not receive real-time transit dispatch offers until you sign back in.',
+          'You will be put offline and will not receive real-time transit dispatch offers until you sign back in.'.trAuto(context),
           style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle()),
+            child: Text('Cancel'.trAuto(context), style: TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -3103,7 +3103,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Sign Out'),
+            child: Text('Sign Out'.trAuto(context)),
           ),
         ],
       ),
@@ -3134,12 +3134,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Driver Support & Dispatch Chat',
+              'Driver Support & Dispatch Chat'.trAuto(context),
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Instant chat channel with Agri-Dispatch and Corridor Support team.',
+              'Instant chat channel with Agri-Dispatch and Corridor Support team.'.trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
             ),
@@ -3170,7 +3170,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Start Chat with Support'),
+                child: Text('Start Chat with Support'.trAuto(context)),
               ),
             ),
           ],

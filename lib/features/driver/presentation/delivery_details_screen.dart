@@ -329,7 +329,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                 ),
               ),
               Text(
-                _estTime,
+                _estTime.trAuto(context),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -364,7 +364,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         color: const Color(0xFF475569),
                       ),
                       children: [
-                        const TextSpan(text: 'Pickup by '),
+                        TextSpan(text: 'Pickup by '.trAuto(context)),
                         TextSpan(
                           text: _pickupByTime,
                           style: const TextStyle(
@@ -372,7 +372,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        const TextSpan(text: ' • Dropoff by '),
+                        TextSpan(text: ' • Dropoff by '.trAuto(context)),
                         TextSpan(
                           text: _dropoffByTime,
                           style: const TextStyle(
@@ -439,7 +439,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '📍 Welimada Collection Depot: Central Highlands Collection Point (A5/B509 Highway)',
+                              '📍 Welimada Collection Depot: Central Highlands Collection Point (A5/B509 Highway)'.trAuto(context),
                               style: TextStyle(),
                             ),
                             backgroundColor: const Color(0xFF064E3B),
@@ -470,7 +470,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                                 const Icon(Icons.location_on_rounded, size: 12, color: Colors.white),
                                 const SizedBox(width: 3),
                                 Text(
-                                  'Welimada Depot',
+                                  'Welimada Depot'.trAuto(context),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -513,7 +513,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                           const Icon(Icons.near_me_rounded, size: 13, color: Color(0xFF38BDF8)),
                           const SizedBox(width: 4),
                           Text(
-                            '22.8 km away',
+                            '22.8 km away'.trAuto(context),
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -541,7 +541,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  '📍 Hakgala Organic Farm: Central Highlands Pickup Point (A5 Highway)',
+                                  '📍 Hakgala Organic Farm: Central Highlands Pickup Point (A5 Highway)'.trAuto(context),
                                   style: TextStyle(),
                                 ),
                                 backgroundColor: const Color(0xFF064E3B),
@@ -589,7 +589,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _terrainName,
+                  _terrainName.trAuto(context),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
@@ -597,7 +597,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   ),
                 ),
                 Text(
-                  'Clear Flow',
+                  'Clear Flow'.trAuto(context),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -713,7 +713,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            _farmerName,
+                            _farmerName.trAuto(context),
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
@@ -740,7 +740,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '🌾 ගොවි මහතා',
+                            '🌾 Farmer'.trAuto(context),
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w600,
@@ -751,7 +751,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            _farmerFarm,
+                            _farmerFarm.trAuto(context),
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
@@ -774,7 +774,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Origin',
+                  'Origin'.trAuto(context),
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
@@ -811,7 +811,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _farmerGate,
+                        _farmerGate.trAuto(context),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -820,7 +820,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        _farmerRegion,
+                        _farmerRegion.trAuto(context),
                         style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF64748B),
@@ -865,15 +865,15 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         color: const Color(0xFF64748B),
                       ),
                       children: [
-                        const TextSpan(
-                          text: 'Gate Note: ',
+                        TextSpan(
+                          text: 'Gate Note: '.trAuto(context),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A),
                           ),
                         ),
                         TextSpan(
-                          text: _farmerGateNote,
+                          text: _farmerGateNote.trAuto(context),
                         ),
                       ],
                     ),
@@ -897,7 +897,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                     },
                     icon: const Icon(Icons.phone, size: 15, color: Color(0xFF065F46)),
                     label: Text(
-                      'Call Farmer',
+                      'Call Farmer'.trAuto(context),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -937,7 +937,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       color: Color(0xFF065F46),
                     ),
                     label: Text(
-                      'Chat Farmer',
+                      'Chat Farmer'.trAuto(context),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -1064,7 +1064,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            _buyerName,
+                            _buyerName.trAuto(context),
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
@@ -1091,7 +1091,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            '🛒 ගැනුම්කරු',
+                            '🛒 Buyer'.trAuto(context),
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w600,
@@ -1102,7 +1102,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            _buyerSubtitle,
+                            _buyerSubtitle.trAuto(context),
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
@@ -1125,7 +1125,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Destination',
+                  'Destination'.trAuto(context),
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
@@ -1162,7 +1162,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _buyerAddress1,
+                        _buyerAddress1.trAuto(context),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -1171,7 +1171,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        _buyerAddress2,
+                        _buyerAddress2.trAuto(context),
                         style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF64748B),
@@ -1205,7 +1205,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Collection Mode',
+                      'Collection Mode'.trAuto(context),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -1369,7 +1369,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _cargoCrateBadge,
+                  _cargoCrateBadge.trAuto(context),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1423,15 +1423,15 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                         color: const Color(0xFF64748B),
                       ),
                       children: [
-                        const TextSpan(
-                          text: 'Handling: ',
-                          style: TextStyle(
+                        TextSpan(
+                          text: 'Handling: '.trAuto(context),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A),
                           ),
                         ),
                         TextSpan(
-                          text: _handlingNote,
+                          text: _handlingNote.trAuto(context),
                         ),
                       ],
                     ),
@@ -1483,7 +1483,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  name.trAuto(context),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -1491,7 +1491,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   ),
                 ),
                 Text(
-                  subtitle,
+                  subtitle.trAuto(context),
                   style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
@@ -1509,7 +1509,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              status,
+              status.trAuto(context),
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
@@ -1815,7 +1815,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Direct Message with $person',
+              '${'Direct Message with'.trAuto(context)} $person',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -1824,7 +1824,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Active order communication channel for $_orderNumber',
+              '${'Active order communication channel for'.trAuto(context)} $_orderNumber',
               style: TextStyle(
                 fontSize: 12,
                 color: const Color(0xFF64748B),
@@ -1854,7 +1854,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Open Chat'),
+                child: Text('Open Chat'.trAuto(context)),
               ),
             ),
           ],
@@ -1896,7 +1896,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Highland Transit Route Map',
+                      'Highland Transit Route Map'.trAuto(context),
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -1904,9 +1904,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       ),
                     ),
                     Text(
-                      _isOrder2
+                      (_isOrder2
                           ? 'Corridor A5/B509 • Welimada → Dehiwala'
-                          : 'Corridor A5 • Nuwara Eliya → Hakgala',
+                          : 'Corridor A5 • Nuwara Eliya → Hakgala').trAuto(context),
                       style: TextStyle(
                         fontSize: 12.5,
                         color: const Color(0xFF64748B),
@@ -1933,7 +1933,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        _isOrder2 ? '22.8 km' : '14.2 km',
+                        (_isOrder2 ? '22.8 km' : '14.2 km').trAuto(context),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
@@ -1979,7 +1979,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                             const Icon(Icons.location_on_rounded, size: 13, color: Colors.white),
                             const SizedBox(width: 4),
                             Text(
-                              'Welimada Depot',
+                              'Welimada Depot'.trAuto(context),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -2007,9 +2007,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _isOrder2
+                      (_isOrder2
                           ? 'Pickup at Welimada Depot. Cargo temperature sensor active at 4.0°C.'
-                          : 'Pickup at Hakgala Farm. Temperature sensor active at 4.2°C.',
+                          : 'Pickup at Hakgala Farm. Temperature sensor active at 4.2°C.').trAuto(context),
                       style: TextStyle(
                         fontSize: 12,
                         color: const Color(0xFF334155),
@@ -2033,7 +2033,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
                   ),
                 ),
                 child: Text(
-                  'Close Route View',
+                  'Close Route View'.trAuto(context),
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),

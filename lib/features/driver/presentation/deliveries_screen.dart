@@ -566,7 +566,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   ),
                 ),
                 Text(
-                  'Nuwara Eliya → Kandy → Colombo',
+                  'Nuwara Eliya → Kandy → Colombo'.trAuto(context),
                   style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
@@ -669,7 +669,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
                     ),
                     child: Text(
-                      '1 Crate',
+                      '1 Crate'.trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -709,9 +709,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _order1.status == 'En Route to Pickup'
-                          ? 'En Route to Pickup'
-                          : _order1.pickupDueText,
+                      (_order1.status == 'En Route to Pickup'
+                              ? 'En Route to Pickup'
+                              : _order1.pickupDueText)
+                          .trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -797,7 +798,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                                 ),
                               ),
                               Text(
-                                'Farm Gate North #2, Nuwara Eliya',
+                                'Farm Gate North #2, Nuwara Eliya'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
@@ -807,7 +808,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Hakgala Valley Farm',
+                          'Hakgala Valley Farm'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
@@ -835,7 +836,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                                 ),
                               ),
                               Text(
-                                'No. 42 Havelock Rd, Colombo 05',
+                                'No. 42 Havelock Rd, Colombo 05'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
@@ -845,7 +846,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Drop-off',
+                          'Drop-off'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
@@ -874,7 +875,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '5 kg (Carrots & Leeks)',
+                      '5 kg (Carrots & Leeks)'.trAuto(context),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -882,7 +883,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       ),
                     ),
                     Text(
-                      'Cool storage packed',
+                      'Cool storage packed'.trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         color: const Color(0xFF059669),
@@ -1045,7 +1046,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       border: Border.all(color: const Color(0xFFC7D2FE), width: 1),
                     ),
                     child: Text(
-                      '2 Crates',
+                      '2 Crates'.trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -1085,7 +1086,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isOrder2InTransit ? _order2.status : 'Pickup Due in 45m',
+                      (isOrder2InTransit ? _order2.status : 'Pickup Due in 45m')
+                          .trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -1158,7 +1160,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                                 ),
                               ),
                               Text(
-                                'Welimada Main Collection Depot',
+                                'Welimada Main Collection Depot'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
@@ -1168,7 +1170,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Welimada Hub',
+                          'Welimada Hub'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
@@ -1196,7 +1198,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                                 ),
                               ),
                               Text(
-                                'Dehiwala Urban Center',
+                                'Dehiwala Urban Center'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
@@ -1206,7 +1208,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Drop-off',
+                          'Drop-off'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
@@ -1235,7 +1237,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '12 kg (Tomatoes & Cabbages)',
+                      '12 kg (Tomatoes & Cabbages)'.trAuto(context),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
@@ -1243,7 +1245,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       ),
                     ),
                     Text(
-                      'Strap secured',
+                      'Strap secured'.trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         color: const Color(0xFF64748B),
@@ -1255,7 +1257,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Driver Fee',
+                      context.tr.driverFee,
                       style: TextStyle(
                         fontSize: 10,
                         color: const Color(0xFF64748B),
@@ -1302,7 +1304,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       color: Colors.white,
                     ),
                     label: Text(
-                      'Navigate to Farm',
+                      context.tr.navigateToFarm,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -1342,7 +1344,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
-                    'Details',
+                    context.tr.deliveryDetails,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
@@ -1629,7 +1631,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '2 NEW',
+                          '2 NEW'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -1652,10 +1654,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.alt_route_rounded,
                         iconColor: const Color(0xFF059669),
                         iconBg: const Color(0xFFD1FAE5),
-                        title: 'Optimized Stop Sequence',
-                        message: 'Route scheduled: Stop 1 Hakgala Farm Gate #2 (Bandara), Stop 2 Welimada Main Depot (Sunil).',
-                        time: '10m ago',
-                        badge: 'Manifest',
+                        title: 'Optimized Stop Sequence'.trAuto(context),
+                        message: 'Route scheduled: Stop 1 Hakgala Farm Gate #2 (Bandara), Stop 2 Welimada Main Depot (Sunil).'.trAuto(context),
+                        time: '10m ago'.trAuto(context),
+                        badge: 'Manifest'.trAuto(context),
                         badgeColor: const Color(0xFF047857),
                         badgeBg: const Color(0xFFDCFCE7),
                         isUnread: true,
@@ -1667,10 +1669,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.mark_chat_unread_outlined,
                         iconColor: const Color(0xFF0284C7),
                         iconBg: const Color(0xFFE0F2FE),
-                        title: 'Buyer Instruction • Chaminda',
-                        message: 'Drop-off note: "Ring doorbell twice, keep produce in shade at 42 Havelock Rd."',
-                        time: '20m ago',
-                        badge: 'Buyer Note',
+                        title: 'Buyer Instruction • Chaminda'.trAuto(context),
+                        message: 'Drop-off note: "Ring doorbell twice, keep produce in shade at 42 Havelock Rd."'.trAuto(context),
+                        time: '20m ago'.trAuto(context),
+                        badge: 'Buyer Note'.trAuto(context),
                         badgeColor: const Color(0xFF0369A1),
                         badgeBg: const Color(0xFFE0F2FE),
                         isUnread: true,
@@ -1682,10 +1684,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.payments_outlined,
                         iconColor: const Color(0xFF7C3AED),
                         iconBg: const Color(0xFFF3E8FF),
-                        title: 'Cash Collection Summary',
-                        message: 'COD expected on arrival: Rs. 1,760 for Order #FH-8841 and Rs. 2,450 for Order #FH-8850.',
-                        time: '45m ago',
-                        badge: 'COD Cash',
+                        title: 'Cash Collection Summary'.trAuto(context),
+                        message: 'COD expected on arrival: Rs. 1,760 for Order #FH-8841 and Rs. 2,450 for Order #FH-8850.'.trAuto(context),
+                        time: '45m ago'.trAuto(context),
+                        badge: 'COD Cash'.trAuto(context),
                         badgeColor: const Color(0xFF6B21A8),
                         badgeBg: const Color(0xFFF3E8FF),
                         isUnread: false,
@@ -1697,10 +1699,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.cloud_done_rounded,
                         iconColor: const Color(0xFF0D9488),
                         iconBg: const Color(0xFFCCFBF1),
-                        title: 'Cloud Manifest Synced',
-                        message: 'Both active orders verified and synced with Central Logistics Hub database.',
-                        time: '1h ago',
-                        badge: 'Database Synced',
+                        title: 'Cloud Manifest Synced'.trAuto(context),
+                        message: 'Both active orders verified and synced with Central Logistics Hub database.'.trAuto(context),
+                        time: '1h ago'.trAuto(context),
+                        badge: 'Database Synced'.trAuto(context),
                         badgeColor: const Color(0xFF0F766E),
                         badgeBg: const Color(0xFFCCFBF1),
                         isUnread: false,
@@ -2039,11 +2041,11 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                               style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                             ),
                             Text(
-                              order.farmerName,
+                              order.farmerName.trAuto(context),
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
                             ),
                             Text(
-                              order.farmerAddress,
+                              order.farmerAddress.trAuto(context),
                               style: TextStyle(fontSize: 11.5, color: const Color(0xFF64748B)),
                             ),
                           ],
@@ -2078,11 +2080,11 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                               style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                             ),
                             Text(
-                              order.buyerName,
+                              order.buyerName.trAuto(context),
                               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
                             ),
                             Text(
-                              order.buyerAddress,
+                              order.buyerAddress.trAuto(context),
                               style: TextStyle(fontSize: 11.5, color: const Color(0xFF64748B)),
                             ),
                           ],
@@ -2109,8 +2111,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(context.tr.cargoManifest, style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-                        Text(order.produceDescription, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(order.crateCount, style: TextStyle(fontSize: 11, color: const Color(0xFF64748B))),
+                        Text(order.produceDescription.trAuto(context), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(order.crateCount.trAuto(context), style: TextStyle(fontSize: 11, color: const Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -2129,7 +2131,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       children: [
                         Text(context.tr.tripPayout, style: TextStyle(fontSize: 10.5, color: const Color(0xFF059669), fontWeight: FontWeight.w600)),
                         Text('Rs. ${order.driverFee.toInt()}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF065F46))),
-                        Text('Net Settlement', style: TextStyle(fontSize: 10.5, color: const Color(0xFF059669))),
+                        Text('Net Settlement'.trAuto(context), style: TextStyle(fontSize: 10.5, color: const Color(0xFF059669))),
                       ],
                     ),
                   ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 
@@ -268,7 +268,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'DRIVER',
+              'DRIVER'.trAuto(context),
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
@@ -488,7 +488,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             const SizedBox(width: 5),
             Text(
-              _vehicleInfo,
+              _vehicleInfo.trAuto(context),
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
@@ -616,10 +616,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           color: const Color(0xFF64748B),
                         ),
                         children: [
-                          TextSpan(text: '$_activeFarmLocation • '),
-                          const TextSpan(
-                            text: '2.4 km away',
-                            style: TextStyle(
+                          TextSpan(text: '${_activeFarmLocation.trAuto(context)} • '),
+                          TextSpan(
+                            text: '2.4 km away'.trAuto(context),
+                            style: const TextStyle(
                               color: Color(0xFF047857),
                               fontWeight: FontWeight.w700,
                             ),
@@ -636,7 +636,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Est. Payout',
+                    'Est. Payout'.trAuto(context),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
@@ -708,7 +708,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'PICKUP LOCATION',
+                            'PICKUP LOCATION'.trAuto(context),
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
@@ -718,7 +718,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            _activePickupLocation,
+                            _activePickupLocation.trAuto(context),
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
@@ -750,7 +750,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'DROPOFF BUYER',
+                            'DROPOFF BUYER'.trAuto(context),
                             style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
@@ -760,7 +760,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            'Chaminda Perera • Havelock Rd, Colombo',
+                            'Chaminda Perera • Havelock Rd, Colombo'.trAuto(context),
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
@@ -790,7 +790,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           const Text('🥕', style: TextStyle(fontSize: 13)),
                           const SizedBox(width: 6),
                           Text(
-                            _activeCargoItem,
+                            _activeCargoItem.trAuto(context),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -807,7 +807,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
                         ),
                         child: Text(
-                          _activeCrate,
+                          _activeCrate.trAuto(context),
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
@@ -976,7 +976,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Today's Shift Pulse",
+              "Today's Shift Pulse".trAuto(context),
               style: TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w700,
@@ -984,7 +984,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               ),
             ),
             Text(
-              '66% Completed',
+              '66% Completed'.trAuto(context),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -1043,7 +1043,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '+2 peak',
+                            '+2 peak'.trAuto(context),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1057,7 +1057,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
                     // Number
                     Text(
-                      '$_scheduledDeliveries Scheduled',
+                      '$_scheduledDeliveries ${'Scheduled'.trAuto(context)}',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -1068,7 +1068,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
                     // Subtitle
                     Text(
-                      '$_deliveredToday Delivered Today',
+                      '$_deliveredToday ${'Delivered Today'.trAuto(context)}',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -1126,7 +1126,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '+1.2k tips',
+                            '+1.2k tips'.trAuto(context),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1199,7 +1199,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Corridor Route Map',
+                    'Corridor Route Map'.trAuto(context),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -1227,7 +1227,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'A7 Highway Clear',
+                      'A7 Highway Clear'.trAuto(context),
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
@@ -1334,7 +1334,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                'Live Transit: 38 km/h',
+                                'Live Transit: 38 km/h'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
@@ -1378,7 +1378,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Hakgala Corridor',
+                                'Hakgala Corridor'.trAuto(context),
                                 style: TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
@@ -1443,7 +1443,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cargo Chiller: 12°C',
+                  'Cargo Chiller: 12°C'.trAuto(context),
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
@@ -1452,7 +1452,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Target 10°C - 14°C • Veg Safe',
+                  'Target 10°C - 14°C • Veg Safe'.trAuto(context),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -1472,7 +1472,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
             ),
             child: Text(
-              'Optimal',
+              'Optimal'.trAuto(context),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -1664,7 +1664,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Start Pickup Route',
+              'Start Pickup Route'.trAuto(context),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -1673,7 +1673,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              'Route to Hakgala Organic Farm (2.4 km)\nDispatch order #FH-8841 is marked as active.',
+              'Route to Hakgala Organic Farm (2.4 km)\nDispatch order #FH-8841 is marked as active.'.trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -1690,7 +1690,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Turn-by-turn navigation started for #FH-8841',
+                        'Turn-by-turn navigation started for #FH-8841'.trAuto(context),
                         style: TextStyle(),
                       ),
                       backgroundColor: const Color(0xFF064E3B),
@@ -1706,7 +1706,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ),
                 ),
                 child: Text(
-                  'Launch Turn-by-Turn GPS',
+                  'Launch Turn-by-Turn GPS'.trAuto(context),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -1750,7 +1750,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order Details #FH-8841',
+                  'Order Details #FH-8841'.trAuto(context),
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -1764,7 +1764,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'Ready for Pickup',
+                    'Ready for Pickup'.trAuto(context),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -1775,14 +1775,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               ],
             ),
             const SizedBox(height: 16),
-            _buildDetailRow('Farmer Name', 'Bandar Menike (Hakgala)'),
-            _buildDetailRow('Contact Phone', '+94 77 458 1920'),
-            _buildDetailRow('Pickup Address', 'Upper Division Gate B, Hakgala Rd'),
-            _buildDetailRow('Buyer Name', 'Chaminda Perera'),
-            _buildDetailRow('Dropoff Address', 'Havelock Rd, Colombo 05'),
-            _buildDetailRow('Cargo Breakdown', '5 kg Fresh Carrots, Leeks (Crate #C)'),
-            _buildDetailRow('Storage Requirement', 'Chilled (10°C - 14°C)'),
-            _buildDetailRow('Driver Compensation', 'Rs. 1,450.00'),
+            _buildDetailRow('Farmer Name'.trAuto(context), 'Bandar Menike (Hakgala)'.trAuto(context)),
+            _buildDetailRow('Contact Phone'.trAuto(context), '+94 77 458 1920'),
+            _buildDetailRow('Pickup Address'.trAuto(context), 'Upper Division Gate B, Hakgala Rd'.trAuto(context)),
+            _buildDetailRow('Buyer Name'.trAuto(context), 'Chaminda Perera'.trAuto(context)),
+            _buildDetailRow('Dropoff Address'.trAuto(context), 'Havelock Rd, Colombo 05'.trAuto(context)),
+            _buildDetailRow('Cargo Breakdown'.trAuto(context), '5 kg Fresh Carrots, Leeks (Crate #C)'.trAuto(context)),
+            _buildDetailRow('Storage Requirement'.trAuto(context), 'Chilled (10°C - 14°C)'.trAuto(context)),
+            _buildDetailRow('Driver Compensation'.trAuto(context), 'Rs. 1,450.00'),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -1796,7 +1796,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ),
                 ),
                 child: Text(
-                  'Close',
+                  'Close'.trAuto(context),
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF475569),
@@ -1879,7 +1879,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              'Call Farmer Bandar',
+              'Call Farmer Bandar'.trAuto(context),
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -1888,7 +1888,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              '+94 77 458 1920 • Hakgala Organic Farm',
+              '+94 77 458 1920 • Hakgala Organic Farm'.trAuto(context),
               style: TextStyle(
                 fontSize: 13,
                 color: const Color(0xFF64748B),
@@ -1901,14 +1901,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(ctx),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: Text(
-                      'Cancel',
+                      'Cancel'.trAuto(context),
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF475569),
@@ -1924,7 +1924,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Dialing Farmer Bandar (+94 77 458 1920)...',
+                            'Dialing Farmer Bandar (+94 77 458 1920)...'.trAuto(context),
                             style: TextStyle(),
                           ),
                           backgroundColor: const Color(0xFF064E3B),
@@ -1934,7 +1934,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     },
                     icon: const Icon(Icons.call, size: 18),
                     label: Text(
-                      'Call Now',
+                      'Call Now'.trAuto(context),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13.5,
@@ -2015,7 +2015,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Shift & Dispatch Alerts',
+                            'Shift & Dispatch Alerts'.trAuto(context),
                             style: TextStyle(
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
@@ -2023,7 +2023,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                             ),
                           ),
                           Text(
-                            'Active route notifications & vehicle telemetry',
+                            'Active route notifications & vehicle telemetry'.trAuto(context),
                             style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
@@ -2040,7 +2040,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '2 NEW',
+                          '2 NEW'.trAuto(context),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -2063,10 +2063,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         icon: Icons.agriculture_rounded,
                         iconColor: const Color(0xFF059669),
                         iconBg: const Color(0xFFD1FAE5),
-                        title: 'Urgent Pickup Ready • #FH-8841',
-                        message: 'Farmer K. M. Bandara confirmed 3 Crates (Cabbage & Carrots) ready at Upper Division Gate B, Hakgala.',
-                        time: '5m ago',
-                        badge: 'Pickup Ready',
+                        title: 'Urgent Pickup Ready • #FH-8841'.trAuto(context),
+                        message: 'Farmer K. M. Bandara confirmed 3 Crates (Cabbage & Carrots) ready at Upper Division Gate B, Hakgala.'.trAuto(context),
+                        time: '5m ago'.trAuto(context),
+                        badge: 'Pickup Ready'.trAuto(context),
                         badgeColor: const Color(0xFF047857),
                         badgeBg: const Color(0xFFDCFCE7),
                         isUnread: true,
@@ -2078,10 +2078,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         icon: Icons.local_shipping_rounded,
                         iconColor: const Color(0xFF0284C7),
                         iconBg: const Color(0xFFE0F2FE),
-                        title: 'New Assigned Order • #FH-8850',
-                        message: 'Dispatcher allocated Order #FH-8850: Sunil Perera (Welimada) ➔ Dilani Jayawardena (Dehiwala).',
-                        time: '15m ago',
-                        badge: 'Assigned',
+                        title: 'New Assigned Order • #FH-8850'.trAuto(context),
+                        message: 'Dispatcher allocated Order #FH-8850: Sunil Perera (Welimada) ➔ Dilani Jayawardena (Dehiwala).'.trAuto(context),
+                        time: '15m ago'.trAuto(context),
+                        badge: 'Assigned'.trAuto(context),
                         badgeColor: const Color(0xFF0369A1),
                         badgeBg: const Color(0xFFE0F2FE),
                         isUnread: true,
@@ -2093,10 +2093,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         icon: Icons.alt_route_rounded,
                         iconColor: const Color(0xFF059669),
                         iconBg: const Color(0xFFD1FAE5),
-                        title: 'A7 & A4 Route Clear Advisory',
-                        message: 'Central Highlands mountain corridors clear of mist and obstacles. Recommended speed: 40 km/h.',
-                        time: '30m ago',
-                        badge: 'Route Clear',
+                        title: 'A7 & A4 Route Clear Advisory'.trAuto(context),
+                        message: 'Central Highlands mountain corridors clear of mist and obstacles. Recommended speed: 40 km/h.'.trAuto(context),
+                        time: '30m ago'.trAuto(context),
+                        badge: 'Route Clear'.trAuto(context),
                         badgeColor: const Color(0xFF047857),
                         badgeBg: const Color(0xFFDCFCE7),
                         isUnread: false,
@@ -2108,10 +2108,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         icon: Icons.ac_unit_rounded,
                         iconColor: const Color(0xFF2563EB),
                         iconBg: const Color(0xFFDBEAFE),
-                        title: 'Cargo Chiller Safe (4.2°C)',
-                        message: 'Cold chain integrity verified. Vegetable storage area operating at optimal refrigerated range.',
-                        time: '1h ago',
-                        badge: 'Chiller Nominal',
+                        title: 'Cargo Chiller Safe (4.2°C)'.trAuto(context),
+                        message: 'Cold chain integrity verified. Vegetable storage area operating at optimal refrigerated range.'.trAuto(context),
+                        time: '1h ago'.trAuto(context),
+                        badge: 'Chiller Nominal'.trAuto(context),
                         badgeColor: const Color(0xFF1D4ED8),
                         badgeBg: const Color(0xFFDBEAFE),
                         isUnread: false,
@@ -2144,7 +2144,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                       ),
                     ),
                     child: Text(
-                      _hasUnreadNotifications ? 'Mark All as Read' : 'Close Notifications',
+                      (_hasUnreadNotifications ? 'Mark All as Read' : 'Close Notifications').trAuto(context),
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
@@ -2253,7 +2253,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              badge,
+                              badge.trAuto(context),
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
@@ -2263,7 +2263,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           const Spacer(),
                           Text(
-                            time,
+                            time.trAuto(context),
                             style: TextStyle(
                               fontSize: 10.5,
                               color: const Color(0xFF94A3B8),
@@ -2329,7 +2329,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               ),
             ),
             Text(
-              'Verified Agri-Logistics Driver • ID #${_currentDriverId != null && _currentDriverId!.length >= 4 ? _currentDriverId!.substring(0, 4).toUpperCase() : 'DRV-4091'}',
+              '${'Verified Agri-Logistics Driver'.trAuto(ctx)} • ID #${_currentDriverId != null && _currentDriverId!.length >= 4 ? _currentDriverId!.substring(0, 4).toUpperCase() : 'DRV-4091'}',
               style: TextStyle(
                 fontSize: 12,
                 color: const Color(0xFF64748B),
@@ -2345,9 +2345,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildProfileStat('Rating', '4.9 ★'),
-                  _buildProfileStat('Completed', '342'),
-                  _buildProfileStat('Van Reg', _plateNumber),
+                  _buildProfileStat('Rating'.trAuto(ctx), '4.9 ★'),
+                  _buildProfileStat('Completed'.trAuto(ctx), '342'),
+                  _buildProfileStat('Van Reg'.trAuto(ctx), _plateNumber),
                 ],
               ),
             ),
@@ -2365,7 +2365,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ),
                 ),
                 child: Text(
-                  'Dismiss',
+                  'Dismiss'.trAuto(ctx),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
