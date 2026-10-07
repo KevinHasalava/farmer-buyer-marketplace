@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/supabase/supabase_config.dart';
 import '../models/user_model.dart';
+import 'notify_sms_service.dart';
 
 /// Exception thrown on authentication errors.
 class AuthException implements Exception {
@@ -152,24 +153,36 @@ class AuthService {
     return user;
   }
 
-  // ── Phone OTP (password-less) ──────────────────────────────────────────
+  // ── Phone OTP (password-less via Notify.lk & Supabase) ─────────────────
 
   Future<void> sendPhoneOtp(String phone) async {
+    // 1. Send real SMS OTP to the phone number via Notify.lk
+    final result = await NotifySmsService.instance.sendOtp(phone);
+    if (!result.success && result.error != null && result.error!.contains('valid')) {
+      throw AuthException(result.error!);
+    }
+
+    // 2. Also attempt Supabase signInWithOtp if configured
     try {
       if (SupabaseConfig.isInitialized) {
         await SupabaseConfig.auth.signInWithOtp(phone: phone, shouldCreateUser: true);
-        return;
       }
     } catch (e) {
       debugPrint('[AuthService] Supabase sendPhoneOtp note: $e');
     }
-    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   Future<UserModel> verifyPhoneOtp({
     required String phone,
     required String token,
   }) async {
+    // 1. Verify via Notify.lk OTP service
+    final isValid = NotifySmsService.instance.verifyOtp(rawPhone: phone, code: token);
+    if (!isValid) {
+      throw const AuthException('Invalid or expired OTP code');
+    }
+
+    // 2. Try Supabase verify if available
     try {
       if (SupabaseConfig.isInitialized) {
         final res = await SupabaseConfig.auth.verifyOTP(
@@ -195,7 +208,6 @@ class AuthService {
       debugPrint('[AuthService] Supabase verifyOTP note: $e');
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
     final shortSuffix = phone.length > 4 ? phone.substring(phone.length - 4) : phone;
     final user = UserModel(
       id: 'usr_phone_${phone.replaceAll(RegExp(r'\D'), '')}',

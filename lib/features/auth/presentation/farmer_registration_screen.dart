@@ -8,7 +8,9 @@ import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
+import 'otp_verification_dialog.dart';
 
 /// Farmer / Producer Registration Screen — matching Farm2Home design.
 class FarmerRegistrationScreen extends StatefulWidget {
@@ -36,7 +38,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
   String? _selectedDistrict = 'Nuwara Eliya';
   String _selectedScale = '1 - 3 Acres';
   String _selectedPractice = 'Certified Organic (SL-GAP)';
-  bool _otpSent = false;
+  bool _otpVerified = false;
+  bool _otpSending = false;
   bool _isAttached = false;
   bool _isLoading = false;
 
@@ -94,20 +97,81 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
+    final rawPhone = _phoneCtrl.text.trim();
+    if (rawPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your mobile phone number first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please enter a valid Sri Lankan mobile number (e.g., 77 234 5678).'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
-    setState(() => _otpSent = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP verification code sent via SMS!'),
-        backgroundColor: Color(0xFF1E8342),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    setState(() => _otpSending = true);
+
+    final res = await NotifySmsService.instance.sendOtp(rawPhone);
+
+    if (!mounted) return;
+    setState(() => _otpSending = false);
+
+    if (res.success) {
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.error ?? 'Could not send SMS.'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    }
   }
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_otpVerified) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please verify your mobile number with the SMS OTP code first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _sendOtp();
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -479,15 +543,21 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: _otpVerified
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFF3E0),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      _otpSent ? context.tr.smsOtpVerified : context.tr.smsOtpVerification,
-                      style: const TextStyle(
+                      _otpVerified
+                          ? context.tr.smsOtpVerified
+                          : context.tr.smsOtpVerification,
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF15803D),
+                        color: _otpVerified
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFE65100),
                       ),
                     ),
                   ),
@@ -498,7 +568,12 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: _otpVerified
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFE2E8F0),
+                    width: _otpVerified ? 1.5 : 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -523,6 +598,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       child: TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
+                        enabled: !_otpVerified,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -546,9 +622,13 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: TextButton(
-                        onPressed: _sendOtp,
+                        onPressed: _otpSending
+                            ? null
+                            : (_otpVerified ? null : _sendOtp),
                         style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFFE8F5E9),
+                          backgroundColor: _otpVerified
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFF15803D),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
@@ -557,14 +637,51 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          _otpSent ? context.tr.verified : context.tr.sendOtp,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF15803D),
-                          ),
-                        ),
+                        child: _otpSending
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_otpVerified) ...[
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 14,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.verified,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const Icon(
+                                      Icons.sms_outlined,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.sendOtp,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                       ),
                     ),
                   ],

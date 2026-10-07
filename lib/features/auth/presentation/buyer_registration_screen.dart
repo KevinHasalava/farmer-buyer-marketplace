@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,7 +9,9 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
+import 'otp_verification_dialog.dart';
 
 /// Buyer Registration Screen — matching Farm2Home design.
 class BuyerRegistrationScreen extends StatefulWidget {
@@ -39,6 +41,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   bool _obscureConfirm = true;
   bool _agreeTerms = true;
   bool _isLoading = false;
+  bool _otpVerified = false;
+  bool _otpSending = false;
 
   final Set<String> _producePreferences = {
     '100% Organic',
@@ -73,8 +77,55 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     super.dispose();
   }
 
+  Future<void> _sendOtp() async {
+    final rawPhone = _phoneCtrl.text.trim();
+    if (rawPhone.isEmpty) {
+      _showSnackBar('Please enter your mobile phone number first.');
+      return;
+    }
+
+    if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
+      _showSnackBar('Please enter a valid Sri Lankan mobile number (e.g., 77 123 4567).');
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    setState(() => _otpSending = true);
+
+    final res = await NotifySmsService.instance.sendOtp(rawPhone);
+
+    if (!mounted) return;
+    setState(() => _otpSending = false);
+
+    if (res.success) {
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    } else {
+      _showSnackBar(res.error ?? 'Could not send SMS.');
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_otpVerified) {
+      HapticFeedback.mediumImpact();
+      _showSnackBar('Please verify your mobile number with the SMS OTP code first.');
+      _sendOtp();
+      return;
+    }
 
     if (!_agreeTerms) {
       _showSnackBar('Please agree to the Terms of Service & Privacy Policy.');
@@ -528,13 +579,44 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Mobile Number ──────────────────────────────────────────────
-              _buildFieldLabel(context.tr.mobileNumberLabel),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildFieldLabel(context.tr.mobileNumberLabel),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _otpVerified
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _otpVerified
+                          ? context.tr.smsOtpVerified
+                          : context.tr.smsOtpVerification,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: _otpVerified
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFE65100),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Container(
                 height: 52,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: _otpVerified
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFE2E8F0),
+                    width: _otpVerified ? 1.5 : 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -566,6 +648,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       child: TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
+                        enabled: !_otpVerified,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -584,6 +667,71 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                         ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: TextButton(
+                        onPressed: _otpSending
+                            ? null
+                            : (_otpVerified ? null : _sendOtp),
+                        style: TextButton.styleFrom(
+                          backgroundColor: _otpVerified
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFF15803D),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: _otpSending
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_otpVerified) ...[
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 14,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.verified,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const Icon(
+                                      Icons.sms_outlined,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.sendOtp,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                       ),
                     ),
                   ],

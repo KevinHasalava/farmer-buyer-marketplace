@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +26,6 @@ class PhoneAuthScreen extends StatefulWidget {
 }
 
 class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
-  static const _demoCode = '123456';
   static const _resendSeconds = 30;
 
   final _authService = const AuthService();
@@ -129,18 +128,13 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       _error = null;
     });
     try {
-      if (_demoMode) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (code != _demoCode) throw Exception('bad code');
-        if (mounted) _goStep(_AuthStep.name);
-        return;
-      }
-
       final user =
           await _authService.verifyPhoneOtp(phone: _e164!, token: code);
       final existingName = user.userMetadata?['full_name'] as String?;
       if (!mounted) return;
-      if (existingName != null && existingName.trim().isNotEmpty) {
+      if (existingName != null &&
+          existingName.trim().isNotEmpty &&
+          !existingName.startsWith('User ')) {
         await _authService.updateProfile(
           fullName: existingName,
           role: context.settings.role?.name ?? 'buyer',
