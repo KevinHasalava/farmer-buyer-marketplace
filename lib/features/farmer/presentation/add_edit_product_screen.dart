@@ -643,7 +643,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _productOptions.map((opt) {
             return DropdownMenuItem<String>(
               value: opt.name,
-              child: Text(opt.name),
+              child: Text(opt.name.trAuto(context)),
             );
           }).toList(),
         ),
@@ -682,7 +682,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _categoryOptions.map((cat) {
             return DropdownMenuItem<String>(
               value: cat,
-              child: Text(cat),
+              child: Text(cat.trAuto(context)),
             );
           }).toList(),
         ),

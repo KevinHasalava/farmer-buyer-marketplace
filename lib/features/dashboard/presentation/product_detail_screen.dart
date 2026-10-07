@@ -85,6 +85,12 @@ class ProductData {
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }
+  String localizedName(BuildContext context) => name.trAuto(context);
+  String localizedPrice(BuildContext context) => price.trAuto(context);
+  String localizedUnit(BuildContext context) => unit.trAuto(context);
+  String localizedAvailability(BuildContext context) => availability.trAuto(context);
+  String localizedCategory(BuildContext context) => category.trAuto(context);
+  String localizedDescription(BuildContext context) => description.trAuto(context);
 }
 
 class FarmerData {

@@ -293,7 +293,7 @@ extension LocalizedBuyerProduct on BuyerProduct {
         return lang == AppLanguage.sinhala ? entry.value.$1 : entry.value.$2;
       }
     }
-    return name;
+    return AppAutoTranslator.instance.translateSync(name, lang);
   }
 
   String localizedUnit(AppLanguage lang) {
@@ -306,7 +306,7 @@ extension LocalizedBuyerProduct on BuyerProduct {
     if (unit.toLowerCase().contains('pot')) return lang == AppLanguage.sinhala ? '1 හට්ටිය' : '1 சட்டி';
     if (unit.toLowerCase().contains('bottle')) return lang == AppLanguage.sinhala ? 'බෝතලය' : 'பாட்டில்';
     if (unit.toLowerCase().contains('nut')) return lang == AppLanguage.sinhala ? '1 ගෙඩිය' : '1 காய்';
-    return unit;
+    return AppAutoTranslator.instance.translateSync(unit, lang);
   }
 
   String localizedCategory(AppLanguage lang) {
@@ -318,7 +318,7 @@ extension LocalizedBuyerProduct on BuyerProduct {
     if (lower.contains('spice') || lower.contains('herb')) return lang == AppLanguage.sinhala ? 'කුළුබඩු සහ ඖෂධ පැළෑටි' : 'மசாலா மற்றும் மூலிகைகள்';
     if (lower.contains('organic') || lower.contains('trad')) return lang == AppLanguage.sinhala ? 'කාබනික සහ දේශීය' : 'இயற்கை & பாரம்பரிய';
     if (lower.contains('dairy') || lower.contains('fresh')) return lang == AppLanguage.sinhala ? 'කිරි සහ නැවුම් නිෂ්පාදන' : 'பால் & புதிய பொருட்கள்';
-    return category;
+    return AppAutoTranslator.instance.translateSync(category, lang);
   }
 
   String? localizedBadge(AppLanguage lang) {
@@ -396,7 +396,7 @@ extension LocalizedBuyerCategoryItem on BuyerCategoryItem {
           ? 'රුහුණු මීකිරි, ස්වාභාවික වන මීපැණි, ගම්බිත්තර සහ කිතුල් පැණි'
           : 'எருமைத் தயிர், இயற்கை காட்டுத் தேன், முட்டை & கித்துள் பாகு';
     }
-    return description;
+    return AppAutoTranslator.instance.translateSync(description, lang);
   }
 
   String localizedActionText(AppLanguage lang) {
@@ -436,7 +436,7 @@ extension LocalizedCartItem on CartItem {
         return lang == AppLanguage.sinhala ? entry.value.$1 : entry.value.$2;
       }
     }
-    return name;
+    return AppAutoTranslator.instance.translateSync(name, lang);
   }
 
   String localizedUnit(AppLanguage lang) {
@@ -448,7 +448,7 @@ extension LocalizedCartItem on CartItem {
     if (u.contains('bottle')) return lang == AppLanguage.sinhala ? '/බෝතලය' : '/பாட்டில்';
     if (u.contains('pot')) return lang == AppLanguage.sinhala ? '/හට්ටිය' : '/சட்டி';
     if (u.contains('item') || u.contains('each')) return lang == AppLanguage.sinhala ? '/එකක්' : '/ஒன்று';
-    return unit;
+    return AppAutoTranslator.instance.translateSync(unit, lang);
   }
 }
 

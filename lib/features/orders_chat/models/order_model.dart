@@ -62,6 +62,9 @@ class OrderItemSummary {
   });
 
   double get totalPrice => unitPrice * quantity;
+
+  String localizedName(BuildContext context) => name.trAuto(context);
+  String localizedUnit(BuildContext context) => unit.trAuto(context);
 }
 
 class OrderTrackingStep {

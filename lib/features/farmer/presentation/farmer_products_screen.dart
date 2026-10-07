@@ -655,7 +655,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      p.name,
+                      p.localizedName(context),
                       style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -666,7 +666,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     Row(
                       children: [
                         Text(
-                          p.price,
+                          p.localizedPrice(context),
                           style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
@@ -674,7 +674,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                           ),
                         ),
                         Text(
-                          ' ${p.unit}',
+                          ' ${p.localizedUnit(context)}',
                           style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
@@ -685,7 +685,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      p.availability,
+                      p.localizedAvailability(context),
                       style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 12,
                         fontWeight: FontWeight.w400,

@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:farmer_buyer_marketplace/core/localization/app_strings.dart';
+import 'package:farmer_buyer_marketplace/core/localization/auto_translator.dart';
+
+export 'auto_translator.dart';
 
 /// Supported app languages.
 enum AppLanguage {
@@ -60,6 +63,7 @@ class AppSettings extends ChangeNotifier {
 
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
+    await AppAutoTranslator.instance.init();
     return AppSettings._(prefs);
   }
 
