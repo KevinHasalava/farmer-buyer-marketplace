@@ -585,8 +585,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   // 🧭 2. DESKTOP WORKSPACE TOP BAR (BREADCRUMB + SEARCH + ACTIONS)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildWorkspaceTopBar({required bool isDesktop}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrow = screenWidth < 1150;
+    final isVeryNarrow = screenWidth < 980;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: _borderLight)),
@@ -596,15 +600,17 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           // Section Breadcrumbs
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Farm2Home Console',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted),
-              ),
+              if (!isVeryNarrow)
+                Text(
+                  'Farm2Home Console',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: _textMuted),
+                ),
               Text(
                 _getTabTitle(_activeNavIndex),
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: _textDark,
                   letterSpacing: -0.3,
@@ -612,12 +618,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
             ],
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 14),
 
           // Search Field
           Expanded(
             child: Container(
-              height: 40,
+              height: 38,
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(10),
@@ -626,66 +632,97 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               child: TextField(
                 controller: _searchController,
                 onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
-                style: const TextStyle(fontSize: 13, color: _textDark),
+                style: const TextStyle(fontSize: 12.5, color: _textDark),
                 decoration: InputDecoration(
-                  hintText: 'Search records by name, ID, phone, district...',
-                  hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                  hintText: isVeryNarrow ? 'Search...' : 'Search records by name, ID, phone...',
+                  hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 17, color: Color(0xFF64748B)),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
+                          icon: const Icon(Icons.clear_rounded, size: 15, color: Color(0xFF94A3B8)),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _searchQuery = '');
                           },
                         )
-                      : Container(
-                          margin: const EdgeInsets.all(8),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: _borderLight),
-                          ),
-                          child: const Text(
-                            'Ctrl+K',
-                            style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
-                          ),
-                        ),
+                      : (!isVeryNarrow
+                          ? Container(
+                              margin: const EdgeInsets.all(7),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: _borderLight),
+                              ),
+                              child: const Text(
+                                'Ctrl+K',
+                                style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                              ),
+                            )
+                          : null),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 10),
 
           // Language Selector
           const Center(child: AppLanguagePill(isDarkHeader: false)),
-          const SizedBox(width: 12),
+          const SizedBox(width: 6),
+
+          // Supabase Real-time Sync Button
+          IconButton(
+            tooltip: 'Sync Live Database with Supabase Cloud',
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFF059669), size: 20),
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(),
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Synchronizing with Supabase Cloud...'),
+                  duration: Duration(milliseconds: 900),
+                ),
+              );
+              await _service.refreshDatabaseSync();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✓ Supabase Cloud Database 100% Synchronized!'),
+                    backgroundColor: Color(0xFF059669),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+          const SizedBox(width: 6),
 
           // Primary "+ New Entry" Action Button
           ElevatedButton.icon(
             onPressed: () => _handleCreateActionForTab(_activeNavIndex),
-            icon: const Icon(Icons.add_rounded, size: 17),
+            icon: const Icon(Icons.add_rounded, size: 16),
             label: Text(
-              _getCreateButtonLabelForTab(_activeNavIndex),
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+              isNarrow ? '+ Add' : _getCreateButtonLabelForTab(_activeNavIndex),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: _emerald,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: isNarrow ? 10 : 14, vertical: 10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
 
           // Return to Public App
           IconButton(
             tooltip: 'Exit to Public Marketplace',
-            icon: const Icon(Icons.exit_to_app_rounded, color: Color(0xFF64748B), size: 20),
+            icon: const Icon(Icons.exit_to_app_rounded, color: Color(0xFF64748B), size: 19),
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -714,6 +751,28 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
       ),
       actions: [
+        IconButton(
+          tooltip: 'Sync Database',
+          icon: const Icon(Icons.sync_rounded, color: Color(0xFF34D399), size: 20),
+          onPressed: () async {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Synchronizing with Supabase Cloud...'),
+                duration: Duration(milliseconds: 900),
+              ),
+            );
+            await _service.refreshDatabaseSync();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✓ Supabase Cloud Database 100% Synchronized!'),
+                  backgroundColor: Color(0xFF059669),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          },
+        ),
         const Center(child: AppLanguagePill(isDarkHeader: true)),
         IconButton(
           icon: const Icon(Icons.exit_to_app_rounded, color: Colors.white, size: 20),

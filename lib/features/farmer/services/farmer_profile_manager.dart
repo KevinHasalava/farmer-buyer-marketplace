@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../models/farmer_profile_model.dart';
 
 class FarmerProfileManager extends ChangeNotifier {
@@ -133,6 +134,11 @@ class FarmerProfileManager extends ChangeNotifier {
       debugPrint('[FarmerProfileManager] Supabase update note: $e');
     }
 
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncFarmerFromApp(_profile);
+    } catch (_) {}
+
     notifyListeners();
   }
 
@@ -204,6 +210,11 @@ class FarmerProfileManager extends ChangeNotifier {
           ),
         );
       }
+    } catch (_) {}
+
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncFarmerFromApp(_profile);
     } catch (_) {}
 
     notifyListeners();

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../models/buyer_profile_model.dart';
 
 class BuyerProfileManager extends ChangeNotifier {
@@ -123,6 +124,11 @@ class BuyerProfileManager extends ChangeNotifier {
       debugPrint('[BuyerProfileManager] Supabase update note: $e');
     }
 
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncBuyerFromApp(_profile);
+    } catch (_) {}
+
     notifyListeners();
   }
 
@@ -166,6 +172,11 @@ class BuyerProfileManager extends ChangeNotifier {
           ),
         );
       }
+    } catch (_) {}
+
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncBuyerFromApp(_profile);
     } catch (_) {}
 
     notifyListeners();

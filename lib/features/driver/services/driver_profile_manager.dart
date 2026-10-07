@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../models/driver_model.dart';
 import 'driver_firestore_service.dart';
 
@@ -164,6 +165,11 @@ class DriverProfileManager extends ChangeNotifier {
       debugPrint('[DriverProfileManager] Supabase update note: $e');
     }
 
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncDriverFromApp(_driver);
+    } catch (_) {}
+
     notifyListeners();
   }
 
@@ -224,6 +230,11 @@ class DriverProfileManager extends ChangeNotifier {
     } catch (e) {
       debugPrint('[DriverProfileManager] Supabase update note: $e');
     }
+
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncDriverFromApp(_driver);
+    } catch (_) {}
 
     notifyListeners();
   }

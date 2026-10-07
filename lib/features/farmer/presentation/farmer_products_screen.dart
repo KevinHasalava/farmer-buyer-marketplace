@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
 
+import '../../admin/models/admin_models.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../services/farmer_profile_manager.dart';
@@ -119,6 +121,28 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     return _products;
   }
 
+  AdminProductModel _toAdminProduct(ProductData p) {
+    final cleanPrice = p.price.replaceAll('Rs.', '').replaceAll('Rs', '').replaceAll(',', '').trim();
+    final priceNum = double.tryParse(cleanPrice) ?? 250.0;
+    final cleanQty = p.availability.replaceAll('Available:', '').replaceAll('kg', '').replaceAll('Kg', '').trim();
+    final qtyNum = double.tryParse(cleanQty) ?? 50.0;
+    return AdminProductModel(
+      id: 'prod_${p.name.toLowerCase().replaceAll(' ', '_')}',
+      name: p.name,
+      category: p.category,
+      price: priceNum,
+      unit: p.unit,
+      availableQty: qtyNum,
+      farmName: FarmerProfileManager.instance.profile.farmName,
+      farmerName: _farmer.name,
+      isOrganic: p.tag?.toLowerCase().contains('organic') == true || p.tags.contains('Organic'),
+      imageUrl: p.imageUrl ?? '',
+      description: p.description,
+      status: p.isActive ? 'In Stock' : 'Out of Stock',
+      createdAt: DateTime.now(),
+    );
+  }
+
   void _onEditProduct(int index, ProductData prod) async {
     final updated = await Navigator.push<ProductData>(
       context,
@@ -128,6 +152,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     );
     if (updated != null && mounted) {
       setState(() => _products[index] = updated);
+      try {
+        AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
+      } catch (_) {}
       _showSnackBar(context.tr.productUpdated(updated.name));
     }
   }
@@ -139,6 +166,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     );
     if (newProd != null && mounted) {
       setState(() => _products.insert(0, newProd));
+      try {
+        AdminMarketplaceService.instance.addProduct(_toAdminProduct(newProd));
+      } catch (_) {}
       _showSnackBar(context.tr.productAdded(newProd.name));
     }
   }
@@ -149,6 +179,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       _products[index] = p.copyWith(isActive: !p.isActive);
     });
     final p = _products[index];
+    try {
+      AdminMarketplaceService.instance.updateProduct(_toAdminProduct(p));
+    } catch (_) {}
     _showSnackBar(
       '${p.name}: ${p.isActive ? context.tr.active : context.tr.outOfStock}',
     );
@@ -229,6 +262,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     onPressed: () {
                       Navigator.pop(ctx);
                       setState(() => _products.removeAt(index));
+                      try {
+                        AdminMarketplaceService.instance.deleteProduct(_toAdminProduct(prod).id);
+                      } catch (_) {}
                       _showSnackBar('${prod.name} deleted', isError: true);
                     },
                     style: ElevatedButton.styleFrom(
