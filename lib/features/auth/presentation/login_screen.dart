@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +9,10 @@ import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
+import '../../driver/services/driver_profile_manager.dart';
+import '../../admin/services/admin_auth_service.dart';
 
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
@@ -93,15 +98,64 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final inputEmail = _emailCtrl.text.trim();
+    final inputPassword = _passwordCtrl.text;
+
+    // ── Master Administrator Credentials Intercept ───────────────────
+    if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
+      setState(() => _isLoading = true);
+      HapticFeedback.mediumImpact();
+      final success = await AdminAuthService.instance.login(
+        email: inputEmail,
+        password: inputPassword,
+      );
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Master Administrator Access Granted. Opening Console...'),
+            backgroundColor: Color(0xFF047857),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.go(AppRoutes.adminPanel);
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     try {
-      await _authService.signIn(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
+      final user = await _authService.signIn(
+        email: inputEmail,
+        password: inputPassword,
       );
 
       if (!mounted) return;
       await context.read<AppSettings>().setRole(_selectedRole);
+
+      final effectiveName = user.name.isNotEmpty && !user.name.startsWith('User ')
+          ? user.name
+          : _emailCtrl.text.trim().split('@').first;
+      final phone = user.phone;
+
+      if (_selectedRole == UserRole.farmer) {
+        await FarmerProfileManager.instance.updateProfile(
+          name: effectiveName,
+          email: user.email,
+          phone: phone.isNotEmpty ? phone : null,
+        );
+      } else if (_selectedRole == UserRole.buyer) {
+        await BuyerProfileManager.instance.updateProfile(
+          name: effectiveName,
+          email: user.email,
+          phone: phone.isNotEmpty ? phone : null,
+        );
+      } else if (_selectedRole == UserRole.driver) {
+        await DriverProfileManager.instance.updateProfile(
+          fullName: effectiveName,
+          mobileNumber: phone.isNotEmpty ? phone : null,
+        );
+      }
+
       if (mounted) {
         context.go(AppRoutes.homeFor(_selectedRole));
       }
@@ -195,9 +249,30 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.go(AppRoutes.homeFor(_selectedRole));
+              final inputEmail = _emailCtrl.text.trim();
+              if (inputEmail.isNotEmpty) {
+                final derivedName = inputEmail.split('@').first;
+                if (_selectedRole == UserRole.farmer) {
+                  await FarmerProfileManager.instance.updateProfile(
+                    name: derivedName,
+                    email: inputEmail,
+                  );
+                } else if (_selectedRole == UserRole.buyer) {
+                  await BuyerProfileManager.instance.updateProfile(
+                    name: derivedName,
+                    email: inputEmail,
+                  );
+                } else if (_selectedRole == UserRole.driver) {
+                  await DriverProfileManager.instance.updateProfile(
+                    fullName: derivedName,
+                  );
+                }
+              }
+              if (mounted) {
+                context.go(AppRoutes.homeFor(_selectedRole));
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF235D3A),

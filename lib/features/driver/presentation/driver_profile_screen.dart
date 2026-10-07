@@ -6,11 +6,13 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/driver_firestore_service.dart';
+import '../services/driver_profile_manager.dart';
 import 'deliveries_screen.dart';
 import 'delivery_history_screen.dart';
 import 'driver_chat_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
+import '../../admin/presentation/admin_panel_screen.dart';
 
 /// Pixel-perfect Driver Profile Screen matching the reference mockup.
 ///
@@ -35,6 +37,7 @@ class DriverProfileScreen extends StatefulWidget {
   final String? accountNumber;
   final String? cargoCapacity;
   final String? licenseNumber;
+  final String? phone;
 
   const DriverProfileScreen({
     super.key,
@@ -46,6 +49,7 @@ class DriverProfileScreen extends StatefulWidget {
     this.accountNumber,
     this.cargoCapacity,
     this.licenseNumber,
+    this.phone,
   });
 
   @override
@@ -58,6 +62,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   String _accountNumber = '8004 1293 4198';
   String _maskedAccount = 'Commercial Bank LK (****4198)';
   String _accountHolder = 'Ranjith Subha Udhasanak';
+  String _phone = '+94 77 123 4567';
   String _branch = 'Nuwara Eliya (Branch 042)';
   String _vehicleType = 'Chilled / Refrigerated Van';
   String _plateNumber = 'NC-4982';
@@ -69,6 +74,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   @override
   void initState() {
     super.initState();
+    DriverProfileManager.instance.addListener(_onProfileManagerUpdated);
+    _syncFromManager();
+
+    if (widget.phone != null && widget.phone!.trim().isNotEmpty) {
+      _phone = widget.phone!.trim();
+    }
+
     if (widget.driverName != null && widget.driverName!.trim().isNotEmpty) {
       _accountHolder = widget.driverName!.trim();
     }
@@ -96,6 +108,38 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     _maskedAccount = '$_bankName (****$last4)';
 
     _loadDriverProfile();
+  }
+
+  @override
+  void dispose() {
+    DriverProfileManager.instance.removeListener(_onProfileManagerUpdated);
+    super.dispose();
+  }
+
+  void _onProfileManagerUpdated() {
+    if (mounted) {
+      _syncFromManager();
+    }
+  }
+
+  void _syncFromManager() {
+    final d = DriverProfileManager.instance.driver;
+    setState(() {
+      if (d.fullName.isNotEmpty) _accountHolder = d.fullName;
+      if (d.mobileNumber.isNotEmpty) _phone = d.mobileNumber;
+      if (d.vehicleType.isNotEmpty) _vehicleType = d.vehicleType;
+      if (d.plateNumber.isNotEmpty) _plateNumber = d.plateNumber;
+      if (d.cargoCapacity.isNotEmpty) _cargoCapacity = d.cargoCapacity;
+      if (d.licenseNumber.isNotEmpty) _licenseNumber = d.licenseNumber;
+      if (d.bankName.isNotEmpty) _bankName = d.bankName;
+      if (d.accountNumber.isNotEmpty) {
+        _accountNumber = d.accountNumber;
+        final last4 = d.accountNumber.length >= 4
+            ? d.accountNumber.substring(d.accountNumber.length - 4)
+            : d.accountNumber;
+        _maskedAccount = '$_bankName (****$last4)';
+      }
+    });
   }
 
   Future<void> _loadDriverProfile() async {
@@ -741,6 +785,32 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 14),
+
+          // Edit Profile Details Button
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: _showEditDriverProfileModal,
+              icon: const Icon(Icons.edit_note_rounded, size: 18, color: Color(0xFF047857)),
+              label: Text(
+                'Edit Profile Details'.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF047857),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFA7F3D0), width: 1.2),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -922,6 +992,18 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
           child: Column(
             children: [
+              // Tile 0: Edit Driver Profile & Vehicle
+              _buildOperationTile(
+                icon: Icons.person_outline_rounded,
+                iconBg: const Color(0xFFDCFCE7),
+                iconColor: const Color(0xFF047857),
+                title: 'Edit Driver Profile & Vehicle'.trAuto(context),
+                subtitle: '$_accountHolder • $_plateNumber',
+                subtitleColor: const Color(0xFF64748B),
+                onTap: _showEditDriverProfileModal,
+              ),
+              const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
+
               // Tile 1: Delivery History & Statements
               _buildOperationTile(
                 icon: Icons.history_rounded,
@@ -1359,6 +1441,284 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ===========================================================================
+  // ⭐ EDIT DRIVER & VEHICLE PROFILE MODAL SHEET
+  // ===========================================================================
+  void _showEditDriverProfileModal() {
+    final driver = DriverProfileManager.instance.driver;
+    final nameCtrl = TextEditingController(text: _accountHolder);
+    final phoneCtrl = TextEditingController(
+      text: driver.mobileNumber.isNotEmpty ? driver.mobileNumber : _phone,
+    );
+    final licenseCtrl = TextEditingController(text: _licenseNumber);
+    final vehicleCtrl = TextEditingController(text: _vehicleType);
+    final plateCtrl = TextEditingController(text: _plateNumber);
+    final capacityCtrl = TextEditingController(text: _cargoCapacity);
+    final bankCtrl = TextEditingController(text: _bankName);
+    final accountCtrl = TextEditingController(text: _accountNumber);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Edit Driver & Vehicle Profile'.trAuto(context),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Legal Name
+                _buildDriverEditField(
+                  controller: nameCtrl,
+                  label: 'Full Legal Name',
+                  hint: 'e.g. Ranjith Subha Udhasanak',
+                  prefixIcon: Icons.person_outline_rounded,
+                ),
+                const SizedBox(height: 12),
+
+                // Phone Number
+                _buildDriverEditField(
+                  controller: phoneCtrl,
+                  label: 'Phone Number',
+                  hint: 'e.g. 077 123 4567',
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: Icons.phone_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // License Number
+                _buildDriverEditField(
+                  controller: licenseCtrl,
+                  label: 'Driving License Number',
+                  hint: 'e.g. B-8492019',
+                  prefixIcon: Icons.badge_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // Vehicle Type & Plate Number
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: vehicleCtrl,
+                        label: 'Vehicle Type',
+                        hint: 'e.g. Refrigerated Van',
+                        prefixIcon: Icons.local_shipping_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: plateCtrl,
+                        label: 'Plate Number',
+                        hint: 'e.g. NC-4982',
+                        prefixIcon: Icons.pin_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Cargo Capacity
+                _buildDriverEditField(
+                  controller: capacityCtrl,
+                  label: 'Cargo Capacity',
+                  hint: 'e.g. 1,200 kg',
+                  prefixIcon: Icons.inventory_2_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // Bank Details
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: bankCtrl,
+                        label: 'Bank Name',
+                        hint: 'e.g. Commercial Bank',
+                        prefixIcon: Icons.account_balance_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: accountCtrl,
+                        label: 'Account Number',
+                        hint: 'e.g. 8004 1293',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: Icons.credit_card_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Save Changes Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      HapticFeedback.mediumImpact();
+                      final newName = nameCtrl.text.trim();
+                      final newPhone = phoneCtrl.text.trim();
+                      final newLicense = licenseCtrl.text.trim();
+                      final newVehicle = vehicleCtrl.text.trim();
+                      final newPlate = plateCtrl.text.trim();
+                      final newCapacity = capacityCtrl.text.trim();
+                      final newBank = bankCtrl.text.trim();
+                      final newAccount = accountCtrl.text.trim();
+
+                      Navigator.pop(ctx);
+
+                      await DriverProfileManager.instance.updateProfile(
+                        fullName: newName.isNotEmpty ? newName : null,
+                        mobileNumber: newPhone.isNotEmpty ? newPhone : null,
+                        licenseNumber: newLicense.isNotEmpty ? newLicense : null,
+                        vehicleType: newVehicle.isNotEmpty ? newVehicle : null,
+                        plateNumber: newPlate.isNotEmpty ? newPlate : null,
+                        cargoCapacity: newCapacity.isNotEmpty ? newCapacity : null,
+                        bankName: newBank.isNotEmpty ? newBank : null,
+                        accountNumber: newAccount.isNotEmpty ? newAccount : null,
+                      );
+
+                      if (mounted) {
+                        setState(() {
+                          if (newName.isNotEmpty) _accountHolder = newName;
+                          if (newPhone.isNotEmpty) _phone = newPhone;
+                          if (newVehicle.isNotEmpty) _vehicleType = newVehicle;
+                          if (newPlate.isNotEmpty) _plateNumber = newPlate;
+                          if (newCapacity.isNotEmpty) _cargoCapacity = newCapacity;
+                          if (newLicense.isNotEmpty) _licenseNumber = newLicense;
+                          if (newBank.isNotEmpty) _bankName = newBank;
+                          if (newAccount.isNotEmpty) {
+                            _accountNumber = newAccount;
+                            final last4 = newAccount.length >= 4
+                                ? newAccount.substring(newAccount.length - 4)
+                                : newAccount;
+                            _maskedAccount = '$_bankName (****$last4)';
+                          }
+                        });
+                      }
+
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Profile details updated successfully!'.trAuto(context)),
+                          backgroundColor: const Color(0xFF047857),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF047857),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Save Changes'.trAuto(context),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDriverEditField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    IconData? prefixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.trAuto(context),
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF047857)) : null,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF047857), width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3067,6 +3427,24 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Switched to Buyer Portal'.trAuto(context), style: TextStyle())),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              tileColor: const Color(0xFFF0FDF4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFA7F3D0)),
+              ),
+              leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF047857)),
+              title: Text('Marketplace Admin Console'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF047857))),
+              subtitle: Text('Manage Farmers, Buyers, Drivers & Orders'.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF065F46))),
+              trailing: const Icon(Icons.chevron_right, color: Color(0xFF047857)),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
                 );
               },
             ),

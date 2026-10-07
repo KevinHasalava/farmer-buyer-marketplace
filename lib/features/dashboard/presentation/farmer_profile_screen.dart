@@ -124,12 +124,16 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
   void _showEditProfileModal() {
     final nameCtrl = TextEditingController(text: _farmer.name);
+    final farmNameCtrl = TextEditingController(text: _profileManager.profile.farmName);
     final roleCtrl = TextEditingController(text: _farmer.role);
     final locCtrl = TextEditingController(text: _farmer.location);
+    final agrarianCtrl = TextEditingController(text: _profileManager.profile.agrarianCenter);
+    final phoneCtrl = TextEditingController(text: _farmer.phone ?? '076 323 8225');
+    final bankCtrl = TextEditingController(text: _profileManager.profile.bankName ?? '');
+    final accountCtrl = TextEditingController(text: _profileManager.profile.accountNumber ?? '');
     final expCtrl = TextEditingController(text: _farmer.yearsExperience);
     final custCtrl = TextEditingController(text: _farmer.happyCustomers);
     final aboutCtrl = TextEditingController(text: _farmer.about);
-    final phoneCtrl = TextEditingController(text: _farmer.phone ?? '076 323 8225');
 
     showModalBottomSheet(
       context: context,
@@ -184,16 +188,38 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                 _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'e.g. Sunil Perera'),
                 const SizedBox(height: 12),
 
+                // Farm Name Field
+                _buildEditField(controller: farmNameCtrl, label: 'Farm Name', hint: 'e.g. Hakgala Organic Gardens'),
+                const SizedBox(height: 12),
+
                 // Role Field
                 _buildEditField(controller: roleCtrl, label: 'Role / Farm Title', hint: 'e.g. Small-Scale Farmer'),
                 const SizedBox(height: 12),
 
                 // Location Field
-                _buildEditField(controller: locCtrl, label: 'Location', hint: 'e.g. Hambantota'),
+                _buildEditField(controller: locCtrl, label: 'Location / District', hint: 'e.g. Nuwara Eliya'),
+                const SizedBox(height: 12),
+
+                // Agrarian Center Field
+                _buildEditField(controller: agrarianCtrl, label: 'Agrarian Service Center', hint: 'e.g. Hakgala Agrarian Center'),
                 const SizedBox(height: 12),
 
                 // Phone Field
                 _buildEditField(controller: phoneCtrl, label: 'Phone Number', hint: 'e.g. 076 323 8225', keyboardType: TextInputType.phone),
+                const SizedBox(height: 12),
+
+                // Bank Details
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildEditField(controller: bankCtrl, label: 'Bank Name', hint: 'e.g. Commercial Bank'),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildEditField(controller: accountCtrl, label: 'Account Number', hint: 'e.g. 80041293', keyboardType: TextInputType.number),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
 
                 // Experience & Customers row
@@ -234,9 +260,13 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                     onPressed: () async {
                       HapticFeedback.mediumImpact();
                       final newName = nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : _farmer.name;
+                      final newFarmName = farmNameCtrl.text.trim().isNotEmpty ? farmNameCtrl.text.trim() : _profileManager.profile.farmName;
                       final newRole = roleCtrl.text.trim().isNotEmpty ? roleCtrl.text.trim() : _farmer.role;
                       final newLoc = locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : _farmer.location;
+                      final newAgrarian = agrarianCtrl.text.trim().isNotEmpty ? agrarianCtrl.text.trim() : _profileManager.profile.agrarianCenter;
                       final newPhone = phoneCtrl.text.trim().isNotEmpty ? phoneCtrl.text.trim() : _farmer.phone;
+                      final newBank = bankCtrl.text.trim().isNotEmpty ? bankCtrl.text.trim() : _profileManager.profile.bankName;
+                      final newAccount = accountCtrl.text.trim().isNotEmpty ? accountCtrl.text.trim() : _profileManager.profile.accountNumber;
                       final newExp = expCtrl.text.trim().isNotEmpty ? expCtrl.text.trim() : _farmer.yearsExperience;
                       final newCust = custCtrl.text.trim().isNotEmpty ? custCtrl.text.trim() : _farmer.happyCustomers;
                       final newAbout = aboutCtrl.text.trim().isNotEmpty ? aboutCtrl.text.trim() : _farmer.about;
@@ -257,9 +287,14 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
 
                       _profileManager.updateProfile(
                         name: newName,
+                        farmName: newFarmName,
                         role: newRole,
                         location: newLoc,
+                        district: newLoc,
+                        agrarianCenter: newAgrarian,
                         phone: newPhone,
+                        bankName: newBank,
+                        accountNumber: newAccount,
                         yearsExperience: newExp,
                         happyCustomers: newCust,
                         about: newAbout,
@@ -268,7 +303,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Profile details updated successfully!'),
+                            content: Text('Profile details updated successfully! ✓'),
                             backgroundColor: _forestGreen,
                             behavior: SnackBarBehavior.floating,
                           ),

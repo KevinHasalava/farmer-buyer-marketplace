@@ -9,6 +9,7 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/notify_sms_service.dart';
+import '../../driver/services/driver_profile_manager.dart';
 import 'otp_verification_dialog.dart';
 
 /// Driver Registration Screen — matching Farm2Home Agri-Transit design.
@@ -25,13 +26,12 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   final _authService = const AuthService();
 
   // Controllers
-  final _nameCtrl = TextEditingController(text: 'Ranjith Subha Udhasanak');
-  final _licenseCtrl = TextEditingController(text: 'B-1234567');
-  final _phoneCtrl = TextEditingController(text: '77 123 4567');
-  final _plateCtrl = TextEditingController(text: 'WP NC-4982');
-  final _capacityCtrl = TextEditingController(text: '500 kg / 40 Crates');
-  final _bankCtrl =
-      TextEditingController(text: 'Commercial Bank • 8234892831');
+  final _nameCtrl = TextEditingController();
+  final _licenseCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _plateCtrl = TextEditingController();
+  final _capacityCtrl = TextEditingController();
+  final _bankCtrl = TextEditingController();
 
   // State
   int _selectedVehicleIndex = 0;
@@ -131,6 +131,39 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
     try {
       final name = _nameCtrl.text.trim();
+      final phone = _phoneCtrl.text.trim();
+      final license = _licenseCtrl.text.trim();
+      final plate = _plateCtrl.text.trim();
+      final capacity = _capacityCtrl.text.trim();
+      final bank = _bankCtrl.text.trim();
+
+      final vehicleType = _selectedVehicleIndex == 0
+          ? 'Chilled / Refrigerated Van'
+          : (_selectedVehicleIndex == 1
+              ? 'Insulated Light Truck (2.5T)'
+              : 'Electric Three-Wheeler');
+
+      String bankName = 'Commercial Bank';
+      String accountNumber = '';
+      if (bank.contains('•')) {
+        final parts = bank.split('•');
+        bankName = parts[0].trim();
+        accountNumber = parts[1].trim();
+      } else if (bank.isNotEmpty) {
+        bankName = bank;
+      }
+
+      await DriverProfileManager.instance.saveRegistrationData(
+        name: name,
+        phone: phone,
+        licenseNumber: license,
+        plateNumber: plate,
+        vehicleType: vehicleType,
+        capacity: capacity,
+        bankName: bankName,
+        accountNumber: accountNumber,
+      );
+
       if (name.isNotEmpty) {
         await _authService.updateProfile(
           fullName: name,

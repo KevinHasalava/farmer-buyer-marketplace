@@ -9,6 +9,7 @@ import 'driver_profile_photo_data.dart';
 import 'driver_profile_screen.dart';
 import 'pickup_navigation_map_data.dart';
 import '../services/driver_firestore_service.dart';
+import '../services/driver_profile_manager.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -81,6 +82,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
       parent: _transitPulseController,
       curve: Curves.easeOut,
     );
+
+    DriverProfileManager.instance.addListener(_onDriverProfileChanged);
+    _syncFromProfileManager();
+
     if (widget.driverName != null && widget.driverName!.trim().isNotEmpty) {
       _driverName = widget.driverName!.trim();
     }
@@ -106,6 +111,28 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
       _vehicleInfo = '$_vehicleType $_plateNumber • Active Shift';
     }
     _loadDashboardData();
+  }
+
+  void _onDriverProfileChanged() {
+    if (mounted) {
+      _syncFromProfileManager();
+    }
+  }
+
+  void _syncFromProfileManager() {
+    final d = DriverProfileManager.instance.driver;
+    if (d.fullName.isNotEmpty) {
+      setState(() {
+        _driverName = d.fullName;
+        if (d.vehicleType.isNotEmpty) _vehicleType = d.vehicleType;
+        if (d.plateNumber.isNotEmpty) _plateNumber = d.plateNumber;
+        _vehicleInfo = '$_vehicleType $_plateNumber • Active Shift';
+        if (d.bankName.isNotEmpty) _bankName = d.bankName;
+        if (d.accountNumber.isNotEmpty) _accountNumber = d.accountNumber;
+        if (d.cargoCapacity.isNotEmpty) _cargoCapacity = d.cargoCapacity;
+        if (d.licenseNumber.isNotEmpty) _licenseNumber = d.licenseNumber;
+      });
+    }
   }
 
   /// READ (R) operation: Fetch driver document, shift stats, and active order from Cloud Firestore
@@ -155,6 +182,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
   @override
   void dispose() {
+    DriverProfileManager.instance.removeListener(_onDriverProfileChanged);
     _transitPulseController.dispose();
     super.dispose();
   }

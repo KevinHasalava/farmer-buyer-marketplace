@@ -12,6 +12,7 @@ import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
 import 'buyer_notifications_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
+import '../../admin/presentation/admin_panel_screen.dart';
 
 /// Buyer Profile Screen — matching Farm2Home "Buyer Profile - Consumer Hub" design.
 class BuyerProfileScreen extends StatefulWidget {
@@ -1130,6 +1131,22 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const OrdersChatScreen(initialTab: 1),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                      _buildMenuItem(
+                        icon: Icons.admin_panel_settings_rounded,
+                        iconBg: const Color(0xFFDCFCE7),
+                        iconColor: const Color(0xFF047857),
+                        title: 'Marketplace Admin Console',
+                        subtitle: 'Multi-role Management & CRUD System',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminPanelScreen(),
                             ),
                           );
                         },
