@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import 'farmer_profile_screen.dart';
@@ -518,7 +519,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               Expanded(
                                 child: _InfoCard(
                                   icon: Icons.calendar_today_outlined,
-                                  label: 'Harvest Date',
+                                  label: context.tr.harvestDate,
                                   value: p.harvestDate,
                                 ),
                               ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
@@ -20,7 +20,7 @@ class FarmerDashboardScreen extends StatefulWidget {
 
 class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     with SingleTickerProviderStateMixin {
-  int _selectedNav = 0;
+  final int _selectedNav = 0;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
 
@@ -106,8 +106,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Incoming Orders',
-              style: GoogleFonts.poppins(
+              context.tr.incomingOrders,
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF111827),
@@ -155,8 +156,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              'Farmer Direct Chat',
-              style: GoogleFonts.poppins(
+              context.tr.farmerDirectChat,
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF111827),
@@ -164,9 +166,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Chat directly with verified buyers inquiring about your fresh produce.',
+              context.tr.farmerChatSub,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 13,
                 color: const Color(0xFF6B7280),
               ),
@@ -186,8 +189,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
               child: Text(
-                'Close',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                context.tr.close,
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -257,7 +263,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       children: [
         Text(
           context.tr.farmerDashboard,
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF111827),
@@ -278,8 +285,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Already at the root of Farmer view',
-                        style: GoogleFonts.poppins(),
+                        context.tr.alreadyAtFarmerRoot,
+                        style: AppTheme.fontStyle(context.currentLanguage),
                       ),
                       duration: const Duration(seconds: 2),
                     ),
@@ -301,7 +308,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   children: [
                     Text(
                       context.tr.buyerView,
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF4B5563),
@@ -324,8 +332,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'You have 2 pending order notifications',
-                      style: GoogleFonts.poppins(),
+                      context.tr.pendingOrderAlert,
+                      style: AppTheme.fontStyle(context.currentLanguage),
                     ),
                     backgroundColor: const Color(0xFF235A43),
                     behavior: SnackBarBehavior.floating,
@@ -379,7 +387,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       children: [
         Text(
           '${_getGreeting()}, $displayName 🌾',
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 23,
             fontWeight: FontWeight.w800,
             color: const Color(0xFF111827),
@@ -389,7 +398,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         const SizedBox(height: 4),
         Text(
           context.tr.farmOverview,
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 14,
             fontWeight: FontWeight.w400,
             color: const Color(0xFF6B7280),
@@ -430,7 +440,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 children: [
                   Text(
                     _farmer.name,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
@@ -439,7 +450,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   const SizedBox(height: 3),
                   Text(
                     _farmer.role,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF6B7280),
@@ -456,7 +468,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       const SizedBox(width: 4),
                       Text(
                         _farmer.location,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF4B5563),
@@ -571,8 +584,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Total weekly earnings: Rs. 8,500 across 18 orders',
-                        style: GoogleFonts.poppins(),
+                        context.tr.weeklyEarningsSummary,
+                        style: AppTheme.fontStyle(context.currentLanguage),
                       ),
                       backgroundColor: const Color(0xFF235A43),
                       behavior: SnackBarBehavior.floating,
@@ -618,7 +631,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 Expanded(
                   child: Text(
                     value,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: value.startsWith('Rs') ? 17 : 22,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1E5E3A),
@@ -640,7 +654,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             const SizedBox(height: 10),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF6B7280),
@@ -659,7 +674,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       children: [
         Text(
           context.tr.quickActions.toUpperCase(),
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF374151),
@@ -744,7 +760,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           const SizedBox(height: 8),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: AppTheme.fontStyle(
+              context.currentLanguage,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF374151),
@@ -765,7 +782,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           children: [
             Text(
               context.tr.recentOrders,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF111827),
@@ -775,7 +793,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               onTap: _showOrdersSheet,
               child: Text(
                 context.tr.seeAll,
-                style: GoogleFonts.poppins(
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF235A43),
@@ -861,7 +880,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   children: [
                     Text(
                       ord.id,
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF111827),
@@ -869,7 +889,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                     ),
                     Text(
                       ' • ',
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 13,
                         color: const Color(0xFF9CA3AF),
                       ),
@@ -878,7 +899,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       child: Text(
                         ord.customer,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF4B5563),
@@ -890,7 +912,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 const SizedBox(height: 3),
                 Text(
                   ord.amount,
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF111827),
@@ -909,8 +932,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               border: Border.all(color: badgeBorder),
             ),
             child: Text(
-              ord.status,
-              style: GoogleFonts.poppins(
+              ord.isPending ? context.tr.statusPending : context.tr.statusConfirmed,
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: badgeText,
@@ -939,7 +963,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             icon: Icons.home_rounded,
             label: context.tr.navHome,
             isSelected: _selectedNav == 0,
-            onTap: () => setState(() => _selectedNav = 0),
+            onTap: () => setState(() => _selectedNav == 0),
           ),
           _buildNavItem(
             icon: Icons.assignment_outlined,
@@ -947,7 +971,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             hasBadge: true,
             isSelected: _selectedNav == 1,
             onTap: () {
-              setState(() => _selectedNav = 1);
+              setState(() => _selectedNav == 1);
               _showOrdersSheet();
             },
           ),
@@ -956,7 +980,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             label: context.tr.navChat,
             isSelected: _selectedNav == 2,
             onTap: () {
-              setState(() => _selectedNav = 2);
+              setState(() => _selectedNav == 2);
               _showMessagesSheet();
             },
           ),
@@ -965,7 +989,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             label: context.tr.navProfile,
             isSelected: _selectedNav == 3,
             onTap: () {
-              setState(() => _selectedNav = 3);
+              setState(() => _selectedNav == 3);
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1021,7 +1045,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: AppTheme.fontStyle(
+              context.currentLanguage,
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected ? activeColor : inactiveColor,

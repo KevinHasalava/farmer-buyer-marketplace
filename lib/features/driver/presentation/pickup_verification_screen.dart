@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../models/pickup_verification_model.dart';
 import '../services/driver_firestore_service.dart';
@@ -138,7 +139,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
               Expanded(
                 child: Text(
                   'Audit log #VER-${_orderId.replaceAll('#', '')} created in Firestore (CREATE)',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -257,8 +258,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
           ),
           const SizedBox(width: 8),
           Text(
-            'Pickup Verification',
-            style: GoogleFonts.poppins(
+            context.tr.pickupVerification,
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -364,7 +365,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                             const SizedBox(width: 2),
                             Text(
                               'Welimada Depot Gate #1',
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -450,8 +451,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'UPCOMING TURN',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.upcomingTurn,
+                                  style: TextStyle(
                                     fontSize: 8.5,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF059669),
@@ -462,7 +463,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                                   isOrder8850
                                       ? 'In 150m, Turn Right'
                                       : 'In 400m, Turn Right',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF0F172A),
@@ -473,7 +474,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                                   isOrder8850
                                       ? 'Welimada Depot Platform Gate #1 / C'
                                       : 'Hakgala Farm Gate #2 Access Rd',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(
                                     fontSize: 10,
                                     color: const Color(0xFF64748B),
                                     height: 1.15,
@@ -504,8 +505,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'LIVE',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.liveBadge,
+                                  style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF065F46),
@@ -550,7 +551,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                             isOrder8850
                                 ? 'Welimada – Badulla Rd'
                                 : 'Badulla – Nuwara Eliya Rd',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF334155),
@@ -592,7 +593,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           const SizedBox(width: 5),
                           Text(
                             isOrder8850 ? '4 mins • 1.8 km' : '8 mins • 2.1 km',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -645,8 +646,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Live Transit Navigation',
-                      style: GoogleFonts.poppins(
+                      context.tr.liveTransitNav,
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -654,7 +655,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                     ),
                     Text(
                       'En route to Hakgala Farm Gate #2',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         color: const Color(0xFF64748B),
                       ),
@@ -684,7 +685,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                         _orderId.contains('8850')
                             ? '4 mins • 1.8 km'
                             : '8 mins • 2.1 km',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF15803D),
@@ -728,7 +729,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           _orderId.contains('8850')
                               ? 'Upcoming: In 150m, Turn Right'
                               : 'Upcoming: In 400m, Turn Right',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF0F172A),
@@ -738,7 +739,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           _orderId.contains('8850')
                               ? 'Welimada Depot Platform Gate #1 / C • B322 Highway'
                               : 'Hakgala Farm Gate #2 Access Rd • Badulla – Nuwara Eliya Rd',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 11.5,
                             color: const Color(0xFF64748B),
                           ),
@@ -763,8 +764,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                 ),
                 child: Text(
-                  'Close Navigation View',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  context.tr.closeNavigationView,
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -839,8 +840,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'ARRIVAL VERIFIED',
-                            style: GoogleFonts.poppins(
+                            context.tr.arrivalVerified,
+                            style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF047857),
@@ -853,7 +854,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                     const SizedBox(height: 3),
                     Text(
                       _farmLocation,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -890,15 +891,15 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Host Farmer',
-                              style: GoogleFonts.poppins(
+                              context.tr.hostFarmer,
+                              style: TextStyle(
                                 fontSize: 10,
                                 color: const Color(0xFF94A3B8),
                               ),
                             ),
                             Text(
                               _farmerName,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
@@ -934,15 +935,15 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Gate / Shed',
-                              style: GoogleFonts.poppins(
+                              context.tr.gateShed,
+                              style: TextStyle(
                                 fontSize: 10,
                                 color: const Color(0xFF94A3B8),
                               ),
                             ),
                             Text(
                               _gateInfo,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
@@ -994,8 +995,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Quality Checklist',
-                    style: GoogleFonts.poppins(
+                    context.tr.qualityChecklist,
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -1010,8 +1011,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '3 of 3 Verified',
-                  style: GoogleFonts.poppins(
+                  context.tr.threeOfThreeVerified,
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF047857),
@@ -1024,8 +1025,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
 
           // Subtitle instruction
           Text(
-            'Verify field condition, sealed weight, and scan codes before staging into cold van manifest.',
-            style: GoogleFonts.poppins(
+            context.tr.qualityChecklistSub,
+            style: TextStyle(
               fontSize: 11.5,
               color: const Color(0xFF64748B),
               height: 1.45,
@@ -1035,14 +1036,14 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
 
           // Checklist Item 1: Fresh bundled, hydro-cooled
           _buildChecklistItem(
-            title: 'Fresh bundled, hydro-cooled',
+            title: context.tr.freshBundledHydroCooled,
             badgeText: 'Verified',
           ),
           const SizedBox(height: 8),
 
           // Checklist Item 2: Crate Tag Scanned
           _buildChecklistItem(
-            title: 'Crate Tag Scanned',
+            title: context.tr.crateTagScanned,
             subtitle: _crateId,
             badgeText: 'Verified',
           ),
@@ -1050,8 +1051,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
 
           // Checklist Item 3: Ambient: 16°C (Optimal)
           _buildChecklistItem(
-            title: 'Ambient: $_ambientTemp (Optimal)',
-            badgeText: 'Freshness OK',
+            title: context.tr.ambientOptimal(_ambientTemp),
+            badgeText: context.tr.freshnessOk,
           ),
           const SizedBox(height: 12),
 
@@ -1075,8 +1076,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Need Help? Contact Dispatch',
-                      style: GoogleFonts.poppins(
+                      context.tr.needHelpContactDispatch,
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF475569),
@@ -1120,7 +1121,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
@@ -1130,7 +1131,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   const SizedBox(height: 1),
                   Text(
                     subtitle,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF94A3B8),
@@ -1145,7 +1146,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
           // Status Badge on right
           Text(
             badgeText,
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF059669),
@@ -1188,8 +1189,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Handover Auth',
-                    style: GoogleFonts.poppins(
+                    context.tr.handoverAuth,
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -1198,8 +1199,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                 ],
               ),
               Text(
-                'Field Verification',
-                style: GoogleFonts.poppins(
+                context.tr.fieldVerification,
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF64748B),
@@ -1224,8 +1225,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Farmer PIN Handover',
-                  style: GoogleFonts.poppins(
+                  context.tr.farmerPinHandover,
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF64748B),
@@ -1270,8 +1271,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Matched',
-                            style: GoogleFonts.poppins(
+                            context.tr.pinMatched,
+                            style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF047857),
@@ -1293,7 +1294,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
   Widget _buildPinDigit(String digit) {
     return Text(
       digit,
-      style: GoogleFonts.poppins(
+      style: TextStyle(
         fontSize: 19,
         fontWeight: FontWeight.w800,
         color: const Color(0xFF0F172A),
@@ -1335,8 +1336,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    'Verifying & Staging to Van...',
-                    style: GoogleFonts.poppins(
+                    context.tr.verifyingAndStaging,
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -1350,8 +1351,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Confirm Pickup & Load to Van',
-                    style: GoogleFonts.poppins(
+                    context.tr.confirmPickupAndLoad,
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -1405,8 +1406,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Pickup Verified & Loaded!',
-              style: GoogleFonts.poppins(
+              context.tr.pickupVerifiedLoadedTitle,
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1414,9 +1415,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              '2 Crates (#CR-8841-A & B) securely staged into cold van manifest.\nNext stage: En route to Colombo dropoff.',
+              context.tr.pickupVerifiedLoadedDesc,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: const Color(0xFF64748B),
                 height: 1.5,
@@ -1439,8 +1440,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ),
                 ),
                 child: Text(
-                  'Back to Driver Dashboard',
-                  style: GoogleFonts.poppins(
+                  context.tr.backToDriverDashboard,
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1490,8 +1491,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              'Agri-Dispatch Hotline',
-              style: GoogleFonts.poppins(
+              context.tr.agriDispatchHotline,
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1499,8 +1500,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              'Direct line for corridor re-routing or crate issues.',
-              style: GoogleFonts.poppins(
+              context.tr.agriDispatchHotlineSub,
+              style: TextStyle(
                 fontSize: 12.5,
                 color: const Color(0xFF64748B),
               ),
@@ -1515,8 +1516,8 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Dialing Dispatch Central Hotline...',
-                        style: GoogleFonts.poppins(),
+                        context.tr.dialingDispatch,
+                        style: TextStyle(),
                       ),
                       backgroundColor: const Color(0xFF064E3B),
                       behavior: SnackBarBehavior.floating,
@@ -1524,7 +1525,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                   );
                 },
                 icon: const Icon(Icons.call, size: 18),
-                label: const Text('Call Dispatch (1920)'),
+                label: Text(context.tr.callDispatch1920),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,

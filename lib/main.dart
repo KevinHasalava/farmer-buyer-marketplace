@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'core/localization/app_settings.dart';
@@ -61,33 +60,22 @@ Future<void> main() async {
 class FarmTrustApp extends StatelessWidget {
   const FarmTrustApp({super.key});
 
-  /// Poppins has no Sinhala/Tamil glyphs — fall back to Noto Sans for those.
-  static final List<String> _scriptFallback = [
-    GoogleFonts.notoSansSinhala().fontFamily!,
-    GoogleFonts.notoSansTamil().fontFamily!,
-  ];
-
-  static ThemeData _withScriptFallback(ThemeData t) => t.copyWith(
-        textTheme: t.textTheme.apply(fontFamilyFallback: _scriptFallback),
-        primaryTextTheme:
-            t.primaryTextTheme.apply(fontFamilyFallback: _scriptFallback),
-      );
-
   @override
   Widget build(BuildContext context) {
     // Rebuild the whole app when the language changes.
-    context.watch<AppSettings>();
+    final settings = context.watch<AppSettings>();
+    final currentLang = settings.language ?? AppLanguage.english;
 
     return MaterialApp.router(
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
 
-      // ── Theme ─────────────────────────────────────────────────────────────
-      theme: _withScriptFallback(AppTheme.lightTheme),
-      darkTheme: _withScriptFallback(AppTheme.darkTheme),
+      // ── Theme (Dynamic Typography for Sinhala, Tamil, English) ───────
+      theme: AppTheme.lightTheme(currentLang),
+      darkTheme: AppTheme.darkTheme(currentLang),
       themeMode: ThemeMode.system,
 
-      // ── Navigation ────────────────────────────────────────────────────────
+      // ── Navigation ───────────────────────────────────────────────────
       routerConfig: appRouter,
     );
   }

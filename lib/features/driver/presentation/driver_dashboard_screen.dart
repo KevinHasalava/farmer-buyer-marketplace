@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import 'deliveries_screen.dart';
 import 'delivery_details_screen.dart';
@@ -10,6 +10,7 @@ import 'driver_profile_screen.dart';
 import 'pickup_navigation_map_data.dart';
 import '../services/driver_firestore_service.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
 /// Pixel-perfect Driver Dashboard Screen matching the Farm2Home Driver reference design.
@@ -250,7 +251,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           // Brand Name
           Text(
             'Farm2Home',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF111827),
@@ -268,7 +269,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             child: Text(
               'DRIVER',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF065F46),
@@ -383,8 +384,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           children: [
             // Subtitle label
             Text(
-              'HIGHLAND AGRI-CORRIDOR #4',
-              style: GoogleFonts.poppins(
+              context.tr.highlandAgriCorridor,
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF64748B),
@@ -415,10 +417,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      newDuty
-                          ? 'Duty Status: ON DUTY (Updated in Cloud Firestore - UPDATE)'
-                          : 'Duty Status: OFF DUTY (Updated in Cloud Firestore - UPDATE)',
-                      style: GoogleFonts.poppins(),
+                      newDuty ? context.tr.dutyOn : context.tr.dutyOff,
+                      style: AppTheme.fontStyle(context.currentLanguage),
                     ),
                     duration: const Duration(seconds: 2),
                     backgroundColor:
@@ -451,7 +451,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     const SizedBox(width: 5),
                     Text(
                       _isOnDuty ? '• ${context.tr.online}' : '• ${context.tr.offline}',
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         color: _isOnDuty ? const Color(0xFF065F46) : const Color(0xFF64748B),
@@ -468,7 +469,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
         // Main Greeting
         Text(
           '${context.tr.hello}, ${_getDriverFirstName()}',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF0F172A),
@@ -488,7 +489,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(width: 5),
             Text(
               _vehicleInfo,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF64748B),
@@ -540,8 +541,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     const Text('⚡', style: TextStyle(fontSize: 11)),
                     const SizedBox(width: 4),
                     Text(
-                      'Urgent: Ready for Pickup',
-                      style: GoogleFonts.poppins(
+                      context.tr.urgentPickup,
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFFB45309),
@@ -554,7 +556,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               // Order Number
               Text(
                 _activeOrderId,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF334155),
@@ -600,7 +602,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   children: [
                     Text(
                       _activeFarmerName,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -609,7 +611,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     const SizedBox(height: 2),
                     RichText(
                       text: TextSpan(
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF64748B),
                         ),
@@ -635,7 +637,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 children: [
                   Text(
                     'Est. Payout',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF64748B),
@@ -647,7 +649,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                       children: [
                         TextSpan(
                           text: 'Rs. \n',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF065F46),
@@ -656,7 +658,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         ),
                         TextSpan(
                           text: _activeEstPayout.toInt().toString(),
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF064E3B),
@@ -707,7 +709,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         children: [
                           Text(
                             'PICKUP LOCATION',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF94A3B8),
@@ -717,7 +719,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           const SizedBox(height: 1),
                           Text(
                             _activePickupLocation,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF1E293B),
@@ -749,7 +751,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         children: [
                           Text(
                             'DROPOFF BUYER',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF94A3B8),
@@ -759,7 +761,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           const SizedBox(height: 1),
                           Text(
                             'Chaminda Perera • Havelock Rd, Colombo',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF1E293B),
@@ -789,7 +791,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           const SizedBox(width: 6),
                           Text(
                             _activeCargoItem,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF1E293B),
@@ -806,7 +808,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         ),
                         child: Text(
                           _activeCrate,
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF065F46),
@@ -846,8 +848,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Start Pickup Route',
-                    style: GoogleFonts.poppins(
+                    context.tr.startRoute,
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -900,8 +903,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'View Details',
-                          style: GoogleFonts.poppins(
+                          context.tr.viewDetails,
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF1E293B),
@@ -942,8 +946,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Call Farmer',
-                          style: GoogleFonts.poppins(
+                          '${context.tr.call} ${context.tr.farmer}',
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF065F46),
@@ -972,7 +977,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           children: [
             Text(
               "Today's Shift Pulse",
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 16.5,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -980,7 +985,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             Text(
               '66% Completed',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF64748B),
@@ -1039,7 +1044,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           child: Text(
                             '+2 peak',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF047857),
@@ -1053,7 +1058,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     // Number
                     Text(
                       '$_scheduledDeliveries Scheduled',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF0F172A),
@@ -1064,7 +1069,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     // Subtitle
                     Text(
                       '$_deliveredToday Delivered Today',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF64748B),
@@ -1122,7 +1127,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           child: Text(
                             '+1.2k tips',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF047857),
@@ -1136,7 +1141,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     // Number
                     Text(
                       'Rs. ${_formatEarnings(_netEarnings)}',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF059669),
@@ -1147,7 +1152,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     // Subtitle
                     Text(
                       context.tr.todaysEarnings,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         color: const Color(0xFF64748B),
@@ -1195,7 +1200,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   const SizedBox(width: 8),
                   Text(
                     'Corridor Route Map',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -1223,7 +1228,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     const SizedBox(width: 4),
                     Text(
                       'A7 Highway Clear',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF047857),
@@ -1330,7 +1335,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                               const SizedBox(width: 5),
                               Text(
                                 'Live Transit: 38 km/h',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -1374,7 +1379,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                               const SizedBox(width: 4),
                               Text(
                                 'Hakgala Corridor',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF1E293B),
@@ -1439,7 +1444,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               children: [
                 Text(
                   'Cargo Chiller: 12°C',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
@@ -1448,7 +1453,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 const SizedBox(height: 1),
                 Text(
                   'Target 10°C - 14°C • Veg Safe',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF64748B),
@@ -1468,7 +1473,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             child: Text(
               'Optimal',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF059669),
@@ -1585,7 +1590,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             SnackBar(
               content: Text(
                 '$label tab selected',
-                style: GoogleFonts.poppins(),
+                style: TextStyle(),
               ),
               duration: const Duration(seconds: 1),
               backgroundColor: const Color(0xFF065F46),
@@ -1608,7 +1613,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
@@ -1660,7 +1665,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(height: 16),
             Text(
               'Start Pickup Route',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1670,7 +1675,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             Text(
               'Route to Hakgala Organic Farm (2.4 km)\nDispatch order #FH-8841 is marked as active.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: const Color(0xFF64748B),
               ),
@@ -1686,7 +1691,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     SnackBar(
                       content: Text(
                         'Turn-by-turn navigation started for #FH-8841',
-                        style: GoogleFonts.poppins(),
+                        style: TextStyle(),
                       ),
                       backgroundColor: const Color(0xFF064E3B),
                       behavior: SnackBarBehavior.floating,
@@ -1702,7 +1707,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 ),
                 child: Text(
                   'Launch Turn-by-Turn GPS',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -1746,7 +1751,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               children: [
                 Text(
                   'Order Details #FH-8841',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
@@ -1760,7 +1765,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                   ),
                   child: Text(
                     'Ready for Pickup',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -1792,7 +1797,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 ),
                 child: Text(
                   'Close',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF475569),
                   ),
@@ -1815,7 +1820,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             width: 140,
             child: Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF64748B),
@@ -1825,7 +1830,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0F172A),
@@ -1875,7 +1880,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(height: 14),
             Text(
               'Call Farmer Bandar',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1884,7 +1889,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(height: 4),
             Text(
               '+94 77 458 1920 • Hakgala Organic Farm',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: const Color(0xFF64748B),
               ),
@@ -1904,7 +1909,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF475569),
                       ),
@@ -1920,7 +1925,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         SnackBar(
                           content: Text(
                             'Dialing Farmer Bandar (+94 77 458 1920)...',
-                            style: GoogleFonts.poppins(),
+                            style: TextStyle(),
                           ),
                           backgroundColor: const Color(0xFF064E3B),
                           behavior: SnackBarBehavior.floating,
@@ -1930,7 +1935,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     icon: const Icon(Icons.call, size: 18),
                     label: Text(
                       'Call Now',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13.5,
                       ),
@@ -2011,7 +2016,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         children: [
                           Text(
                             'Shift & Dispatch Alerts',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -2019,7 +2024,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           ),
                           Text(
                             'Active route notifications & vehicle telemetry',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -2036,7 +2041,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                         ),
                         child: Text(
                           '2 NEW',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF047857),
@@ -2140,7 +2145,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                     ),
                     child: Text(
                       _hasUnreadNotifications ? 'Mark All as Read' : 'Close Notifications',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2210,7 +2215,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
@@ -2232,7 +2237,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                       const SizedBox(height: 3),
                       Text(
                         message,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF475569),
                           height: 1.4,
@@ -2249,7 +2254,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                             ),
                             child: Text(
                               badge,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: badgeColor,
@@ -2259,7 +2264,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                           const Spacer(),
                           Text(
                             time,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10.5,
                               color: const Color(0xFF94A3B8),
                             ),
@@ -2317,7 +2322,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             const SizedBox(height: 12),
             Text(
               _driverName,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -2325,7 +2330,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
             ),
             Text(
               'Verified Agri-Logistics Driver • ID #${_currentDriverId != null && _currentDriverId!.length >= 4 ? _currentDriverId!.substring(0, 4).toUpperCase() : 'DRV-4091'}',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12,
                 color: const Color(0xFF64748B),
               ),
@@ -2361,7 +2366,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
                 ),
                 child: Text(
                   'Dismiss',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2378,7 +2383,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
       children: [
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF0F172A),
@@ -2386,7 +2391,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
         ),
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 11,
             color: const Color(0xFF64748B),
           ),

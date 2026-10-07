@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 import '../../farmer/presentation/add_edit_product_screen.dart';
@@ -403,11 +404,11 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.edit_rounded, size: 14, color: _forestGreen),
+                        children: [
+                          const Icon(Icons.edit_rounded, size: 14, color: _forestGreen),
                           SizedBox(width: 4),
                           Text(
-                            'Edit',
+                            context.tr.edit,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -458,8 +459,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                     ),
                   ),
                 ],
-                title: const Text(
-                  'Farmer Profile',
+                title: Text(
+                  context.tr.farmerProfile,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -717,8 +718,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text(
-                                      'ABOUT ME',
+                                    Text(
+                                      context.tr.aboutMe,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
@@ -755,8 +756,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'My Products',
+                              Text(
+                                context.tr.products,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
@@ -864,15 +865,15 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.add_circle_outline_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
                       SizedBox(width: 8),
                       Text(
-                        'Add Product',
+                        context.tr.addProduct,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

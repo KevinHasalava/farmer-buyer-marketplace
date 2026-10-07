@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/localization/app_settings.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
@@ -65,13 +66,19 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added $_quantity ${widget.product.unit} of ${widget.product.name} to cart!'),
+        content: Text(
+          context.tr.addedQtyProduceNotice(
+            _quantity,
+            widget.product.localizedUnit(context.currentLanguage),
+            widget.product.localizedName(context.currentLanguage),
+          ),
+        ),
         backgroundColor: _forestGreen,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCartBtn,
           textColor: const Color(0xFFFDE68A),
           onPressed: () {
             Navigator.push(
@@ -99,9 +106,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Product Details',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _textDark),
+        title: Text(
+          context.tr.productDetails,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _textDark),
         ),
         centerTitle: true,
         actions: [
@@ -199,9 +206,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 color: const Color(0xFF1B5E38),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'Direct Farm Harvest',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                              child: Text(
+                                context.tr.directFarmHarvest,
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -212,7 +219,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                prod.isOrganic ? '100% Organic' : 'Farm Direct Produce',
+                                prod.isOrganic ? context.tr.organicPercent : context.tr.farmDirectProduce,
                                 style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -224,7 +231,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                prod.harvestTime,
+                                context.tr.localizedHarvestTime(prod.harvestTime),
                                 style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -246,9 +253,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               end: Alignment.topCenter,
                             ),
                           ),
-                          child: const Text(
-                            'Tested pesticide-free • LKR/Farm Direct',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr.testedPesticideFree,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -263,7 +270,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
 
                 // Title & Price Section
                 Text(
-                  prod.name,
+                  prod.localizedName(context.currentLanguage),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -276,7 +283,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                     const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
                     const SizedBox(width: 4),
                     Text(
-                      '${prod.rating} • ${prod.reviewsCount} verified buyer reviews',
+                      '${prod.rating} • ${context.tr.verifiedBuyerReviewsCount(prod.reviewsCount)}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -290,7 +297,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${prod.formattedPrice} / ${prod.unit}',
+                      '${prod.formattedPrice} / ${prod.localizedUnit(context.currentLanguage)}',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -304,7 +311,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${prod.availableStock} available in stock',
+                        context.tr.inStockCount(prod.availableStock),
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -338,12 +345,12 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
-                            children: const [
-                              Icon(Icons.shield_outlined, size: 16, color: _forestGreen),
-                              SizedBox(width: 6),
+                            children: [
+                              const Icon(Icons.shield_outlined, size: 16, color: _forestGreen),
+                              const SizedBox(width: 6),
                               Text(
-                                'HARVEST TRANSPARENCY',
-                                style: TextStyle(
+                                context.tr.harvestTransparency,
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.5,
@@ -358,9 +365,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               color: const Color(0xFFDCFCE7),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'Verified Origin',
-                              style: TextStyle(
+                            child: Text(
+                              context.tr.verifiedOrigin,
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF166534),
@@ -452,15 +459,15 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    children: const [
-                                      Icon(Icons.schedule_rounded, size: 12, color: _textMuted),
-                                      SizedBox(width: 4),
-                                      Text('HARVESTED', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _textMuted)),
+                                    children: [
+                                      const Icon(Icons.schedule_rounded, size: 12, color: _textMuted),
+                                      const SizedBox(width: 4),
+                                      Text(context.tr.harvestedLabel, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _textMuted)),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    prod.harvestTime,
+                                    context.tr.localizedHarvestTime(prod.harvestTime),
                                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _textDark),
                                   ),
                                 ],
@@ -480,10 +487,10 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    children: const [
-                                      Icon(Icons.local_shipping_outlined, size: 12, color: _textMuted),
-                                      SizedBox(width: 4),
-                                      Text('DISPATCH VIA', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _textMuted)),
+                                    children: [
+                                      const Icon(Icons.local_shipping_outlined, size: 12, color: _textMuted),
+                                      const SizedBox(width: 4),
+                                      Text(context.tr.dispatchViaLabel, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _textMuted)),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
@@ -503,9 +510,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                 const SizedBox(height: 18),
 
                 // Harvest Notes
-                const Text(
-                  'Harvest Notes',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
+                Text(
+                  context.tr.harvestNotes,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -522,9 +529,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildFeatureChip(icon: Icons.water_drop_outlined, label: 'Spring Washed'),
-                    _buildFeatureChip(icon: Icons.eco_outlined, label: 'Zero Chemical'),
-                    _buildFeatureChip(icon: Icons.all_inbox_rounded, label: 'Aerated Box'),
+                    _buildFeatureChip(icon: Icons.water_drop_outlined, label: context.tr.springWashed),
+                    _buildFeatureChip(icon: Icons.eco_outlined, label: context.tr.zeroChemical),
+                    _buildFeatureChip(icon: Icons.all_inbox_rounded, label: context.tr.aeratedBox),
                   ],
                 ),
               ],
@@ -560,12 +567,12 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Selected Weight:',
-                              style: TextStyle(fontSize: 10, color: _textMuted),
+                            Text(
+                              context.tr.selectedWeight,
+                              style: const TextStyle(fontSize: 10, color: _textMuted),
                             ),
                             Text(
-                              'Subtotal: Rs. ${subtotal.toStringAsFixed(0)}',
+                              '${context.tr.subtotal}: ${context.tr.priceRs} ${subtotal.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -591,7 +598,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 },
                               ),
                               Text(
-                                '$_quantity kg',
+                                '$_quantity ${prod.localizedUnit(context.currentLanguage)}',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
                               ),
                               IconButton(
@@ -615,9 +622,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                           flex: 2,
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: _forestGreen),
-                            label: const Text(
-                              'Chat with Farmer',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
+                            label: Text(
+                              context.tr.chatWithFarmer,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: _forestGreen, width: 1.5),
@@ -641,7 +648,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.shopping_bag_outlined, size: 16, color: Colors.white),
                             label: Text(
-                              'Add to Cart • Rs. ${subtotal.toStringAsFixed(0)}',
+                              '${context.tr.addToCart} • ${context.tr.priceRs} ${subtotal.toStringAsFixed(0)}',
                               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
                             ),
                             style: ElevatedButton.styleFrom(
@@ -655,9 +662,9 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Express guaranteed morning delivery to Greater Colombo.',
-                      style: TextStyle(fontSize: 10, color: _textMuted),
+                    Text(
+                      context.tr.expressMorningDelivery,
+                      style: const TextStyle(fontSize: 10, color: _textMuted),
                     ),
                   ],
                 ),

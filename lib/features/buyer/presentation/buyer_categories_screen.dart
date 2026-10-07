@@ -194,9 +194,9 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    'Direct from 60+ family farms across Nuwara Eliya, Jaffna & Dambulla',
-                    style: TextStyle(
+                  Text(
+                    context.tr.pickedFromPartnerFarms,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: _textMuted,
                     ),
@@ -227,9 +227,9 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                           child: TextField(
                             controller: _searchController,
                             style: const TextStyle(fontSize: 13, color: _textDark, fontWeight: FontWeight.w600),
-                            decoration: const InputDecoration(
-                              hintText: 'Filter category or crop name...',
-                              hintStyle: TextStyle(
+                            decoration: InputDecoration(
+                              hintText: context.tr.filterOrCropHint,
+                              hintStyle: const TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 13,
                               ),
@@ -281,11 +281,11 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                           children: [
                             const Icon(Icons.search_off_rounded, size: 40, color: _textMuted),
                             const SizedBox(height: 10),
-                            Text('No categories match "$_searchFilter"'),
+                            Text(context.tr.noProductsMatch),
                             const SizedBox(height: 10),
                             TextButton(
                               onPressed: () => _searchController.clear(),
-                              child: const Text('Show All Categories'),
+                              child: Text(context.tr.showAllCategories),
                             ),
                           ],
                         ),
@@ -343,7 +343,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                cat.badge!,
+                                cat.localizedBadge(context.currentLanguage) ?? cat.badge!,
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
@@ -354,7 +354,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                             const SizedBox(width: 6),
                           ],
                           Text(
-                            cat.itemCountText,
+                            cat.localizedItemCount(context.currentLanguage),
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -365,7 +365,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        cat.name,
+                        cat.localizedName(context.currentLanguage),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -374,7 +374,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        cat.description,
+                        cat.localizedDescription(context.currentLanguage),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -387,7 +387,7 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                       Row(
                         children: [
                           Text(
-                            cat.actionText,
+                            cat.localizedActionText(context.currentLanguage),
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,

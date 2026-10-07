@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
@@ -110,8 +110,9 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                         const SizedBox(width: AppDimensions.spaceXXS),
                         Text(
-                          '100% ETHICAL & DIRECT',
-                          style: GoogleFonts.poppins(
+                          tr.ethicalAndDirect,
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             color: AppColors.primaryGreen,
                             letterSpacing: AppTextStyles.trackingWidest,
                             fontWeight: FontWeight.w700,
@@ -134,7 +135,8 @@ class _SplashScreenState extends State<SplashScreen>
                   child: RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 34,
                         color: AppColors.textDark,
                         letterSpacing: -0.5,
@@ -174,7 +176,8 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Text(
                     tr.tagline,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       color: AppColors.textSecondary,
                       fontSize: 14,
                       height: 1.5,

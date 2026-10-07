@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'app_strings.dart';
+import 'package:farmer_buyer_marketplace/core/localization/app_strings.dart';
 
 /// Supported app languages.
 enum AppLanguage {
@@ -105,6 +105,15 @@ extension AppSettingsX on BuildContext {
       return watch<AppSettings>().strings;
     } catch (_) {
       return const AppStrings(AppLanguage.english);
+    }
+  }
+
+  /// Current active language that rebuilds on change.
+  AppLanguage get currentLanguage {
+    try {
+      return watch<AppSettings>().language ?? AppLanguage.english;
+    } catch (_) {
+      return AppLanguage.english;
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/models/cart_item_model.dart';
+import '../models/buyer_models.dart';
 import '../../cart/presentation/checkout_delivery_screen.dart';
 import '../../cart/services/cart_state.dart';
 
@@ -116,24 +117,24 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Clear Cart?'),
-                    content: const Text('Are you sure you want to remove all items from your cart?'),
+                    title: Text(context.tr.clearCartDialogTitle),
+                    content: Text(context.tr.clearCartDialogBody),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.tr.cancel)),
                       TextButton(
                         onPressed: () {
                           _cartState.clearCart();
                           Navigator.pop(ctx);
                         },
-                        child: const Text('Clear', style: TextStyle(color: Color(0xFFEF4444))),
+                        child: Text(context.tr.clear, style: const TextStyle(color: Color(0xFFEF4444))),
                       ),
                     ],
                   ),
                 );
               },
-              child: const Text(
-                'Clear Cart',
-                style: TextStyle(
+              child: Text(
+                context.tr.clearCart,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFFEF4444),
@@ -150,7 +151,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                 children: [
                   const Icon(Icons.shopping_bag_outlined, size: 64, color: _textMuted),
                   const SizedBox(height: 12),
-                  const Text('Your cart is empty', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text(context.tr.cartEmpty, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -158,7 +159,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Shop Fresh Produce', style: TextStyle(color: Colors.white)),
+                    child: Text(context.tr.shopFreshProduce, style: const TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -186,15 +187,15 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
-                                    '100% Direct Route',
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _forestGreen),
+                                    context.tr.directRouteTitle,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _forestGreen),
                                   ),
-                                  SizedBox(height: 2),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    'Direct from Hakgala, Ohiya & Dambulla. Consolidated into 1 eco-friendly delivery.',
-                                    style: TextStyle(fontSize: 10, color: Color(0xFF166534)),
+                                    context.tr.directRouteSub,
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF166534)),
                                   ),
                                 ],
                               ),
@@ -217,12 +218,14 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
-                          children: const [
-                            Icon(Icons.flash_on_rounded, size: 14, color: _forestGreen),
-                            SizedBox(width: 6),
-                            Text(
-                              'ZERO WAREHOUSING: Direct transit directly to you',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _forestGreen),
+                          children: [
+                            const Icon(Icons.flash_on_rounded, size: 14, color: _forestGreen),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                context.tr.zeroWarehousing,
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _forestGreen),
+                              ),
                             ),
                           ],
                         ),
@@ -243,9 +246,9 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Order Summary',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
+                                Text(
+                                  context.tr.orderSummary,
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -253,19 +256,19 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                                     color: const Color(0xFFDCFCE7),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Text(
-                                    'Guaranteed Fresh',
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF166534)),
+                                  child: Text(
+                                    context.tr.guaranteedFresh,
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF166534)),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            _buildSummaryRow('Items Subtotal (${items.length} Items)', 'Rs. ${subtotal.toStringAsFixed(0)}'),
+                            _buildSummaryRow('${context.tr.itemsSubtotal} (${items.length})', 'Rs. ${subtotal.toStringAsFixed(0)}'),
                             const SizedBox(height: 8),
-                            _buildSummaryRow('Farm Direct Delivery Fee', 'Rs. ${deliveryFee.toStringAsFixed(0)}'),
+                            _buildSummaryRow(context.tr.deliveryFeeLabel, 'Rs. ${deliveryFee.toStringAsFixed(0)}'),
                             const SizedBox(height: 8),
-                            _buildSummaryRow('Fresh Produce Packaging', 'Free', isGreen: true),
+                            _buildSummaryRow(context.tr.packagingLabel, context.tr.free, isGreen: true),
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 10),
                               child: Divider(color: Color(0xFFE2E8F0)),
@@ -275,19 +278,19 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                               children: [
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
+                                  children: [
                                     Text(
-                                      'Total Amount',
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                                      context.tr.totalAmount,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
                                     ),
                                     Text(
-                                      'incl. all agricultural levies',
-                                      style: TextStyle(fontSize: 9, color: _textMuted),
+                                      context.tr.inclLevies,
+                                      style: const TextStyle(fontSize: 9, color: _textMuted),
                                     ),
                                   ],
                                 ),
                                 Text(
-                                  'Rs. ${total.toStringAsFixed(0)}',
+                                  '${context.tr.priceRs} ${total.toStringAsFixed(0)}',
                                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _forestGreen),
                                 ),
                               ],
@@ -306,20 +309,20 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Row(
                               children: [
-                                Icon(Icons.eco_rounded, size: 14, color: _forestGreen),
-                                SizedBox(width: 6),
+                                const Icon(Icons.eco_rounded, size: 14, color: _forestGreen),
+                                const SizedBox(width: 6),
                                 Text(
-                                  '3.2 kg CO₂ saved vs traditional wholesale',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark),
+                                  context.tr.co2SavedWholesale,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark),
                                 ),
                               ],
                             ),
                             Text(
-                              'Impacted',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen),
+                              context.tr.impacted,
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen),
                             ),
                           ],
                         ),
@@ -354,18 +357,18 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                children: const [
-                                  Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFEA580C)),
-                                  SizedBox(width: 2),
+                                children: [
+                                  const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFEA580C)),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    'Tomorrow 7-9 AM',
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted),
+                                    context.tr.tomorrowDeliverySlot,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Total: Rs. ${total.toStringAsFixed(0)}',
+                                '${context.tr.total}: ${context.tr.priceRs} ${total.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -390,13 +393,13 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                               );
                             },
                             child: Row(
-                              children: const [
+                              children: [
                                 Text(
-                                  'Proceed to Checkout',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                                  context.tr.proceedToCheckout,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
                                 ),
-                                SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                                const SizedBox(width: 6),
+                                const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
                               ],
                             ),
                           ),
@@ -447,7 +450,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  item.localizedName(context.currentLanguage),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
@@ -459,7 +462,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Rs. ${item.price.toStringAsFixed(0)} ${item.unit}',
+                  '${context.tr.priceRs} ${item.price.toStringAsFixed(0)} ${item.localizedUnit(context.currentLanguage)}',
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted),
                 ),
               ],
@@ -500,7 +503,7 @@ class _BuyerCartScreenState extends State<BuyerCartScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Rs. ${item.totalPrice.toStringAsFixed(0)}',
+                '${context.tr.priceRs} ${item.totalPrice.toStringAsFixed(0)}',
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _forestGreen),
               ),
             ],

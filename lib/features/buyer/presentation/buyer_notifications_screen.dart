@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../models/buyer_notification_model.dart';
@@ -68,22 +70,22 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
-          children: const [
-            Icon(Icons.phone_in_talk_rounded, color: _forestGreen),
-            SizedBox(width: 10),
-            Text('Contact Driver', style: TextStyle(fontWeight: FontWeight.w700)),
+          children: [
+            const Icon(Icons.phone_in_talk_rounded, color: _forestGreen),
+            const SizedBox(width: 10),
+            Text(context.tr.contactDriver, style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Driver: ${item.driverName ?? "Ranjith"}'),
+            Text('${context.tr.driverLabel}: ${item.driverName ?? "Ranjith"}'),
             const SizedBox(height: 4),
-            Text('Vehicle: ${item.vanNumber ?? "#WP-NC-4882"}'),
+            Text('${context.tr.vehicleLabel}: ${item.vanNumber ?? "#WP-NC-4882"}'),
             const SizedBox(height: 8),
             Text(
-              'Calling ${item.driverPhone}...',
+              '${context.tr.callingDriver} ${item.driverPhone}...',
               style: const TextStyle(fontWeight: FontWeight.w700, color: _forestGreen),
             ),
           ],
@@ -91,14 +93,14 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(context.tr.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Calling ${item.driverName ?? "Driver"}...'),
+                  content: Text('${context.tr.callingDriver} ${item.driverName ?? context.tr.driverLabel}...'),
                   backgroundColor: _forestGreen,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -108,7 +110,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               backgroundColor: _forestGreen,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Call Now'),
+            child: Text(context.tr.callNow),
           ),
         ],
       ),
@@ -145,12 +147,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  children: const [
-                    Icon(Icons.near_me_rounded, color: _forestGreen),
-                    SizedBox(width: 8),
+                  children: [
+                    const Icon(Icons.near_me_rounded, color: _forestGreen),
+                    const SizedBox(width: 8),
                     Text(
-                      'Live Transit Tracking',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
+                      context.tr.liveTransitTracking,
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                   ],
                 ),
@@ -160,9 +162,9 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     color: const Color(0xFFDCFCE7),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Text(
-                    '500m Away',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _forestGreen),
+                  child: Text(
+                    context.tr.away500m,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _forestGreen),
                   ),
                 ),
               ],
@@ -215,7 +217,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Transit Route:', style: TextStyle(fontSize: 11.5, color: _textMuted)),
+                      Text('${context.tr.transitRoute}:', style: const TextStyle(fontSize: 11.5, color: _textMuted)),
                       const Text('Havelock Rd ➔ Colombo Hub Route', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _textDark)),
                     ],
                   ),
@@ -223,7 +225,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Cash on Delivery:', style: TextStyle(fontSize: 11.5, color: _textMuted)),
+                      Text('${context.tr.cashOnDelivery}:', style: const TextStyle(fontSize: 11.5, color: _textMuted)),
                       Text(item.amountDue ?? 'Rs. 1,760', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _forestGreen)),
                     ],
                   ),
@@ -237,7 +239,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.pop(ctx),
                 icon: const Icon(Icons.check_rounded, color: Colors.white),
-                label: const Text('Acknowledge Gate Arrival', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: Text(context.tr.acknowledgeArrival, style: const TextStyle(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _forestGreen,
                   foregroundColor: Colors.white,
@@ -389,6 +391,10 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     ),
                   ),
 
+                  // Language Switcher Pill
+                  const AppLanguagePill(),
+                  const SizedBox(width: 8),
+
                   // Profile Avatar
                   GestureDetector(
                     onTap: () => Navigator.push(
@@ -428,12 +434,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Row(
                           children: [
                             Text(
-                              '🌿 Notifications',
-                              style: TextStyle(
+                              '🌿 ${context.tr.notifications}',
+                              style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
                                 color: _textDark,
@@ -442,10 +448,10 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: 3),
+                        const SizedBox(height: 3),
                         Text(
-                          'Real-time updates on harvests, deliveries, and deals.',
-                          style: TextStyle(
+                          context.tr.notificationsSub,
+                          style: const TextStyle(
                             fontSize: 11.5,
                             color: _textMuted,
                             fontWeight: FontWeight.w500,
@@ -458,10 +464,10 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     onTap: () {
                       _notifService.markAllAsRead();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('All notifications marked as read!'),
+                        SnackBar(
+                          content: Text(context.tr.allNotificationsMarkedRead),
                           backgroundColor: _forestGreen,
-                          duration: Duration(seconds: 1),
+                          duration: const Duration(seconds: 1),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -474,12 +480,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                         border: Border.all(color: const Color(0xFFDBEAFE)),
                       ),
                       child: Row(
-                        children: const [
-                          Icon(Icons.check_rounded, size: 13, color: Color(0xFF2563EB)),
-                          SizedBox(width: 4),
+                        children: [
+                          const Icon(Icons.check_rounded, size: 13, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 4),
                           Text(
-                            'Mark read',
-                            style: TextStyle(
+                            context.tr.markAllRead,
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF2563EB),
@@ -498,11 +504,11 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  _buildTabPill('All ($totalAll)', BuyerNotificationCategory.all),
+                  _buildTabPill('${context.tr.filterAll} ($totalAll)', BuyerNotificationCategory.all),
                   const SizedBox(width: 8),
-                  _buildTabPill('Orders ($totalOrders)', BuyerNotificationCategory.orders),
+                  _buildTabPill('${context.tr.filterOrders} ($totalOrders)', BuyerNotificationCategory.orders),
                   const SizedBox(width: 8),
-                  _buildTabPill('Harvest Alerts ($totalHarvest)', BuyerNotificationCategory.harvestAlerts),
+                  _buildTabPill('${context.tr.filterHarvestAlerts} ($totalHarvest)', BuyerNotificationCategory.harvestAlerts),
                 ],
               ),
             ),
@@ -730,12 +736,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.near_me_rounded, color: Colors.white, size: 14),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.near_me_rounded, color: Colors.white, size: 14),
+                        const SizedBox(width: 6),
                         Text(
-                          'Track Driver Live',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+                          context.tr.trackDriverLive,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                       ],
                     ),
@@ -757,12 +763,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                     border: Border.all(color: const Color(0xFFC8E6C9)),
                   ),
                   child: Row(
-                    children: const [
-                      Icon(Icons.phone_outlined, color: _forestGreen, size: 15),
-                      SizedBox(width: 4),
+                    children: [
+                      const Icon(Icons.phone_outlined, color: _forestGreen, size: 15),
+                      const SizedBox(width: 4),
                       Text(
-                        'Call',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
+                        context.tr.call,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
                       ),
                     ],
                   ),
@@ -935,12 +941,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB), size: 15),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB), size: 15),
+                  const SizedBox(width: 6),
                   Text(
-                    'View Harvest & Reserve',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF2563EB)),
+                    context.tr.viewHarvestAndReserve,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF2563EB)),
                   ),
                 ],
               ),
@@ -1038,12 +1044,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                   border: Border.all(color: const Color(0xFFDCFCE7)),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.ac_unit_rounded, size: 12, color: _forestGreen),
-                    SizedBox(width: 4),
+                  children: [
+                    const Icon(Icons.ac_unit_rounded, size: 12, color: _forestGreen),
+                    const SizedBox(width: 4),
                     Text(
-                      'Cold-chain certified',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen),
+                      context.tr.coldChainCertified,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _forestGreen),
                     ),
                   ],
                 ),
@@ -1057,12 +1063,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                   border: Border.all(color: _borderColor),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.verified_outlined, size: 12, color: _textMuted),
-                    SizedBox(width: 4),
+                  children: [
+                    const Icon(Icons.verified_outlined, size: 12, color: _textMuted),
+                    const SizedBox(width: 4),
                     Text(
-                      'Eco-crate sealed',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted),
+                      context.tr.ecoCrateSealed,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _textMuted),
                     ),
                   ],
                 ),
@@ -1144,9 +1150,9 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
           // Star Rating Row
           Row(
             children: [
-              const Text(
-                'Tap to rate:',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: _textDark),
+              Text(
+                context.tr.tapToRate,
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: _textDark),
               ),
               const SizedBox(width: 8),
               ...List.generate(5, (index) {
@@ -1197,12 +1203,12 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.rate_review_outlined, color: _forestGreen, size: 15),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.rate_review_outlined, color: _forestGreen, size: 15),
+                  const SizedBox(width: 6),
                   Text(
-                    'Leave Review (+50 Coins)',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _forestGreen),
+                    context.tr.leaveReviewCoins,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _forestGreen),
                   ),
                 ],
               ),
@@ -1334,9 +1340,9 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Direct farm gate pricing active',
-                        style: TextStyle(fontSize: 10, color: _textMuted),
+                      Text(
+                        context.tr.farmGatePricingActive,
+                        style: const TextStyle(fontSize: 10, color: _textMuted),
                       ),
                     ],
                   ),

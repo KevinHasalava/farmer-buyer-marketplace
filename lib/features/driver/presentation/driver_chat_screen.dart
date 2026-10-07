@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 /// Driver Chat Screen for communication with Central Dispatch, Farmers, and Buyers.
 class DriverChatScreen extends StatefulWidget {
@@ -96,11 +97,11 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
     ],
   };
 
-  final List<String> _quickReplies = [
-    'Arrived at location',
-    'Delayed by traffic (5-10m)',
-    'Loaded and secured',
-    'Delivered safely',
+  List<String> _getQuickReplies(BuildContext context) => [
+    context.tr.arrivedAtLocation,
+    context.tr.delayedByTraffic,
+    context.tr.loadedAndSecured,
+    context.tr.deliveredSafely,
   ];
 
   @override
@@ -187,7 +188,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
           children: [
             Text(
               _title(_activeThreadId),
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 color: const Color(0xFF0F172A),
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
@@ -206,7 +207,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                 const SizedBox(width: 5),
                 Text(
                   _subtitle(_activeThreadId),
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     color: const Color(0xFF64748B),
                     fontSize: 11,
                   ),
@@ -223,11 +224,11 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
             color: Colors.white,
             child: Row(
               children: [
-                _tabChip('dispatch', 'Support', Icons.headset_mic_rounded),
+                _tabChip('dispatch', context.tr.support, Icons.headset_mic_rounded),
                 const SizedBox(width: 8),
-                _tabChip('bandara', 'Farmer', Icons.agriculture_rounded),
+                _tabChip('bandara', context.tr.farmer, Icons.agriculture_rounded),
                 const SizedBox(width: 8),
-                _tabChip('chaminda', 'Buyer', Icons.storefront_rounded),
+                _tabChip('chaminda', context.tr.buyer, Icons.storefront_rounded),
               ],
             ),
           ),
@@ -258,7 +259,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                         if (!m.isMe && m.senderName != null) ...[
                           Text(
                             m.senderName!,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF0F766E),
@@ -268,7 +269,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                         ],
                         Text(
                           m.text,
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 13,
                             color: m.isMe ? Colors.white : const Color(0xFF1E293B),
                           ),
@@ -276,7 +277,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                         const SizedBox(height: 4),
                         Text(
                           m.time,
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10,
                             color: m.isMe ? Colors.white70 : const Color(0xFF94A3B8),
                           ),
@@ -293,17 +294,17 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _quickReplies.length,
+              itemCount: _getQuickReplies(context).length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (ctx, idx) => ActionChip(
                 label: Text(
-                  _quickReplies[idx],
-                  style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF0F766E)),
+                  _getQuickReplies(context)[idx],
+                  style: TextStyle(fontSize: 12, color: const Color(0xFF0F766E)),
                 ),
                 backgroundColor: const Color(0xFFCCFBF1),
                 side: BorderSide.none,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                onPressed: () => _send(_quickReplies[idx]),
+                onPressed: () => _send(_getQuickReplies(context)[idx]),
               ),
             ),
           ),
@@ -321,8 +322,8 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                     child: TextField(
                       controller: _msgController,
                       decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        hintStyle: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontSize: 13),
+                        hintText: context.tr.typeYourMessage,
+                        hintStyle: TextStyle(color: const Color(0xFF94A3B8), fontSize: 13),
                         border: InputBorder.none,
                       ),
                       onSubmitted: (_) => _send(),
@@ -365,7 +366,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: active ? Colors.white : const Color(0xFF64748B),

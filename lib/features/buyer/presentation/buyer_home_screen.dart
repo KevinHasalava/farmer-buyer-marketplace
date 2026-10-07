@@ -90,7 +90,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(context.tr.addedToCart(prod.name)),
+        content: Text(context.tr.addedToCart(prod.localizedName(context.currentLanguage))),
         backgroundColor: _forestGreen,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
@@ -776,7 +776,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       padding: const EdgeInsets.only(right: 12),
                       child: _buildDealCard(
                         product: prod,
-                        discountTag: prod.badge ?? 'Fresh Pick',
+                        discountTag: prod.localizedBadge(context.currentLanguage) ?? context.tr.badgeFreshPick,
                         onAdd: () => _addBuyerProductToCart(prod),
                       ),
                     );
@@ -996,7 +996,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    product.name,
+                    product.localizedName(context.currentLanguage),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1039,9 +1039,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                             color: _forestGreen,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Text(
-                            '+ Add',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr.addProduct,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -1103,7 +1103,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          product.badge!,
+                          product.localizedBadge(context.currentLanguage) ?? product.badge!,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -1121,7 +1121,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
+                    product.localizedName(context.currentLanguage),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

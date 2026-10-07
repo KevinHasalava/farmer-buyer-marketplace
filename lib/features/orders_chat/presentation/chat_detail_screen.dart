@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../cart/services/cart_state.dart';
 import '../models/chat_model.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Interactive Chat Detail screen between Buyer and Farmer/Customer
 class ChatDetailScreen extends StatefulWidget {
@@ -27,11 +29,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   late ChatConversation _chat;
 
-  final List<String> _quickReplies = [
-    'Are these freshly harvested?',
-    'Can I get 5kg ready for delivery?',
-    'What time is the farm pickup?',
-    'Is it 100% organic?',
+  List<String> _getQuickReplies(BuildContext context) => [
+    context.tr.quickReply1,
+    context.tr.quickReply2,
+    context.tr.quickReply3,
+    context.tr.quickReply4,
   ];
 
   @override
@@ -67,7 +69,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ChatMessage(
             id: 'rep_${DateTime.now().millisecondsSinceEpoch}',
             senderId: 'buyer',
-            text: 'Noted! I will make sure the produce is packed carefully for you.',
+            text: context.tr.farmerAutoReply,
             time: DateTime.now(),
             isMe: false,
           ),
@@ -86,6 +88,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final quickReplies = _getQuickReplies(context);
+
     return Scaffold(
       backgroundColor: _bgSoft,
       appBar: AppBar(
@@ -161,21 +165,19 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ],
         ),
         actions: [
+          const Center(child: AppLanguagePill()),
           IconButton(
             icon: const Icon(Icons.phone_outlined, color: _forestGreen),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Calling ${_chat.name}...'),
+                  content: Text('${context.tr.callingDriver} ${_chat.name}...'),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded, color: _textDark),
-            onPressed: () {},
-          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -192,7 +194,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Regarding item: ${_chat.productContext}',
+                      '${context.tr.regardingItem}: ${_chat.productContext}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -225,10 +227,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              itemCount: _quickReplies.length,
+              itemCount: quickReplies.length,
               itemBuilder: (context, i) {
                 return GestureDetector(
-                  onTap: () => _sendMessage(_quickReplies[i]),
+                  onTap: () => _sendMessage(quickReplies[i]),
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -245,7 +247,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       ],
                     ),
                     child: Text(
-                      _quickReplies[i],
+                      quickReplies[i],
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -292,9 +294,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     child: TextField(
                       controller: _textController,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        hintText: context.tr.typeMessageHint,
+                        hintStyle: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF94A3B8),
                         ),
@@ -302,7 +304,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),

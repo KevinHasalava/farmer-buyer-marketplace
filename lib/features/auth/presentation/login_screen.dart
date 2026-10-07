@@ -130,14 +130,14 @@ class _LoginScreenState extends State<LoginScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
-            SizedBox(width: 10),
+            const Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Email Rate Limit',
-                style: TextStyle(
+                context.tr.emailNoticeTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -150,9 +150,9 @@ class _LoginScreenState extends State<LoginScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Supabase free tier limits confirmation emails to 3 per hour. Since you tested multiple times, Supabase has paused sending confirmation emails temporarily.',
-              style: TextStyle(
+            Text(
+              context.tr.emailNoticeBody,
+              style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
                 height: 1.45,
@@ -166,9 +166,9 @@ class _LoginScreenState extends State<LoginScreen>
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFFFFE082)),
               ),
-              child: const Text(
-                '💡 Tip: To permanently fix this in Supabase, go to Authentication > Providers > Email and turn OFF "Confirm email".',
-                style: TextStyle(
+              child: Text(
+                context.tr.emailNoticeTip,
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF795548),
                   height: 1.4,
@@ -176,9 +176,9 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Would you like to enter directly into the app now?',
-              style: TextStyle(
+            Text(
+              context.tr.enterDirectlyPrompt,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF235D3A),
@@ -189,9 +189,9 @@ class _LoginScreenState extends State<LoginScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
+            child: Text(
+              context.tr.cancel,
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
@@ -206,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen>
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('Continue to App'),
+            child: Text(context.tr.continueToApp),
           ),
         ],
       ),
@@ -288,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen>
                             Expanded(
                               child: _PremiumAccountCard(
                                 label: context.tr.buyer,
-                                sublabel: 'Household',
+                                sublabel: context.tr.householdRole,
                                 icon: Icons.shopping_basket_rounded,
                                 isSelected: _selectedRole == UserRole.buyer,
                                 onTap: () =>
@@ -299,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen>
                             Expanded(
                               child: _PremiumAccountCard(
                                 label: context.tr.farmer,
-                                sublabel: 'Producer',
+                                sublabel: context.tr.producerRole,
                                 icon: Icons.agriculture_rounded,
                                 isSelected: _selectedRole == UserRole.farmer,
                                 onTap: () =>
@@ -310,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen>
                             Expanded(
                               child: _PremiumAccountCard(
                                 label: context.tr.driver,
-                                sublabel: 'Transit',
+                                sublabel: context.tr.transitRole,
                                 icon: Icons.delivery_dining_rounded,
                                 isSelected: _selectedRole == UserRole.driver,
                                 onTap: () =>
@@ -330,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen>
                           keyboardType: TextInputType.emailAddress,
                           controller: _emailCtrl,
                           validator: (v) =>
-                              (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                              (v == null || !v.contains('@')) ? context.tr.invalidEmail : null,
                         ),
                         const SizedBox(height: AppDimensions.spaceMD),
 
@@ -341,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen>
                           onToggle: () =>
                               setState(() => _obscurePassword = !_obscurePassword),
                           validator: (v) =>
-                              (v == null || v.length < 6) ? 'Min. 6 characters' : null,
+                              (v == null || v.length < 6) ? context.tr.passwordMinLength : null,
                         ),
 
                         const SizedBox(height: AppDimensions.spaceLG),
@@ -360,9 +360,9 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(
+                              Text(
+                                context.tr.dontHaveAccount,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
                                 ),
@@ -372,9 +372,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     context.push(AppRoutes.registerFor(_selectedRole)),
                                 child: Text(
                                   switch (_selectedRole) {
-                                    UserRole.buyer => 'Register as Buyer',
-                                    UserRole.farmer => 'Register as Farmer',
-                                    UserRole.driver => 'Register as Driver',
+                                    UserRole.buyer => context.tr.registerAsBuyer,
+                                    UserRole.farmer => context.tr.registerAsFarmer,
+                                    UserRole.driver => context.tr.registerAsDriver,
                                   },
                                   style: const TextStyle(
                                     color: AppColors.primaryGreen,
@@ -395,9 +395,9 @@ class _LoginScreenState extends State<LoginScreen>
                           child: TextButton.icon(
                             onPressed: () => context.go(AppRoutes.phoneAuth),
                             icon: const Icon(Icons.phone_iphone_rounded, size: 16),
-                            label: const Text(
-                              'Sign in with Mobile OTP instead',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.mobileOtpInstead,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryGreen,
@@ -415,8 +415,8 @@ class _LoginScreenState extends State<LoginScreen>
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
-                                'OR',
-                                style: TextStyle(
+                                context.tr.orDivider,
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textHint,
@@ -441,9 +441,9 @@ class _LoginScreenState extends State<LoginScreen>
                               size: 18,
                               color: Color(0xFF235D3A),
                             ),
-                            label: const Text(
-                              'Skip & Explore as Demo User',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.skipDemoUser,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF235D3A),
@@ -596,12 +596,12 @@ class _PremiumHeader extends StatelessWidget {
                     _dot(),
                     const SizedBox(width: 6),
                     Text(
-                      'FRESH • DIRECT • HONEST',
+                      context.tr.freshDirectHonest,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: Colors.white.withValues(alpha: 0.6),
-                        letterSpacing: 3,
+                        letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -934,9 +934,9 @@ class _PremiumPasswordField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Password',
-          style: TextStyle(
+        Text(
+          context.tr.password,
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: AppColors.textDark,

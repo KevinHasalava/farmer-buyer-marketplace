@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 import '../../cart/models/cart_item_model.dart';
@@ -49,12 +50,15 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
 
   void _addToCart(BuyerProduct prod) {
     HapticFeedback.lightImpact();
+    final lang = context.currentLanguage;
+    final localizedTitle = prod.localizedName(lang);
+    final unit = prod.localizedUnit(lang);
     _cartState.addToCart(
       CartItem(
         id: prod.id,
-        name: prod.name,
+        name: localizedTitle,
         price: prod.price,
-        unit: '/${prod.unit}',
+        unit: '/$unit',
         quantity: 1,
         emoji: '👨‍🌾',
         farmName: prod.farmerName,
@@ -65,13 +69,13 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added ${prod.name} from ${widget.farmer.name} to cart!'),
+        content: Text(context.tr.addedToCartNotice(localizedTitle, prod.formattedPrice)),
         backgroundColor: _forestGreen,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCartBtn,
           textColor: const Color(0xFFFDE68A),
           onPressed: () {
             Navigator.push(
@@ -105,8 +109,8 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _textDark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Farmer Profile',
+        title: Text(
+          context.tr.farmerProfile,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _textDark),
         ),
         centerTitle: true,
@@ -179,12 +183,12 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.fiber_manual_record, size: 8, color: Color(0xFF16A34A)),
-                  SizedBox(width: 6),
+                children: [
+                  const Icon(Icons.fiber_manual_record, size: 8, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 6),
                   Text(
-                    'DIRECT FIELD LINK • ACTIVE NOW',
-                    style: TextStyle(
+                    context.tr.directFieldLink,
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       color: _forestGreen,
@@ -231,8 +235,8 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                                 color: const Color(0xFFDCFCE7),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text(
-                                'Certified Organic',
+                              child: Text(
+                                context.tr.certifiedOrganicOnly,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
@@ -275,14 +279,14 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                         icon: Icons.star_rounded,
                         iconColor: const Color(0xFFF59E0B),
                         value: '${farmer.rating} (${farmer.reviewsCount}+)',
-                        label: 'Top Rated Producer',
+                        label: context.tr.topRatedProducer,
                       ),
                       const SizedBox(width: 16),
                       _buildFarmerStatItem(
                         icon: Icons.history_edu_rounded,
                         iconColor: _forestGreen,
                         value: farmer.yearsExperience,
-                        label: 'Heritage Farming',
+                        label: context.tr.heritageFarming,
                       ),
                     ],
                   ),
@@ -313,8 +317,8 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                       Expanded(
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: Colors.white),
-                          label: const Text(
-                            'Chat with Farmer',
+                          label: Text(
+                            context.tr.chatWithFarmer,
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -336,8 +340,8 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.call_outlined, size: 16, color: _forestGreen),
-                          label: const Text(
-                            'Call Farm Directly',
+                          label: Text(
+                            context.tr.callFarmDirectly,
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -367,15 +371,15 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _buildMetricCard(farmer.ordersFulfilled, 'Orders Fulfilled'),
+                  child: _buildMetricCard(farmer.ordersFulfilled, context.tr.ordersFulfilledLabel),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _buildMetricCard(farmer.onTimeRate, 'On-Time Out'),
+                  child: _buildMetricCard(farmer.onTimeRate, context.tr.onTimeOutLabel),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _buildMetricCard(farmer.directTrace, 'Direct Trace'),
+                  child: _buildMetricCard(farmer.directTrace, context.tr.directTraceLabel),
                 ),
               ],
             ),
@@ -403,8 +407,8 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                 ),
                 padding: const EdgeInsets.all(12),
                 alignment: Alignment.bottomLeft,
-                child: const Text(
-                  'HAKGALA TERROIR: Naturally mineral-rich mountain soil',
+                child: Text(
+                  context.tr.hakgalaTerroir,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 11,
@@ -421,23 +425,23 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Active Harvest Listings',
-                      style: TextStyle(
+                      context.tr.activeHarvestListings,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: _textDark,
                       ),
                     ),
                     Text(
-                      'Harvested fresh upon order confirmation',
-                      style: TextStyle(fontSize: 11, color: _textMuted),
+                      context.tr.harvestedFreshUponOrder,
+                      style: const TextStyle(fontSize: 11, color: _textMuted),
                     ),
                   ],
                 ),
                 Text(
-                  '${products.length} items available',
+                  context.tr.itemsAvailableCount(products.length),
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _forestGreen),
                 ),
               ],
@@ -494,7 +498,7 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                p.name,
+                                p.localizedName(context.currentLanguage),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -505,7 +509,7 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Per ${p.unit}',
+                                '${context.tr.per} ${p.localizedUnit(context.currentLanguage)}',
                                 style: const TextStyle(fontSize: 10, color: _textMuted),
                               ),
                               const SizedBox(height: 4),

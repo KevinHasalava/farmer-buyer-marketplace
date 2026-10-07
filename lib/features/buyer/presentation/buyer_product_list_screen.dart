@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/localization/app_settings.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../data/buyer_mock_data.dart';
@@ -93,7 +94,12 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
             const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Added ${prod.name} (${prod.formattedPrice}) to cart!'),
+              child: Text(
+                context.tr.addedToCartNotice(
+                  prod.localizedName(context.currentLanguage),
+                  prod.formattedPrice,
+                ),
+              ),
             ),
           ],
         ),
@@ -102,7 +108,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCartBtn,
           textColor: const Color(0xFFFDE68A),
           onPressed: () {
             Navigator.push(
@@ -142,17 +148,17 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
-                  'Sort Products',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
+                  context.tr.sortProducts,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
                 ),
               ),
               ..._sortOptions.map(
                 (opt) => ListTile(
                   title: Text(
-                    opt,
+                    context.tr.localizedSort(opt),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: opt == _selectedSort ? FontWeight.w700 : FontWeight.w500,
@@ -208,7 +214,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.categoryTitle,
+          context.tr.localizedCategory(widget.categoryTitle),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -288,7 +294,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${products.length} fresh ${products.length == 1 ? 'item' : 'items'} available',
+                      context.tr.itemsAvailableCount(products.length),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
@@ -296,9 +302,9 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'Picked fresh from local partner farms',
-                      style: TextStyle(fontSize: 10, color: _textMuted),
+                    Text(
+                      context.tr.pickedFromPartnerFarms,
+                      style: const TextStyle(fontSize: 10, color: _textMuted),
                     ),
                   ],
                 ),
@@ -325,7 +331,9 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              activeFiltersCount > 0 ? 'Filters ($activeFiltersCount)' : 'Filters',
+                              activeFiltersCount > 0
+                                  ? '${context.tr.filter} ($activeFiltersCount)'
+                                  : context.tr.filter,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -350,7 +358,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                         child: Row(
                           children: [
                             Text(
-                              _selectedSort.split('(').first.trim(),
+                              context.tr.localizedSort(_selectedSort).split('(').first.trim(),
                               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark),
                             ),
                             const SizedBox(width: 4),
@@ -387,7 +395,13 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                         ),
                       ),
                       child: Text(
-                        _quickFilters[i],
+                        i == 0
+                            ? context.tr.quickFilterAll
+                            : i == 1
+                                ? context.tr.quickFilterUnder400
+                                : i == 2
+                                    ? context.tr.quickFilterOrganic
+                                    : context.tr.quickFilterToday,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -420,15 +434,15 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                             child: const Icon(Icons.eco_outlined, size: 36, color: _textMuted),
                           ),
                           const SizedBox(height: 14),
-                          const Text(
-                            'No Products Match This Selection',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
+                          Text(
+                            context.tr.noProductsMatch,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Try resetting your active filters or choosing another category.',
+                          Text(
+                            context.tr.tryResettingFilters,
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: _textMuted),
+                            style: const TextStyle(fontSize: 12, color: _textMuted),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
@@ -443,7 +457,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             ),
-                            child: const Text('Show All Produce'),
+                            child: Text(context.tr.showAllProduce),
                           ),
                         ],
                       ),
@@ -560,7 +574,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                prod.badge!,
+                                prod.localizedBadge(context.currentLanguage) ?? prod.badge!,
                                 style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Colors.white),
                               ),
                             ),
@@ -575,7 +589,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              '${prod.availableStock} in stock',
+                              context.tr.inStockCount(prod.availableStock),
                               style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -595,7 +609,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                prod.name,
+                                prod.localizedName(context.currentLanguage),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -642,7 +656,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                             const Icon(Icons.location_on_outlined, size: 12, color: _textMuted),
                             const SizedBox(width: 2),
                             Text(
-                              '${prod.farmLocation} • ${prod.harvestTime}',
+                              '${prod.farmLocation} • ${context.tr.localizedHarvestTime(prod.harvestTime)}',
                               style: const TextStyle(fontSize: 10, color: _textMuted),
                             ),
                           ],
@@ -651,7 +665,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                         Row(
                           children: [
                             Text(
-                              '${prod.formattedPrice} / ${prod.unit}',
+                              '${prod.formattedPrice} / ${prod.localizedUnit(context.currentLanguage)}',
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
@@ -700,7 +714,7 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
                   ElevatedButton.icon(
                     onPressed: onAdd,
                     icon: const Icon(Icons.shopping_bag_outlined, size: 14),
-                    label: const Text('Add to Basket', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                    label: Text(context.tr.addToBasket, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _forestGreen,
                       foregroundColor: Colors.white,

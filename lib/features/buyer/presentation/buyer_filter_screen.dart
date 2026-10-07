@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/localization/app_settings.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
 import 'buyer_product_list_screen.dart';
@@ -129,7 +130,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => BuyerProductListScreen(
-            categoryTitle: criteria.category == 'All' ? 'Filtered Harvests' : criteria.category,
+            categoryTitle: criteria.category == 'All' ? context.tr.filteredHarvests : context.tr.localizedCategory(criteria.category),
             filterCriteria: criteria,
           ),
         ),
@@ -155,8 +156,8 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Filters & Sorting',
+            Text(
+              context.tr.filtersAndSorting,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -171,7 +172,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '$activeCount Active',
+                context.tr.activeFiltersCountText(activeCount),
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -185,8 +186,8 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
         actions: [
           TextButton(
             onPressed: _resetAll,
-            child: const Text(
-              'Reset All',
+            child: Text(
+              context.tr.resetAll,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -220,19 +221,19 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
-                              'Customizing Your Farm Basket',
-                              style: TextStyle(
+                              context.tr.customizingFarmBasket,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: _forestGreen,
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'Refine harvest origins, organic purity, price per kg, and dispatch hub.',
-                              style: TextStyle(
+                              context.tr.refineHarvestOrigins,
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF166534),
                               ),
@@ -249,12 +250,12 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Category',
+                    Text(
+                      context.tr.category,
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      _categories[_selectedCategoryIndex],
+                      context.tr.localizedCategory(_categories[_selectedCategoryIndex]),
                       style: const TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -286,7 +287,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                               : null,
                         ),
                         child: Text(
-                          _categories[i],
+                          context.tr.localizedCategory(_categories[i]),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -303,12 +304,12 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Price Range',
+                    Text(
+                      context.tr.priceRange,
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Rs. ${_priceRange.start.round()} - Rs. ${_priceRange.end.round()}',
+                      '${context.tr.priceRs} ${_priceRange.start.round()} - ${context.tr.priceRs} ${_priceRange.end.round()}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _forestGreen),
                     ),
                   ],
@@ -327,10 +328,10 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('MINIMUM', style: TextStyle(fontSize: 9, color: _textMuted, fontWeight: FontWeight.w600)),
+                            Text(context.tr.minimumPrice, style: const TextStyle(fontSize: 9, color: _textMuted, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
-                              'Rs. ${_priceRange.start.round()}',
+                              '${context.tr.priceRs} ${_priceRange.start.round()}',
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
                             ),
                           ],
@@ -352,10 +353,10 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('MAXIMUM', style: TextStyle(fontSize: 9, color: _textMuted, fontWeight: FontWeight.w600)),
+                            Text(context.tr.maximumPrice, style: const TextStyle(fontSize: 9, color: _textMuted, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
-                              'Rs. ${_priceRange.end.round()}',
+                              '${context.tr.priceRs} ${_priceRange.end.round()}',
                               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
                             ),
                           ],
@@ -377,10 +378,10 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text('Rs. 50', style: TextStyle(fontSize: 10, color: _textMuted)),
-                      Text('Rs. 1,000', style: TextStyle(fontSize: 10, color: _textMuted)),
-                      Text('Rs. 2,000+', style: TextStyle(fontSize: 10, color: _textMuted)),
+                    children: [
+                      Text('${context.tr.priceRs} 50', style: const TextStyle(fontSize: 10, color: _textMuted)),
+                      Text('${context.tr.priceRs} 1,000', style: const TextStyle(fontSize: 10, color: _textMuted)),
+                      Text('${context.tr.priceRs} 2,000+', style: const TextStyle(fontSize: 10, color: _textMuted)),
                     ],
                   ),
                 ),
@@ -390,12 +391,12 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Sourcing Region',
+                    Text(
+                      context.tr.sourcingRegion,
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      _regions[_selectedRegionIndex].$1,
+                      context.tr.localizedRegion(_regions[_selectedRegionIndex].$1),
                       style: const TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -431,7 +432,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              title,
+                              context.tr.localizedRegion(title),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -442,7 +443,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              sub,
+                              context.tr.localizedRegionSub(sub),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -461,35 +462,35 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 // Harvest Standards
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text(
-                      'Harvest Standards',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
+                      context.tr.harvestStandards,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Verified quality badge',
-                      style: TextStyle(fontSize: 11, color: _textMuted),
+                      context.tr.verifiedQualityBadge,
+                      style: const TextStyle(fontSize: 11, color: _textMuted),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 _buildToggleCard(
-                  title: 'Fresh Harvest Today',
-                  subtitle: 'Plucked from fields at dawn within 24 hours',
+                  title: context.tr.freshHarvestToday,
+                  subtitle: context.tr.pluckedWithin24Hours,
                   value: _freshHarvestOnly,
                   onChanged: (val) => setState(() => _freshHarvestOnly = val),
                 ),
                 const SizedBox(height: 8),
                 _buildToggleCard(
-                  title: '100% Certified Organic Only',
-                  subtitle: 'Zero synthetic chemical sprays or fertilizers',
+                  title: context.tr.certifiedOrganicOnlyToggle,
+                  subtitle: context.tr.zeroChemicalSprays,
                   value: _certifiedOrganic,
                   onChanged: (val) => setState(() => _certifiedOrganic = val),
                 ),
                 const SizedBox(height: 8),
                 _buildToggleCard(
-                  title: 'Direct Farm Dispatch',
-                  subtitle: 'Direct cold transit straight to your doorstep',
+                  title: context.tr.directFarmDispatchToggle,
+                  subtitle: context.tr.directColdTransit,
                   value: _directFarmDispatch,
                   onChanged: (val) => setState(() => _directFarmDispatch = val),
                 ),
@@ -498,14 +499,14 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                 // Sort Results By
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Text(
-                      'Sort Results By',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
+                      context.tr.sortResultsBy,
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _textDark),
                     ),
                     Text(
-                      'Live ordering',
-                      style: TextStyle(fontSize: 11, color: _textMuted),
+                      context.tr.liveOrdering,
+                      style: const TextStyle(fontSize: 11, color: _textMuted),
                     ),
                   ],
                 ),
@@ -538,7 +539,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  title,
+                                  context.tr.localizedSort(title),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -547,7 +548,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  desc,
+                                  context.tr.localizedSortSub(desc),
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: isSel ? const Color(0xFF166534) : _textMuted,
@@ -595,7 +596,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                      child: const Text('Reset', style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: Text(context.tr.resetAll, style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(width: 10),
                     // Apply button with live count
@@ -613,7 +614,7 @@ class _BuyerFilterScreenState extends State<BuyerFilterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Apply Filters (${matchingProducts.length} ${matchingProducts.length == 1 ? 'Product' : 'Products'})',
+                              context.tr.applyFiltersCount(matchingProducts.length),
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../services/driver_firestore_service.dart';
 import 'deliveries_screen.dart';
@@ -253,8 +253,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Remove Trip Record?',
-                style: GoogleFonts.poppins(
+                context.tr.removeTripRecord,
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF0F172A),
@@ -264,8 +264,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           ],
         ),
         content: Text(
-          'Are you sure you want to remove #${item.orderId} from your delivery history? This will remove the record from your active history in the database.',
-          style: GoogleFonts.poppins(
+          context.tr.removeTripRecordDesc(item.orderId),
+          style: TextStyle(
             fontSize: 12.5,
             color: const Color(0xFF64748B),
             height: 1.4,
@@ -275,8 +275,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
-              'Cancel',
-              style: GoogleFonts.poppins(
+              context.tr.cancel,
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF64748B),
               ),
@@ -293,8 +293,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(
-              'Remove Record',
-              style: GoogleFonts.poppins(
+              context.tr.removeRecord,
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 12.5,
               ),
@@ -332,7 +332,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 Expanded(
                   child: Text(
                     'Trip #${item.orderId} removed from history in DB (DELETE)',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -395,8 +395,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'COMPLETED TRIPS',
-                          style: GoogleFonts.poppins(
+                          context.tr.completedTrips,
+                          style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF64748B),
@@ -404,8 +404,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           ),
                         ),
                         Text(
-                          '${currentPeriod.trips.length} Recent Shown',
-                          style: GoogleFonts.poppins(
+                          context.tr.recentShown(currentPeriod.trips.length),
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF047857),
@@ -437,8 +437,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'No completed trips in this period',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.noTripsInPeriod,
+                                  style: TextStyle(
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w600,
                                     color: const Color(0xFF475569),
@@ -446,8 +446,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Records may have been archived or removed',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.recordsArchivedOrRemoved,
+                                  style: TextStyle(
                                     fontSize: 11.5,
                                     color: const Color(0xFF94A3B8),
                                   ),
@@ -518,7 +518,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           // Brand Name
           Text(
             'Farm2Home',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -535,8 +535,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              'DRIVER',
-              style: GoogleFonts.poppins(
+              context.tr.roleDriverTag,
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF047857),
@@ -579,8 +579,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              'Delivery History',
-              style: GoogleFonts.poppins(
+              context.tr.deliveryHistory,
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF0F172A),
@@ -603,8 +603,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Verified Driver',
-                    style: GoogleFonts.poppins(
+                    context.tr.verifiedDriver,
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -625,8 +625,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             ),
             const SizedBox(width: 5),
             Text(
-              '142 Completed Trips across Sri Lanka',
-              style: GoogleFonts.poppins(
+              context.tr.completedTripsSriLanka(142),
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF64748B),
@@ -649,7 +649,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             iconBg: const Color(0xFFDCFCE7),
             iconColor: const Color(0xFF059669),
             value: '${data.tripsCount}',
-            label: 'Trips Made',
+            label: context.tr.tripsMade,
           ),
         ),
         const SizedBox(width: 10),
@@ -661,7 +661,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             iconBg: const Color(0xFFEDFAF3),
             iconColor: const Color(0xFF059669),
             value: data.onTimeRate,
-            label: 'On-Time',
+            label: context.tr.onTimeRate,
           ),
         ),
         const SizedBox(width: 10),
@@ -673,7 +673,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             iconBg: const Color(0xFFFFF7ED),
             iconColor: const Color(0xFFEA580C),
             value: data.earnings,
-            label: 'Earnings',
+            label: context.tr.navEarnings,
           ),
         ),
       ],
@@ -717,7 +717,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 16.5,
               fontWeight: FontWeight.w800,
               color: const Color(0xFF0F172A),
@@ -726,7 +726,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           const SizedBox(height: 2),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF64748B),
@@ -735,6 +735,13 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
         ],
       ),
     );
+  }
+
+  String _localizedPeriodLabel(BuildContext context, String label) {
+    if (label.contains('Week') && label.contains('This')) return context.tr.thisWeek;
+    if (label.contains('Week') && label.contains('Last')) return context.tr.lastWeek;
+    if (label.contains('Month')) return context.tr.thisMonth;
+    return label;
   }
 
   // ── 3. Time Filter Pills Row ───────────────────────────────────────────────
@@ -777,8 +784,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _periods[idx].label,
-                    style: GoogleFonts.poppins(
+                    _localizedPeriodLabel(context, _periods[idx].label),
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? Colors.white : const Color(0xFF475569),
@@ -828,7 +835,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             children: [
               Text(
                 '#${item.orderId}',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF0F172A),
@@ -854,8 +861,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Completed',
-                      style: GoogleFonts.poppins(
+                      context.tr.statusDelivered,
+                      style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF047857),
@@ -867,7 +874,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               const Spacer(),
               Text(
                 '+${item.amount}',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF047857),
@@ -909,7 +916,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               Expanded(
                 child: Text(
                   item.pickupLocation,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF1E293B),
@@ -917,8 +924,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 ),
               ),
               Text(
-                'Pickup',
-                style: GoogleFonts.poppins(
+                context.tr.pickup,
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF94A3B8),
@@ -943,7 +950,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               Expanded(
                 child: Text(
                   item.dropLocation,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF1E293B),
@@ -951,8 +958,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 ),
               ),
               Text(
-                'Drop',
-                style: GoogleFonts.poppins(
+                context.tr.drop,
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF94A3B8),
@@ -976,7 +983,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               Expanded(
                 child: Text(
                   item.cargo,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF64748B),
@@ -989,7 +996,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 children: [
                   Text(
                     item.time,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF94A3B8),
@@ -1044,8 +1051,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '100% Farm Fresh Assured',
-                  style: GoogleFonts.poppins(
+                  context.tr.farmFreshAssured,
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
@@ -1053,8 +1060,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Direct dispatch reduces transit decay by maintaining optimal farm-gate chill standards.',
-                  style: GoogleFonts.poppins(
+                  context.tr.farmFreshAssuredSub,
+                  style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
                     height: 1.4,
@@ -1084,8 +1091,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
           color: Colors.white,
         ),
         label: Text(
-          'Download Tax & Payment Statement (PDF)',
-          style: GoogleFonts.poppins(
+          context.tr.downloadTaxPdf,
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: Colors.white,
@@ -1157,7 +1164,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                         children: [
                           Text(
                             'Tax & Payment Statement',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -1165,7 +1172,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           ),
                           Text(
                             '${period.label} Summary • PDF Document',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -1226,7 +1233,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                 children: [
                                   Text(
                                     'Farm2Home Logistics',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
                                       color: const Color(0xFF0F172A),
@@ -1234,7 +1241,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                   ),
                                   Text(
                                     'Agri-Transit Sri Lanka Ltd.',
-                                    style: GoogleFonts.poppins(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       color: const Color(0xFF64748B),
                                     ),
@@ -1248,7 +1255,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                             children: [
                               Text(
                                 'OFFICIAL STATEMENT',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF047857),
@@ -1257,10 +1264,10 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                               ),
                               Text(
                                 '#STMT-2026-LK',
-                                style: GoogleFonts.spaceMono(
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1E293B),
+                                  color: Color(0xFF1E293B),
                                 ),
                               ),
                             ],
@@ -1277,21 +1284,21 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('DRIVER DETAILS', style: GoogleFonts.poppins(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('DRIVER DETAILS', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
                               const SizedBox(height: 2),
-                              Text('Ranjith Subha Udhasanak', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700)),
-                              Text('Vehicle: WP NC-4982 (Cooled Agro)', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF475569))),
-                              Text('Bank: Commercial Bank LK (****4198)', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Ranjith Subha Udhasanak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              Text('Vehicle: WP NC-4982 (Cooled Agro)', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Bank: Commercial Bank LK (****4198)', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
                             ],
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('STATEMENT PERIOD', style: GoogleFonts.poppins(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('STATEMENT PERIOD', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
                               const SizedBox(height: 2),
-                              Text(period.label, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF064E3B))),
-                              Text('Generated: 01 Oct 2026', style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF475569))),
-                              Text('Status: Dispatched & Cleared ✓', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF047857))),
+                              Text(period.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF064E3B))),
+                              Text('Generated: 01 Oct 2026', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Status: Dispatched & Cleared ✓', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF047857))),
                             ],
                           ),
                         ],
@@ -1299,7 +1306,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                       const SizedBox(height: 18),
 
                       // Itemized Table of Completed Deliveries
-                      Text('ITEMIZED TRANSIT LOGS', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF64748B), letterSpacing: 0.5)),
+                      Text('ITEMIZED TRANSIT LOGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF64748B), letterSpacing: 0.5)),
                       const SizedBox(height: 8),
 
                       Container(
@@ -1314,9 +1321,9 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                               color: const Color(0xFFF8FAFC),
                               child: Row(
                                 children: [
-                                  Expanded(flex: 3, child: Text('Order', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700))),
-                                  Expanded(flex: 5, child: Text('Corridor Route', style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700))),
-                                  Expanded(flex: 3, child: Text('Net Pay', textAlign: TextAlign.right, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 3, child: Text('Order', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 5, child: Text('Corridor Route', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 3, child: Text('Net Pay', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
                                 ],
                               ),
                             ),
@@ -1327,13 +1334,13 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                     children: [
                                       Expanded(
                                         flex: 3,
-                                        child: Text('#${t.orderId}', style: GoogleFonts.spaceMono(fontSize: 10.5, fontWeight: FontWeight.w700)),
+                                        child: Text('#${t.orderId}', style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700)),
                                       ),
                                       Expanded(
                                         flex: 5,
                                         child: Text(
                                           '${t.pickupLocation.split(',').first} → ${t.dropLocation.split('(').first}',
-                                          style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF334155)),
+                                          style: TextStyle(fontSize: 10.5, color: const Color(0xFF334155)),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1343,7 +1350,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                         child: Text(
                                           t.amount,
                                           textAlign: TextAlign.right,
-                                          style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF047857)),
+                                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF047857)),
                                         ),
                                       ),
                                     ],
@@ -1392,9 +1399,9 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('ISSUED BY', style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
-                              Text('Automated Transit Settlement', style: GoogleFonts.poppins(fontSize: 10.5, fontWeight: FontWeight.w600)),
-                              Text('Sri Lanka Agri-Board Approved', style: GoogleFonts.poppins(fontSize: 9.5, color: const Color(0xFF047857))),
+                              Text('ISSUED BY', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('Automated Transit Settlement', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
+                              Text('Sri Lanka Agri-Board Approved', style: TextStyle(fontSize: 9.5, color: const Color(0xFF047857))),
                             ],
                           ),
                           Container(
@@ -1405,8 +1412,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                             ),
                             child: Column(
                               children: [
-                                Text('VERIFIED & STAMPED', style: GoogleFonts.spaceMono(fontSize: 8.5, fontWeight: FontWeight.w800, color: const Color(0xFF047857))),
-                                Text('FARM2HOME 2026', style: GoogleFonts.spaceMono(fontSize: 8, color: const Color(0xFF047857))),
+                                Text('VERIFIED & STAMPED', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
+                                Text('FARM2HOME 2026', style: const TextStyle(fontSize: 8, color: Color(0xFF047857))),
                               ],
                             ),
                           ),
@@ -1438,7 +1445,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                     icon: const Icon(Icons.download_rounded, size: 19),
                     label: Text(
                       'Save PDF Statement to Device',
-                      style: GoogleFonts.poppins(fontSize: 13.5, fontWeight: FontWeight.w700),
+                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF064E3B),
@@ -1462,7 +1469,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
             color: isBold ? const Color(0xFF0F172A) : const Color(0xFF475569),
@@ -1470,7 +1477,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
         ),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: isBold ? 14 : 11.5,
             fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
             color: valueColor ?? const Color(0xFF0F172A),
@@ -1500,14 +1507,14 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'PDF Statement Downloaded!',
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
+              context.tr.pdfDownloadedTitle,
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
             ),
             const SizedBox(height: 8),
             Text(
               'Statement_${period.label.replaceAll(' ', '_')}_2026.pdf has been saved to your Downloads folder.\nTotal: ${period.earnings}',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B), height: 1.5),
+              style: TextStyle(fontSize: 12, color: const Color(0xFF64748B), height: 1.5),
             ),
             const SizedBox(height: 18),
             SizedBox(
@@ -1520,7 +1527,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Open Statement'),
+                child: Text(context.tr.openStatement),
               ),
             ),
           ],
@@ -1548,7 +1555,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             _buildNavItem(
               index: 0,
               icon: Icons.grid_view_rounded,
-              label: 'Dashboard',
+              label: context.tr.dashboard,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -1564,7 +1571,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             _buildNavItem(
               index: 1,
               icon: Icons.inventory_2_outlined,
-              label: 'Deliveries',
+              label: context.tr.navDeliveries,
               isSelected: true,
               hasDot: true,
               onTap: () {
@@ -1580,11 +1587,11 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             _buildNavItem(
               index: 2,
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chat',
+              label: context.tr.navChat,
               isSelected: false,
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Chat tab selected', style: GoogleFonts.poppins())),
+                  SnackBar(content: Text('Chat tab selected', style: TextStyle())),
                 );
               },
             ),
@@ -1593,7 +1600,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             _buildNavItem(
               index: 3,
               icon: Icons.person_outline_rounded,
-              label: 'Profile',
+              label: context.tr.profile,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushReplacement(
@@ -1657,7 +1664,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,

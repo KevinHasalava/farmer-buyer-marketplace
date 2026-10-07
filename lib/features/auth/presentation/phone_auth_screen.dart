@@ -1,15 +1,16 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import 'role_meta.dart';
@@ -286,7 +287,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                             Expanded(
                               child: Text(
                                 _error!,
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   color: AppColors.error,
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
@@ -307,8 +308,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                           onPressed: () => context.go(AppRoutes.login),
                           icon: const Icon(Icons.mail_outline_rounded, size: 16),
                           label: Text(
-                            'Or sign in with email & password',
-                            style: GoogleFonts.poppins(
+                            tr.orSignInWithEmail,
+                            style: AppTheme.fontStyle(
+                              context.currentLanguage,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryGreen,
@@ -322,8 +324,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account? ",
-                              style: GoogleFonts.poppins(
+                              tr.dontHaveAccount,
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
                               ),
@@ -336,8 +339,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                                 context.push(AppRoutes.registerFor(currentRole));
                               },
                               child: Text(
-                                'Sign Up',
-                                style: GoogleFonts.poppins(
+                                tr.signUp,
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.primaryGreen,
@@ -386,8 +390,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ENTER YOUR MOBILE NUMBER',
-          style: GoogleFonts.poppins(
+          tr.enterPhoneLabel,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
@@ -425,7 +430,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                     const SizedBox(width: 6),
                     Text(
                       '+94',
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textDark,
@@ -440,7 +446,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   autofocus: true,
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
@@ -455,7 +462,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   onSubmitted: (_) => _sendOtp(),
                   decoration: InputDecoration(
                     hintText: '77 123 4567',
-                    hintStyle: GoogleFonts.poppins(
+                    hintStyle: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 14,
                       color: AppColors.textHint,
                     ),
@@ -480,7 +488,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             const SizedBox(width: 6),
             Text(
               tr.secureNote,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                context.currentLanguage,
                 fontSize: 12,
                 color: AppColors.textSecondary,
               ),
@@ -517,7 +526,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                 Expanded(
                   child: Text(
                     tr.demoNotice,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 12,
                       color: const Color(0xFF795548),
                     ),
@@ -530,8 +539,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         ],
 
         Text(
-          'ENTER 6-DIGIT VERIFICATION CODE',
-          style: GoogleFonts.poppins(
+          tr.enterOtpCodeLabel,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
@@ -597,7 +607,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                       ),
                       child: Text(
                         filled ? code[i] : '',
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textDark,
@@ -618,7 +629,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
             if (_secondsLeft > 0)
               Text(
                 '${tr.resendIn} 00:${_secondsLeft.toString().padLeft(2, '0')}',
-                style: GoogleFonts.poppins(
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
                   fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
@@ -628,7 +640,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                 onTap: _loading ? null : _sendOtp,
                 child: Text(
                   tr.resend,
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,
@@ -640,7 +653,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               onTap: () => _goStep(_AuthStep.phone),
               child: Text(
                 tr.changeNumber,
-                style: GoogleFonts.poppins(
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
@@ -660,8 +674,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'YOUR FULL NAME',
-          style: GoogleFonts.poppins(
+          tr.fullNameLabel,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
@@ -697,7 +712,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   controller: _nameCtrl,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textDark,
@@ -705,7 +721,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   onSubmitted: (_) => _finish(),
                   decoration: InputDecoration(
                     hintText: tr.fullName,
-                    hintStyle: GoogleFonts.poppins(
+                    hintStyle: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 14,
                       color: AppColors.textHint,
                     ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
 import '../../core/localization/app_strings.dart';
+import '../../core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signature Curved Green Header (matching Login & Welcome screens)
@@ -126,7 +126,8 @@ class AppHeaderBanner extends StatelessWidget {
                           ),
                           child: Text(
                             badgeText!,
-                            style: GoogleFonts.poppins(
+                            style: AppTheme.fontStyle(
+                              context.currentLanguage,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -147,7 +148,8 @@ class AppHeaderBanner extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -160,7 +162,8 @@ class AppHeaderBanner extends StatelessWidget {
                     Text(
                       subtitle!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 12.5,
                         color: Colors.white.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w400,
@@ -386,7 +389,8 @@ class AppSelectableCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   categoryTag!.toUpperCase(),
-                                  style: GoogleFonts.poppins(
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
@@ -431,7 +435,8 @@ class AppSelectableCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   selectedLabel!,
-                                  style: GoogleFonts.poppins(
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
@@ -454,7 +459,8 @@ class AppSelectableCard extends StatelessWidget {
                             ),
                             child: Text(
                               badgeText!,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.accentOrange,
@@ -572,7 +578,8 @@ class AppSelectableCard extends StatelessWidget {
                             children: [
                               Text(
                                 title,
-                                style: GoogleFonts.poppins(
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.3,
@@ -584,7 +591,8 @@ class AppSelectableCard extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 subtitle,
-                                style: GoogleFonts.poppins(
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
                                   height: 1.4,
@@ -684,7 +692,8 @@ class AppSelectableCard extends StatelessWidget {
                             ),
                             child: Text(
                               chip,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
@@ -802,7 +811,8 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
                     children: [
                       Text(
                         widget.label,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: AppTextStyles.labelLarge,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -873,7 +883,8 @@ class AppLanguagePill extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               lang.nativeName,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                lang,
                 color: isDarkHeader ? Colors.white : AppColors.textDark,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -932,7 +943,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             const SizedBox(height: 18),
             Text(
               strings.chooseLanguage,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                currentLang,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -942,7 +954,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             Text(
               strings.chooseLanguageSub,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                currentLang,
                 fontSize: 12.5,
                 color: AppColors.textSecondary,
               ),
@@ -994,7 +1007,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           ),
                           child: Text(
                             l.glyph,
-                            style: GoogleFonts.poppins(
+                            style: AppTheme.fontStyle(
+                              l,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: currentLang == l
@@ -1009,7 +1023,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           children: [
                             Text(
                               l.nativeName,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                l,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -1017,7 +1032,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                             ),
                             Text(
                               l.englishName,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                l,
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),

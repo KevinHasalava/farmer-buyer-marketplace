@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../services/driver_firestore_service.dart';
 import 'delivery_completed_screen.dart';
@@ -133,7 +134,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 Expanded(
                   child: Text(
                     'Live GPS & Van Chiller Temp (${_vanChillerTemp.toStringAsFixed(1)}°C) synced to DB (UPDATE)',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -247,8 +248,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
           ),
           const SizedBox(width: 8),
           Text(
-            'Delivery Tracking',
-            style: GoogleFonts.poppins(
+            context.tr.deliveryTracking,
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -310,7 +311,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   children: [
                     Text(
                       _isOrder2 ? '11.8 km' : '14.5 km',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -325,7 +326,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       ),
                       child: Text(
                         _isOrder2 ? 'A4 / COASTAL' : 'A7 ROUTE',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -342,7 +343,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       : 'Continue on A7 toward Kaduwela /...',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 11.5,
                     color: Colors.white.withValues(alpha: 0.85),
                   ),
@@ -358,8 +359,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Voice navigation audio toggled',
-                    style: GoogleFonts.poppins(),
+                    context.tr.voiceNavToggled,
+                    style: TextStyle(),
                   ),
                   duration: const Duration(seconds: 1),
                   behavior: SnackBarBehavior.floating,
@@ -462,8 +463,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        'Route Smooth • Normal Traffic',
-                        style: GoogleFonts.poppins(
+                        context.tr.routeSmoothNormal,
+                        style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF1E293B),
@@ -530,14 +531,14 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       const SizedBox(width: 4),
                       RichText(
                         text: TextSpan(
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10,
                             color: const Color(0xFF64748B),
                           ),
                           children: [
-                            const TextSpan(
-                              text: 'ORIGIN: ',
-                              style: TextStyle(fontWeight: FontWeight.w600),
+                            TextSpan(
+                              text: context.tr.originHakgala,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             TextSpan(
                               text: _isOrder2 ? 'Welimada 11:20 AM' : 'Hakgala 10:15 AM',
@@ -684,8 +685,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'DESTINATION',
-                                style: GoogleFonts.poppins(
+                                context.tr.destination,
+                                style: TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFFEF4444),
@@ -696,7 +697,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                           ),
                           Text(
                             _isOrder2 ? 'Dehiwala' : 'Colombo 05',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -737,12 +738,12 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       const SizedBox(width: 5),
                       RichText(
                         text: TextSpan(
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 11,
                             color: const Color(0xFF475569),
                           ),
                           children: [
-                            const TextSpan(text: 'Cargo Cool: '),
+                            TextSpan(text: context.tr.cargoCool),
                             TextSpan(
                               text: _cargoCoolTemp,
                               style: const TextStyle(
@@ -788,8 +789,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'REMAINING',
-                  style: GoogleFonts.poppins(
+                  context.tr.remaining,
+                  style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF94A3B8),
@@ -799,7 +800,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 const SizedBox(height: 2),
                 Text(
                   _remainingDistance,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF059669),
@@ -807,7 +808,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 ),
                 Text(
                   _isOrder2 ? 'via A4 Hwy' : 'via A7 Hwy',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
                   ),
@@ -827,8 +828,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'EST. TIME',
-                  style: GoogleFonts.poppins(
+                  context.tr.estTime,
+                  style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF94A3B8),
@@ -838,7 +839,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 const SizedBox(height: 2),
                 Text(
                   _estimatedTime,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF0F172A),
@@ -851,8 +852,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'Fastest',
-                    style: GoogleFonts.poppins(
+                    context.tr.fastest,
+                    style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -874,8 +875,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'TARGET ETA',
-                  style: GoogleFonts.poppins(
+                  context.tr.targetEta,
+                  style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF94A3B8),
@@ -885,7 +886,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 const SizedBox(height: 2),
                 Text(
                   _targetEta,
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFFB45309),
@@ -898,8 +899,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    'On Time',
-                    style: GoogleFonts.poppins(
+                    context.tr.onTime,
+                    style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -962,7 +963,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       children: [
                         Text(
                           _buyerName,
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF0F172A),
@@ -978,7 +979,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     ),
                     Text(
                       _buyerAddress,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11.5,
                         color: const Color(0xFF64748B),
                       ),
@@ -1072,8 +1073,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'PAYMENT ON ARRIVAL',
-                        style: GoogleFonts.poppins(
+                        context.tr.paymentOnArrival,
+                        style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF94A3B8),
@@ -1082,12 +1083,12 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       ),
                       RichText(
                         text: TextSpan(
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 12.5,
                             color: const Color(0xFF0F172A),
                           ),
                           children: [
-                            const TextSpan(text: 'Cash on Delivery: '),
+                            TextSpan(text: context.tr.cashOnDeliveryLabel),
                             TextSpan(
                               text: _codAmount,
                               style: const TextStyle(fontWeight: FontWeight.w800),
@@ -1109,7 +1110,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   ),
                   child: Text(
                     _cratesCount,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF065F46),
@@ -1137,12 +1138,12 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 11,
                       color: const Color(0xFF64748B),
                     ),
                     children: [
-                      const TextSpan(text: 'Gate code '),
+                      TextSpan(text: context.tr.gateCodeLabel),
                       TextSpan(
                         text: _gateCode,
                         style: const TextStyle(
@@ -1234,9 +1235,9 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     Center(
                       child: Text(
                         _isLiveNavigating
-                            ? 'Handover Produce • View Receipt →'
-                            : 'Slide to Start Live Navigation',
-                        style: GoogleFonts.poppins(
+                            ? context.tr.handoverProduceViewReceipt
+                            : context.tr.slideToStartNav,
+                        style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: _isLiveNavigating
@@ -1318,7 +1319,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             const SizedBox(height: 14),
             Text(
               'Call $_buyerName',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1326,7 +1327,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             Text(
               '$_buyerPhone • $_buyerAddress',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12.5,
                 color: const Color(0xFF64748B),
               ),
@@ -1347,7 +1348,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   );
                 },
                 icon: const Icon(Icons.call, size: 18),
-                label: const Text('Call Buyer Now'),
+                label: Text(context.tr.callBuyerNow),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
@@ -1400,8 +1401,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              'Chat with $_buyerName',
-              style: GoogleFonts.poppins(
+              context.tr.chatWithBuyer(_buyerName),
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1409,9 +1410,9 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              'Ask buyer to prepare cash ($_codAmount) on delivery arrival.',
+              context.tr.askBuyerPrepareCash(_codAmount),
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12.5,
                 color: const Color(0xFF64748B),
               ),
@@ -1436,7 +1437,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Open Direct Chat'),
+                child: Text(context.tr.openDirectChat),
               ),
             ),
           ],
@@ -1504,9 +1505,9 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Handing Over Produce to Buyer',
+              context.tr.handingOverProduce,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1518,7 +1519,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   ? 'Arrived at Station Rd, Dehiwala • 2 crates verified.\nUpdating delivery status to Completed...'
                   : 'Arrived at Havelock Rd, Colombo 05 • 3 crates verified.\nUpdating delivery status to Completed...',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 12.5,
                 color: const Color(0xFF64748B),
               ),
@@ -1544,7 +1545,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text('Confirm Handover & View Receipt →'),
+                child: Text(context.tr.confirmHandoverViewReceipt),
               ),
             ),
           ],

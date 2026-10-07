@@ -1,3 +1,4 @@
+
 /// Represents an item in the user's shopping cart.
 class CartItem {
   CartItem({

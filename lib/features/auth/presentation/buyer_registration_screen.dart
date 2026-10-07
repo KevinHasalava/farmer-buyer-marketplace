@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
@@ -194,8 +194,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Buyer Account Created!',
-              style: GoogleFonts.poppins(
+              context.tr.buyerAccountCreated,
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -203,9 +203,9 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Welcome to Farm2Home. Fresh harvest direct to your doorstep awaits!',
+              context.tr.buyerWelcomeMsg,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -227,8 +227,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   ),
                 ),
                 child: Text(
-                  'Explore Fresh Produce',
-                  style: GoogleFonts.poppins(
+                  context.tr.exploreFreshProduce,
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -260,8 +260,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
           },
         ),
         title: Text(
-          'Phone Authentication',
-          style: GoogleFonts.poppins(
+          context.tr.registerAsBuyerTitle,
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.textDark,
@@ -322,16 +322,16 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Role Profile',
-                          style: GoogleFonts.poppins(
+                          context.tr.roleProfile,
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          'Fresh Food Buyer',
-                          style: GoogleFonts.poppins(
+                          context.tr.roleProfileBuyer,
+                          style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
@@ -345,8 +345,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       child: Row(
                         children: [
                           Text(
-                            'Change ⇄',
-                            style: GoogleFonts.poppins(
+                            context.tr.changeRole,
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF1E8342),
@@ -373,7 +373,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                 ),
                 child: Text(
                   '🌱 Pure Field Origin',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF15803D),
@@ -385,8 +385,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
 
               // ── Title & Subtitle ───────────────────────────────────────────
               Text(
-                'Join Farm2Home as a Buyer',
-                style: GoogleFonts.poppins(
+                context.tr.registerAsBuyerTitle,
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -396,7 +396,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 4),
               Text(
                 'Direct farm-fresh harvest delivered straight from rural fields to your doorstep.',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                   height: 1.4,
@@ -446,7 +446,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                             const SizedBox(width: 5),
                             Text(
                               'Harvested at dawn, delivered by evening',
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -464,8 +464,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
 
               // ── Select Buyer Type ──────────────────────────────────────────
               Text(
-                'Select Buyer Type',
-                style: GoogleFonts.poppins(
+                context.tr.buyerTypeLabel,
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -500,7 +500,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           ),
                           child: Text(
                             type,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
                               color: isSel ? Colors.white : AppColors.textDark,
@@ -516,7 +516,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 18),
 
               // ── Full Name ──────────────────────────────────────────────────
-              _buildFieldLabel('Full Name'),
+              _buildFieldLabel(context.tr.fullNameLabel),
               _buildTextInput(
                 controller: _nameCtrl,
                 hintText: 'e.g., Chaminda Perera',
@@ -528,7 +528,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Mobile Number ──────────────────────────────────────────────
-              _buildFieldLabel('Mobile Number'),
+              _buildFieldLabel(context.tr.mobileNumberLabel),
               Container(
                 height: 52,
                 decoration: BoxDecoration(
@@ -552,7 +552,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           const SizedBox(width: 6),
                           Text(
                             '+94',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textDark,
@@ -566,7 +566,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       child: TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textDark,
@@ -577,7 +577,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                         ],
                         decoration: InputDecoration(
                           hintText: '77 123 4567',
-                          hintStyle: GoogleFonts.poppins(
+                          hintStyle: TextStyle(
                             fontSize: 13.5,
                             color: AppColors.textHint,
                           ),
@@ -601,7 +601,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   Expanded(
                     child: Text(
                       'We will send a 6-digit OTP code to verify your mobile number',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
                       ),
@@ -613,7 +613,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Email Address ──────────────────────────────────────────────
-              _buildFieldLabel('Email Address'),
+              _buildFieldLabel(context.tr.emailLabel),
               _buildTextInput(
                 controller: _emailCtrl,
                 hintText: 'name@example.com',
@@ -624,7 +624,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Delivery City / Hub Area Dropdown ───────────────────────────
-              _buildFieldLabel('Delivery City / Hub Area'),
+              _buildFieldLabel(context.tr.regionalHubLabel),
               Container(
                 height: 52,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -647,7 +647,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           value: _selectedHub,
                           isExpanded: true,
                           icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: AppColors.textDark,
@@ -672,7 +672,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Default Street Address ─────────────────────────────────────
-              _buildFieldLabel('Default Street Address'),
+              _buildFieldLabel(context.tr.deliveryAddressLabel),
               _buildTextInput(
                 controller: _addressCtrl,
                 hintText: 'House / Apartment number, Road name, Landmark',
@@ -682,7 +682,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Password ───────────────────────────────────────────────────
-              _buildFieldLabel('Password'),
+              _buildFieldLabel(context.tr.passwordLabel),
               _buildTextInput(
                 controller: _passwordCtrl,
                 hintText: 'At least 8 characters',
@@ -704,7 +704,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               const SizedBox(height: 14),
 
               // ── Confirm Password ───────────────────────────────────────────
-              _buildFieldLabel('Confirm Password'),
+              _buildFieldLabel(context.tr.confirmPasswordLabel),
               _buildTextInput(
                 controller: _confirmCtrl,
                 hintText: 'Repeat your password',
@@ -730,8 +730,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Produce & Harvest Preferences',
-                    style: GoogleFonts.poppins(
+                    context.tr.producePreferencesLabel,
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
@@ -739,7 +739,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   ),
                   Text(
                     'Customized box recommendations',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 10.5,
                       color: AppColors.textSecondary,
                     ),
@@ -775,7 +775,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                             : const Color(0xFFCBD5E1),
                       ),
                     ),
-                    labelStyle: GoogleFonts.poppins(
+                    labelStyle: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                       color: isSel ? Colors.white : AppColors.textDark,
@@ -817,8 +817,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Buyer Freshness Promise',
-                            style: GoogleFonts.poppins(
+                            context.tr.buyerFreshnessPromise,
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F3E26),
@@ -826,8 +826,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Zero middleman markup, transparent farm gate price, guaranteed harvest within 24h of picking.',
-                            style: GoogleFonts.poppins(
+                            context.tr.freshnessPromiseBody,
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF2D5A40),
                               height: 1.4,
@@ -861,8 +861,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'I agree to the Terms of Service, Privacy Policy, and the Sri Lanka Rural Direct Fair-Trade Charter.',
-                      style: GoogleFonts.poppins(
+                      context.tr.agreeTermsBuyer,
+                      style: TextStyle(
                         fontSize: 11.5,
                         color: AppColors.textSecondary,
                         height: 1.35,
@@ -901,8 +901,8 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Create Buyer Account',
-                              style: GoogleFonts.poppins(
+                              context.tr.createBuyerAccountBtn,
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -923,7 +923,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   children: [
                     Text(
                       'Already have an account? ',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         color: AppColors.textSecondary,
                       ),
@@ -932,7 +932,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       onTap: () => context.go(AppRoutes.phoneAuth),
                       child: Text(
                         'Log In',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF15803D),
@@ -954,7 +954,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textDark,
@@ -983,7 +983,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         keyboardType: keyboardType,
         obscureText: obscureText,
         validator: validator,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.w500,
           color: AppColors.textDark,
@@ -992,7 +992,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
           prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
           suffixIcon: suffix,
           hintText: hintText,
-          hintStyle: GoogleFonts.poppins(
+          hintStyle: TextStyle(
             fontSize: 13,
             color: AppColors.textHint,
           ),

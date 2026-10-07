@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/constants.dart';
+import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Welcome / splash screen — the entry point of the app.
 ///
@@ -13,6 +15,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tr = context.tr;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -21,6 +24,12 @@ class WelcomeScreen extends StatelessWidget {
           padding: AppDimensions.screenPadding,
           child: Column(
             children: [
+              // ── Top Language Switcher ────────────────────────────────────
+              const Align(
+                alignment: Alignment.topRight,
+                child: AppLanguagePill(),
+              ),
+
               const Spacer(flex: 2),
 
               // ── Brand Logo ──────────────────────────────────────────────
@@ -72,7 +81,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: AppDimensions.spaceXXS),
                     Text(
-                      '100% ETHICAL & DIRECT',
+                      tr.ethicalAndDirect,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: AppColors.primaryGreen,
                         letterSpacing: AppTextStyles.trackingWidest,
@@ -111,8 +120,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.spaceSM),
 
               Text(
-                'Fresh from real farmers, directly to your table\n'
-                'with guaranteed trust and verified fair pricing.',
+                tr.welcomeHeroSub,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
@@ -127,7 +135,7 @@ class WelcomeScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => context.go(AppRoutes.onboarding),
-                  child: const Text('Get Started'),
+                  child: Text(tr.getStarted),
                 ),
               ),
 
@@ -138,14 +146,14 @@ class WelcomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Already have an account?',
+                    tr.alreadyHaveAccount,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                     ),
                   ),
                   TextButton(
                     onPressed: () => context.go(AppRoutes.login),
-                    child: const Text('Sign In'),
+                    child: Text(tr.signIn),
                   ),
                 ],
               ),
