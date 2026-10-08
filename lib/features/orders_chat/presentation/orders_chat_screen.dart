@@ -10,9 +10,12 @@ import '../../cart/services/cart_state.dart';
 import '../models/chat_model.dart';
 import '../models/order_model.dart';
 import 'chat_detail_screen.dart';
+import 'chat_list_screen.dart';
 import 'order_tracking_screen.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../pre_order/presentation/pre_order_list_screen.dart';
+import '../../pre_order/presentation/create_pre_order_screen.dart';
 
 /// Clean, beautifully organized "Orders & Chat" screen aligned with the Farm2Home design system
 class OrdersChatScreen extends StatefulWidget {
@@ -397,7 +400,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 onChanged: (val) => setState(() => _searchQuery = val.trim()),
               )
             : Text(
-                context.tr.ordersAndChat,
+                'Orders & Pre-Orders',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -585,33 +588,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                context.tr.chat,
+                                'Pre-Orders',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w600,
                                   color: _selectedTab == 1 ? Colors.white : _textMuted,
                                 ),
                               ),
-                              if (_totalUnreadChats > 0) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: _selectedTab == 1
-                                        ? Colors.white.withValues(alpha: 0.25)
-                                        : _forestGreen,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '$_totalUnreadChats',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -629,14 +612,32 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
           Expanded(
             child: _selectedTab == 0
                 ? _buildOrdersTabView()
-                : _buildChatTabView(),
+                : _buildPreOrderTabView(),
           ),
         ],
       ),
 
+      // ── Floating Action Button for Pre-Orders ───────────────────────────
+      floatingActionButton: _selectedTab == 1
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // We need to import CreatePreOrderScreen if not already, or we can just use the path
+                    builder: (_) => const CreatePreOrderScreen(),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF047857),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('New Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          : null,
+
       // ── Unified 5-Tab Buyer Bottom Nav ────────────────────────────────────
       bottomNavigationBar: BuyerBottomNav(
-        selectedIndex: _selectedTab == 0 ? 2 : 3,
+        selectedIndex: 2,
         onTabSelected: (index) {
           switch (index) {
             case 0:
@@ -661,7 +662,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               setState(() => _selectedTab = 0);
               break;
             case 3:
-              setState(() => _selectedTab = 1);
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const ChatListScreen(),
+                  transitionDuration: Duration.zero,
+                ),
+              );
               break;
             case 4:
               Navigator.pushReplacement(
@@ -1222,6 +1229,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
         ),
       ),
     );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PRE-ORDER TAB VIEW
+  // ───────────────────────────────────────────────────────────────────────────
+  Widget _buildPreOrderTabView() {
+    return const PreOrderListScreen(isFarmerMode: false, isEmbedded: true);
   }
 
   // ───────────────────────────────────────────────────────────────────────────

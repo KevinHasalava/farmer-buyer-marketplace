@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
@@ -330,7 +331,7 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const OrdersChatScreen(initialTab: 1),
+                                builder: (_) => const ChatListScreen(),
                               ),
                             );
                           },

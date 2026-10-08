@@ -3430,24 +3430,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 );
               },
             ),
-            const SizedBox(height: 8),
-            ListTile(
-              tileColor: const Color(0xFFF0FDF4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFA7F3D0)),
-              ),
-              leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF047857)),
-              title: Text('Marketplace Admin Console'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF047857))),
-              subtitle: Text('Manage Farmers, Buyers, Drivers & Orders'.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF065F46))),
-              trailing: const Icon(Icons.chevron_right, color: Color(0xFF047857)),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-                );
-              },
-            ),
+
           ],
         ),
       ),

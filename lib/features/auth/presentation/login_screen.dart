@@ -12,8 +12,6 @@ import '../../../services/auth_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
-import '../../admin/services/admin_auth_service.dart';
-
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -101,26 +99,7 @@ class _LoginScreenState extends State<LoginScreen>
     final inputEmail = _emailCtrl.text.trim();
     final inputPassword = _passwordCtrl.text;
 
-    // ── Master Administrator Credentials Intercept ───────────────────
-    if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
-      setState(() => _isLoading = true);
-      HapticFeedback.mediumImpact();
-      final success = await AdminAuthService.instance.login(
-        email: inputEmail,
-        password: inputPassword,
-      );
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Master Administrator Access Granted. Opening Console...'),
-            backgroundColor: Color(0xFF047857),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        context.go(AppRoutes.adminPanel);
-        return;
-      }
-    }
+
 
     setState(() => _isLoading = true);
     try {

@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
+import '../../pre_order/presentation/pre_order_list_screen.dart';
 import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_products_screen.dart';
@@ -123,6 +124,32 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               ),
             ),
             const SizedBox(height: 10),
+            // Pre-orders button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PreOrderListScreen(isFarmerMode: true)),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF166534),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.handshake_rounded),
+                label: const Text(
+                  'Contract Farming / Pre-Orders',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -231,7 +258,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Greeting Header ───────────────────────────────────────
                 _buildGreeting(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+
+
 
                 // ── Farmer Profile Card ───────────────────────────────────
                 _buildProfileCard(context),
@@ -721,59 +750,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         ),
         const SizedBox(height: 14),
 
-        // ── Master Admin Console Shortcut ──────────────────────────────────
-        InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-            );
-          },
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            decoration: BoxDecoration(
-              color: const Color(0xFF064E3B),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF064E3B).withValues(alpha: 0.12),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF047857),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFFA7F3D0), size: 18),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Marketplace Admin Console',
-                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
-                      ),
-                      Text(
-                        'Full CRUD for Farmers, Buyers, Drivers, Products & Orders',
-                        style: TextStyle(color: Color(0xFFA7F3D0), fontSize: 10.5),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFA7F3D0), size: 14),
-              ],
-            ),
-          ),
-        ),
+
       ],
     );
   }

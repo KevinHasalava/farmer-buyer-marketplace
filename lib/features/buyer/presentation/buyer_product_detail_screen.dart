@@ -5,6 +5,7 @@ import '../../../core/localization/app_settings.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../models/buyer_models.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_farmer_profile_screen.dart';
@@ -635,7 +636,7 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const OrdersChatScreen(initialTab: 1),
+                                  builder: (_) => const ChatListScreen(),
                                 ),
                               );
                             },

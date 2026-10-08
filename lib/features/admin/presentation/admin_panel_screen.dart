@@ -7,6 +7,7 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
+import '../../pre_order/services/pre_order_manager.dart';
 
 /// Ultra-Premium Farm2Home Enterprise Master Admin Console
 /// Features: Side Navigation Rail/Sidebar, High-end Executive UI, Full Role CRUD & Dispatch
@@ -42,7 +43,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -178,6 +179,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildDriversTab(),
                         _buildProductsTab(),
                         _buildOrdersTab(),
+                        _buildContractsTab(),
                       ],
                     ),
                   ),
@@ -211,6 +213,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildDriversTab(),
                   _buildProductsTab(),
                   _buildOrdersTab(),
+                  _buildContractsTab(),
                 ],
               ),
             ),
@@ -379,6 +382,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.receipt_long_rounded,
                     label: 'Orders & Dispatch',
                     badgeCount: '${_service.totalOrders}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 6,
+                    icon: Icons.handshake_rounded,
+                    label: 'Pre-Orders (Contracts)',
+                    badgeCount: null,
                   ),
                 ],
               ),
@@ -790,6 +799,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Drivers (${_service.totalDrivers})',
       'Products (${_service.totalProducts})',
       'Orders (${_service.totalOrders})',
+      'Pre-Orders',
     ];
 
     return Container(
@@ -888,6 +898,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       3 => 'Transit & Fleet',
       4 => 'Produce Catalog',
       5 => 'Orders & Dispatch',
+      6 => 'Pre-Orders (Contracts)',
       _ => 'Executive Overview',
     };
   }
@@ -2318,7 +2329,137 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🛠️ 9. HELPERS & BADGES
+  // 🤝 9. TAB 6: PRE-ORDERS (CONTRACTS) CRUD VIEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildContractsTab() {
+    return ListenableBuilder(
+      listenable: PreOrderManager.instance,
+      builder: (context, _) {
+        var list = PreOrderManager.instance.preOrders;
+        if (_searchQuery.isNotEmpty) {
+          list = list
+              .where((o) =>
+                  o.id.toLowerCase().contains(_searchQuery) ||
+                  o.buyerName.toLowerCase().contains(_searchQuery) ||
+                  o.cropName.toLowerCase().contains(_searchQuery))
+              .toList();
+        }
+
+        if (list.isEmpty) {
+          return _buildEmptyState(
+            title: 'No Contracts Found',
+            message: 'No pre-orders match your search.',
+            onAction: () {}, // Quick create not needed for contracts directly in admin unless requested
+            actionLabel: 'Refresh',
+          );
+        }
+
+        return ListView.separated(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (ctx, i) {
+            final o = list[i];
+            final statusColor = o.status == 'Pending' ? const Color(0xFFD97706) : (o.status == 'In Progress' ? const Color(0xFF2563EB) : const Color(0xFF047857));
+
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          o.id,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          o.status,
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${o.cropName} (${o.requiredQuantityKg} Kg @ Rs. ${o.offeredPricePerKg}/Kg)',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textDark),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text('Buyer: ${o.buyerName}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.agriculture_rounded, size: 14, color: Color(0xFF047857)),
+                      const SizedBox(width: 4),
+                      Text('Farmer: ${o.farmerName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Color(0xFF047857), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Contract',
+                            message: 'Are you sure you want to remove Contract #${o.id}?',
+                            onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🛠️ 10. HELPERS & BADGES
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildMetaPill(IconData icon, String label) {
     return Container(

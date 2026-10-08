@@ -1,0 +1,300 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/constants/constants.dart';
+import '../../../widgets/premium/premium_widgets.dart';
+import '../services/pre_order_manager.dart';
+import 'add_progress_update_screen.dart';
+
+class PreOrderDetailScreen extends StatefulWidget {
+  final String preOrderId;
+  final bool isFarmerMode;
+
+  const PreOrderDetailScreen({
+    super.key,
+    required this.preOrderId,
+    required this.isFarmerMode,
+  });
+
+  @override
+  State<PreOrderDetailScreen> createState() => _PreOrderDetailScreenState();
+}
+
+class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
+  void _acceptContract() async {
+    await PreOrderManager.instance.updatePreOrderStatus(
+      widget.preOrderId,
+      'In Progress',
+      farmerId: 'farmer_01', // Mocked farmer ID
+      farmerName: 'Kamal Perera', // Mocked farmer Name
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Contract Accepted Successfully!')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: ListenableBuilder(
+        listenable: PreOrderManager.instance,
+        builder: (context, _) {
+          final order = PreOrderManager.instance.preOrders.firstWhere(
+            (o) => o.id == widget.preOrderId,
+          );
+          final progressList = PreOrderManager.instance.getProgressForOrder(widget.preOrderId);
+
+          return Column(
+            children: [
+              AppHeaderBanner(
+                title: 'Contract Details',
+                showBack: true,
+                badgeText: order.status.toUpperCase(),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Contract Info Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              order.cropName,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildDetailRow('Required Quantity', '${order.requiredQuantityKg} Kg'),
+                            _buildDetailRow('Offered Price', 'Rs ${order.offeredPricePerKg} / Kg'),
+                            _buildDetailRow(
+                              'Expected Delivery', 
+                              '${order.expectedDeliveryDate.day}/${order.expectedDeliveryDate.month}/${order.expectedDeliveryDate.year}',
+                            ),
+                            _buildDetailRow('Buyer', order.buyerName),
+                            if (order.farmerName != null) _buildDetailRow('Farmer', order.farmerName!),
+                            
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Divider(color: AppColors.divider),
+                            ),
+                            const Text('Premium Contract Terms', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                            const SizedBox(height: 12),
+                            _buildDetailRow('Delivery Location', order.deliveryLocation.isNotEmpty ? order.deliveryLocation : 'To be discussed'),
+                            _buildDetailRow('Payment Terms', order.paymentTerms),
+                            _buildDetailRow('Packaging', order.packagingRequirements),
+                            if (order.advancePaymentRs > 0)
+                              _buildDetailRow('Advance Payment', 'Rs ${order.advancePaymentRs.toStringAsFixed(2)}'),
+                            
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Quality Requirements:',
+                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              order.qualityRequirements,
+                              style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+
+                      // Action Buttons for Farmer
+                      if (widget.isFarmerMode && order.status == 'Pending')
+                        AppPrimaryButton(
+                          label: 'Accept Contract',
+                          onPressed: _acceptContract,
+                        ),
+
+                      if (widget.isFarmerMode && order.status == 'In Progress')
+                        AppPrimaryButton(
+                          label: 'Add Progress Update',
+                          icon: Icons.add_a_photo_rounded,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddProgressUpdateScreen(preOrderId: order.id),
+                              ),
+                            );
+                          },
+                        ),
+
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(content: Text('Opening chat...')),
+                           );
+                        },
+                        icon: const Icon(Icons.chat_bubble_outline_rounded),
+                        label: Text(widget.isFarmerMode ? 'Contact Buyer' : 'Contact Farmer'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          foregroundColor: AppColors.primaryGreen,
+                          side: const BorderSide(color: AppColors.primaryGreen),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+
+                      if (progressList.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        const Text(
+                          'Progress Timeline',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ...progressList.map((prog) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Column(
+                                children: [
+                                  Container(
+                                    width: 16,
+                                    height: 16,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryGreen,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 2,
+                                    height: 50,
+                                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          prog.stage,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: AppColors.textDark,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${prog.date.day}/${prog.date.month}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      prog.description,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    if (prog.images.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        height: 80,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: prog.images.length,
+                                          itemBuilder: (ctx, i) => Padding(
+                                            padding: const EdgeInsets.only(right: 8),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Image.network(
+                                                prog.images[i], 
+                                                width: 80, 
+                                                height: 80, 
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => Container(
+                                                  width: 80, height: 80, color: Colors.grey.shade300,
+                                                  child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 14),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
