@@ -6,6 +6,12 @@ import '../services/cart_state.dart';
 import '../../orders_chat/presentation/order_tracking_screen.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../payment/services/payment_method_manager.dart';
+import '../../payment/presentation/saved_payment_methods_screen.dart';
+import '../../payment/presentation/widgets/add_edit_card_sheet.dart';
+import '../../payment/presentation/widgets/wallet_top_up_sheet.dart';
+import '../../payment/presentation/widgets/bank_transfer_sheet.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
 
 /// Pixel-perfect implementation of "Checkout & Delivery" screen matching the provided UI design.
 class CheckoutDeliveryScreen extends StatefulWidget {
@@ -30,6 +36,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
   late String _deliveryTime;
   late String _address;
   late String _contact;
+  String? _selectedCardId;
+  String? _bankTransferRef;
+  bool _bankSlipAttached = false;
 
   bool _isPlacingOrder = false;
 
@@ -42,6 +51,7 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
     _deliveryTime = _state.preferredTime;
     _address = _state.deliveryAddress;
     _contact = _state.contactNumber;
+    _selectedCardId = PaymentMethodManager.instance.defaultMethod?.id;
   }
 
   void _showEditAddressModal() {
@@ -352,12 +362,53 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
     setState(() => _isPlacingOrder = true);
     HapticFeedback.mediumImpact();
 
-    await Future.delayed(const Duration(milliseconds: 700));
-
     if (!mounted) return;
+
+    if (_selectedPaymentMethod == 'Card') {
+      final cards = PaymentMethodManager.instance.methods;
+      if (cards.isNotEmpty) {
+        final chosen = cards.firstWhere(
+          (c) => c.id == _selectedCardId,
+          orElse: () => cards.first,
+        );
+        _state.updatePaymentMethod('Card (${chosen.cardBrand} •••• ${chosen.cardLast4})');
+      } else {
+        _state.updatePaymentMethod('Card (Visa •••• 4242)');
+      }
+    } else if (_selectedPaymentMethod == 'Mobile Wallet') {
+      final orderTotal = _state.totalAmount > 0 ? _state.totalAmount : 950.0;
+      final currentBalance = BuyerProfileManager.instance.profile.walletBalance;
+
+      if (currentBalance < orderTotal) {
+        setState(() => _isPlacingOrder = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Insufficient wallet balance. Please top up your wallet to continue.'.trAuto(context)),
+            backgroundColor: Colors.red.shade700,
+            action: SnackBarAction(
+              label: 'TOP UP',
+              textColor: Colors.white,
+              onPressed: () => WalletTopUpSheet.show(context),
+            ),
+          ),
+        );
+        return;
+      }
+
+      await BuyerProfileManager.instance.deductWallet(orderTotal);
+      _state.updatePaymentMethod('Farm Wallet (Paid: Rs. ${orderTotal.toStringAsFixed(0)})');
+    } else if (_selectedPaymentMethod == 'Bank Transfer') {
+      final refStr = (_bankTransferRef?.isNotEmpty ?? false)
+          ? 'Ref: $_bankTransferRef'
+          : (_bankSlipAttached ? 'Slip Attached' : 'Pending Slip Verification');
+      _state.updatePaymentMethod('Bank Transfer ($refStr)');
+    }
+
     final order = _state.placeCurrentOrder();
 
     setState(() => _isPlacingOrder = false);
+
+    if (!mounted) return;
 
     // Show order success celebration sheet
     showModalBottomSheet(
@@ -757,8 +808,34 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle(context.tr.paymentMethod),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionTitle(context.tr.paymentMethod),
+                      if (_selectedPaymentMethod == 'Card')
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SavedPaymentMethodsScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Manage Cards >'.trAuto(context),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: _forestGreen,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
+
+                  // 1. Cash on Delivery
                   _buildRadioOption(
                     label: context.tr.cashOnDelivery,
                     selected: _selectedPaymentMethod == 'Cash on Delivery',
@@ -767,6 +844,17 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                       _state.updatePaymentMethod('Cash on Delivery');
                     },
                   ),
+                  if (_selectedPaymentMethod == 'Cash on Delivery') ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 36, bottom: 8),
+                      child: Text(
+                        'Pay delivery driver in cash upon doorstep delivery.'.trAuto(context),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  ],
+
+                  // 2. Card Payment (Visa / Mastercard)
                   _buildRadioOption(
                     label: context.tr.cardPayment,
                     selected: _selectedPaymentMethod == 'Card',
@@ -775,6 +863,164 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                       _state.updatePaymentMethod('Card');
                     },
                   ),
+                  if (_selectedPaymentMethod == 'Card') ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 4, top: 4, bottom: 10),
+                      child: ListenableBuilder(
+                        listenable: PaymentMethodManager.instance,
+                        builder: (ctx, _) {
+                          final cards = PaymentMethodManager.instance.methods;
+                          if (cards.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'No saved payment cards found.'.trAuto(context),
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: _forestGreen,
+                                      side: const BorderSide(color: _forestGreen),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () async {
+                                      final added = await AddEditCardSheet.show(context);
+                                      if (added != null) {
+                                        setState(() => _selectedCardId = added.id);
+                                      }
+                                    },
+                                    icon: const Icon(Icons.add_card_rounded, size: 16),
+                                    label: Text('Add Payment Card'.trAuto(context), style: const TextStyle(fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          if (_selectedCardId == null || !cards.any((c) => c.id == _selectedCardId)) {
+                            _selectedCardId = cards.first.id;
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...cards.map((card) {
+                                final isCardSel = card.id == _selectedCardId;
+                                return GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _selectedCardId = card.id);
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isCardSel ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isCardSel ? const Color(0xFF15803D) : const Color(0xFFE2E8F0),
+                                        width: isCardSel ? 1.5 : 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          isCardSel ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                                          color: isCardSel ? const Color(0xFF15803D) : const Color(0xFF94A3B8),
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: card.gradientColors.first,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            card.cardBrand.toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${card.bankName ?? 'Bank'} •••• ${card.cardLast4}',
+                                                style: const TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: _textDark,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Exp ${card.formattedExpiry} • ${card.cardHolderName}',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: Color(0xFF64748B),
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (card.isDefault)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDCFCE7),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Text(
+                                              'Default',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFF15803D),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: _forestGreen,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                ),
+                                onPressed: () async {
+                                  final added = await AddEditCardSheet.show(context);
+                                  if (added != null) {
+                                    setState(() => _selectedCardId = added.id);
+                                  }
+                                },
+                                icon: const Icon(Icons.add_rounded, size: 16),
+                                label: Text('+ Add Another Card'.trAuto(context), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
+                  // 3. Mobile Wallet (Farm Direct Wallet)
                   _buildRadioOption(
                     label: context.tr.mobileWallet,
                     selected: _selectedPaymentMethod == 'Mobile Wallet',
@@ -783,6 +1029,84 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                       _state.updatePaymentMethod('Mobile Wallet');
                     },
                   ),
+                  if (_selectedPaymentMethod == 'Mobile Wallet') ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 36, right: 8, bottom: 10),
+                      child: ListenableBuilder(
+                        listenable: BuyerProfileManager.instance,
+                        builder: (ctx, _) {
+                          final profile = BuyerProfileManager.instance.profile;
+                          final orderTotal = _state.totalAmount > 0 ? _state.totalAmount : 950.0;
+                          final isSufficient = profile.walletBalance >= orderTotal;
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSufficient ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSufficient ? const Color(0xFFDCFCE7) : const Color(0xFFFDE68A),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.account_balance_wallet_rounded,
+                                          color: isSufficient ? const Color(0xFF15803D) : const Color(0xFFD97706),
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${'Wallet Balance:'.trAuto(context)} ${profile.formattedWallet}',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: isSufficient ? const Color(0xFF14532D) : const Color(0xFF92400E),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        foregroundColor: _forestGreen,
+                                      ),
+                                      onPressed: () => WalletTopUpSheet.show(context),
+                                      child: Text(
+                                        '+ Top Up'.trAuto(context),
+                                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isSufficient
+                                      ? 'Direct payment with zero processing fee. Sufficient funds.'
+                                          .trAuto(context)
+                                      : 'Insufficient balance for this order. Please top up to continue.'
+                                          .trAuto(context),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isSufficient ? const Color(0xFF166534) : const Color(0xFFB45309),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+
+                  // 4. Bank Transfer (Commercial Bank & LANKAQR)
                   _buildRadioOption(
                     label: context.tr.bankTransfer,
                     selected: _selectedPaymentMethod == 'Bank Transfer',
@@ -791,6 +1115,124 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                       _state.updatePaymentMethod('Bank Transfer');
                     },
                   ),
+                  if (_selectedPaymentMethod == 'Bank Transfer') ...[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 36, right: 8, bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.account_balance_rounded, color: Color(0xFF2563EB), size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Commercial Bank: 1000 4829 18',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Clipboard.setData(const ClipboardData(text: '1000482918'));
+                                    HapticFeedback.selectionClick();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Account number copied to clipboard!'.trAuto(context)),
+                                        backgroundColor: _forestGreen,
+                                        duration: const Duration(seconds: 1),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.copy_rounded, size: 11, color: Color(0xFF475569)),
+                                        SizedBox(width: 3),
+                                        Text('Copy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_bankSlipAttached || (_bankTransferRef?.isNotEmpty ?? false)) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF15803D)),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      'Slip Attached: ${_bankTransferRef ?? 'Verified'}'.trAuto(context),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: _forestGreen,
+                                side: const BorderSide(color: _forestGreen, width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: () async {
+                                final res = await BankTransferSheet.show(
+                                  context,
+                                  initialReference: _bankTransferRef,
+                                  initialSlipAttached: _bankSlipAttached,
+                                );
+                                if (res != null) {
+                                  setState(() {
+                                    _bankTransferRef = res['reference'] as String?;
+                                    _bankSlipAttached = res['slipAttached'] as bool? ?? false;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+                              label: Text(
+                                (_bankSlipAttached ? 'Update Bank Slip / QR' : 'View LANKAQR & Attach Slip')
+                                    .trAuto(context),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

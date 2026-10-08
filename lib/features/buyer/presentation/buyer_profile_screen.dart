@@ -13,6 +13,9 @@ import 'buyer_farmer_profile_screen.dart';
 import 'buyer_notifications_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 import '../../admin/presentation/admin_panel_screen.dart';
+import '../../payment/presentation/saved_payment_methods_screen.dart';
+import '../../payment/services/payment_method_manager.dart';
+import '../../payment/presentation/widgets/wallet_top_up_sheet.dart';
 
 /// Buyer Profile Screen — matching Farm2Home "Buyer Profile - Consumer Hub" design.
 class BuyerProfileScreen extends StatefulWidget {
@@ -1048,13 +1051,28 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         title: context.tr.farmDirectWallet,
                         subtitle: context.tr.walletSub,
                         trailingPill: profile.formattedWallet,
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${context.tr.walletBalance}: ${profile.formattedWallet}'),
-                              backgroundColor: _forestGreen,
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                        onTap: () => WalletTopUpSheet.show(context),
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                      ListenableBuilder(
+                        listenable: PaymentMethodManager.instance,
+                        builder: (ctx, _) {
+                          final count = PaymentMethodManager.instance.methods.length;
+                          return _buildMenuItem(
+                            icon: Icons.credit_card_rounded,
+                            iconBg: const Color(0xFFF0FDF4),
+                            iconColor: const Color(0xFF15803D),
+                            title: 'Payment Methods & Cards'.trAuto(context),
+                            subtitle: 'Manage saved cards, default payment & accounts'.trAuto(context),
+                            trailingPill: '$count ${count == 1 ? 'Card' : 'Cards'}',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SavedPaymentMethodsScreen(),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
