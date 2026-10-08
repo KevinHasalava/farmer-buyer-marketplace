@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
+import '../../core/localization/app_strings.dart';
+import '../../core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signature Curved Green Header (matching Login & Welcome screens)
@@ -125,7 +126,8 @@ class AppHeaderBanner extends StatelessWidget {
                           ),
                           child: Text(
                             badgeText!,
-                            style: GoogleFonts.poppins(
+                            style: AppTheme.fontStyle(
+                              context.currentLanguage,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -146,7 +148,8 @@ class AppHeaderBanner extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -159,7 +162,8 @@ class AppHeaderBanner extends StatelessWidget {
                     Text(
                       subtitle!,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 12.5,
                         color: Colors.white.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w400,
@@ -385,7 +389,8 @@ class AppSelectableCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   categoryTag!.toUpperCase(),
-                                  style: GoogleFonts.poppins(
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
@@ -430,7 +435,8 @@ class AppSelectableCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   selectedLabel!,
-                                  style: GoogleFonts.poppins(
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
@@ -453,7 +459,8 @@ class AppSelectableCard extends StatelessWidget {
                             ),
                             child: Text(
                               badgeText!,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.accentOrange,
@@ -571,7 +578,8 @@ class AppSelectableCard extends StatelessWidget {
                             children: [
                               Text(
                                 title,
-                                style: GoogleFonts.poppins(
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.3,
@@ -583,7 +591,8 @@ class AppSelectableCard extends StatelessWidget {
                               const SizedBox(height: 4),
                               Text(
                                 subtitle,
-                                style: GoogleFonts.poppins(
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
                                   height: 1.4,
@@ -598,7 +607,7 @@ class AppSelectableCard extends StatelessWidget {
                         // ── Glorious Animated Agro Tick (Checkmark Seal) ────
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeOutBack,
+                          curve: Curves.easeOutCubic,
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
@@ -633,20 +642,25 @@ class AppSelectableCard extends StatelessWidget {
                                 : null,
                           ),
                           child: Center(
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    size: 19,
-                                    color: Colors.white,
-                                  )
-                                : Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Color(0xFFCBD5E1),
+                            child: AnimatedScale(
+                              scale: isSelected ? 1.0 : 0.75,
+                              duration: const Duration(milliseconds: 260),
+                              curve: Curves.easeOutBack,
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check_rounded,
+                                      size: 19,
+                                      color: Colors.white,
+                                    )
+                                  : Container(
+                                      width: 7,
+                                      height: 7,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Color(0xFFCBD5E1),
+                                      ),
                                     ),
-                                  ),
+                            ),
                           ),
                         ),
                       ],
@@ -678,7 +692,8 @@ class AppSelectableCard extends StatelessWidget {
                             ),
                             child: Text(
                               chip,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
@@ -796,7 +811,8 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
                     children: [
                       Text(
                         widget.label,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: AppTextStyles.labelLarge,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -826,8 +842,11 @@ class AppLanguagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<AppSettings>();
-    final lang = settings.language ?? AppLanguage.english;
+    AppSettings? settings;
+    try {
+      settings = context.watch<AppSettings>();
+    } catch (_) {}
+    final lang = settings?.language ?? AppLanguage.english;
 
     return GestureDetector(
       onTap: () => showAppLanguageSheet(context),
@@ -864,7 +883,8 @@ class AppLanguagePill extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               lang.nativeName,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                lang,
                 color: isDarkHeader ? Colors.white : AppColors.textDark,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -894,7 +914,13 @@ Future<void> showAppLanguageSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (ctx) {
-      final settings = ctx.watch<AppSettings>();
+      AppSettings? settings;
+      try {
+        settings = ctx.watch<AppSettings>();
+      } catch (_) {}
+      final currentLang = settings?.language ?? AppLanguage.english;
+      final strings = settings?.strings ?? const AppStrings(AppLanguage.english);
+
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         decoration: const BoxDecoration(
@@ -916,8 +942,9 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             ),
             const SizedBox(height: 18),
             Text(
-              settings.strings.chooseLanguage,
-              style: GoogleFonts.poppins(
+              strings.chooseLanguage,
+              style: AppTheme.fontStyle(
+                currentLang,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -925,9 +952,10 @@ Future<void> showAppLanguageSheet(BuildContext context) {
             ),
             const SizedBox(height: 6),
             Text(
-              settings.strings.chooseLanguageSub,
+              strings.chooseLanguageSub,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(
+                currentLang,
                 fontSize: 12.5,
                 color: AppColors.textSecondary,
               ),
@@ -940,7 +968,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                   borderRadius: BorderRadius.circular(14),
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    settings.setLanguage(l);
+                    settings?.setLanguage(l);
                     Navigator.pop(ctx);
                   },
                   child: Container(
@@ -950,14 +978,14 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                     ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
-                      color: settings.language == l
+                      color: currentLang == l
                           ? const Color(0xFFE8F8EF)
                           : const Color(0xFFF9FBFA),
                       border: Border.all(
-                        color: settings.language == l
+                        color: currentLang == l
                             ? AppColors.primaryGreen
                             : const Color(0xFFE5E7EB),
-                        width: settings.language == l ? 1.8 : 1,
+                        width: currentLang == l ? 1.8 : 1,
                       ),
                     ),
                     child: Row(
@@ -967,22 +995,23 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           height: 38,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: settings.language == l
+                            color: currentLang == l
                                 ? AppColors.primaryGreen
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: settings.language == l
+                              color: currentLang == l
                                   ? AppColors.primaryGreen
                                   : const Color(0xFFE5E7EB),
                             ),
                           ),
                           child: Text(
                             l.glyph,
-                            style: GoogleFonts.poppins(
+                            style: AppTheme.fontStyle(
+                              l,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: settings.language == l
+                              color: currentLang == l
                                   ? Colors.white
                                   : AppColors.primaryGreen,
                             ),
@@ -994,7 +1023,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           children: [
                             Text(
                               l.nativeName,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                l,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textDark,
@@ -1002,7 +1032,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                             ),
                             Text(
                               l.englishName,
-                              style: GoogleFonts.poppins(
+                              style: AppTheme.fontStyle(
+                                l,
                                 fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),
@@ -1010,7 +1041,7 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                           ],
                         ),
                         const Spacer(),
-                        if (settings.language == l)
+                        if (currentLang == l)
                           const Icon(
                             Icons.check_circle_rounded,
                             color: AppColors.primaryGreen,

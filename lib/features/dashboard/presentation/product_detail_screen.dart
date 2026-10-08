@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import 'farmer_profile_screen.dart';
@@ -84,6 +85,12 @@ class ProductData {
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }
+  String localizedName(BuildContext context) => name.trAuto(context);
+  String localizedPrice(BuildContext context) => price.trAuto(context);
+  String localizedUnit(BuildContext context) => unit.trAuto(context);
+  String localizedAvailability(BuildContext context) => availability.trAuto(context);
+  String localizedCategory(BuildContext context) => category.trAuto(context);
+  String localizedDescription(BuildContext context) => description.trAuto(context);
 }
 
 class FarmerData {
@@ -518,7 +525,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                               Expanded(
                                 child: _InfoCard(
                                   icon: Icons.calendar_today_outlined,
-                                  label: 'Harvest Date',
+                                  label: context.tr.harvestDate,
                                   value: p.harvestDate,
                                 ),
                               ),

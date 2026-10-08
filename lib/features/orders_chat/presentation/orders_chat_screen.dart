@@ -11,6 +11,8 @@ import '../models/chat_model.dart';
 import '../models/order_model.dart';
 import 'chat_detail_screen.dart';
 import 'order_tracking_screen.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Clean, beautifully organized "Orders & Chat" screen aligned with the Farm2Home design system
 class OrdersChatScreen extends StatefulWidget {
@@ -104,7 +106,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCart,
           textColor: Colors.white,
           onPressed: () {
             Navigator.push(
@@ -157,7 +159,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Order #${order.id}',
+                      '${context.tr.orderId} #${order.id}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -188,7 +190,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Deliver to: ${order.deliveryAddress}',
+                    '${context.tr.deliverTo}: ${order.deliveryAddress}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -204,7 +206,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 const Icon(Icons.phone_rounded, size: 18, color: _forestGreen),
                 const SizedBox(width: 8),
                 Text(
-                  'Contact: ${order.contactNumber}',
+                  '${context.tr.contact}: ${order.contactNumber}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: _textMuted,
@@ -212,7 +214,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'Payment: ${order.paymentMethod}',
+                  '${context.tr.paymentMethod}: ${order.paymentMethod}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -226,9 +228,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
             const Divider(height: 1, color: _borderColor),
             const SizedBox(height: 14),
 
-            const Text(
-              'Items Ordered',
-              style: TextStyle(
+            Text(
+              context.tr.itemsOrdered,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -307,9 +309,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         ),
                       ),
                       icon: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 18),
-                      label: const Text(
-                        'Track Order Live',
-                        style: TextStyle(
+                      label: Text(
+                        context.tr.trackOrder,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -338,9 +340,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         ),
                       ),
                       icon: const Icon(Icons.replay_rounded, color: Colors.white, size: 18),
-                      label: const Text(
-                        'Reorder All Items',
-                        style: TextStyle(
+                      label: Text(
+                        context.tr.reorder,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -385,7 +387,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 autofocus: true,
                 style: const TextStyle(fontSize: 15, color: _textDark),
                 decoration: InputDecoration(
-                  hintText: _selectedTab == 1 ? 'Search chats...' : 'Search orders (#ID or item)...',
+                  hintText: _selectedTab == 1 ? context.tr.searchChatsHint : context.tr.searchOrdersHint,
                   hintStyle: const TextStyle(color: _textMuted, fontSize: 14),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -394,9 +396,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 ),
                 onChanged: (val) => setState(() => _searchQuery = val.trim()),
               )
-            : const Text(
-                'Orders & Chat',
-                style: TextStyle(
+            : Text(
+                context.tr.ordersAndChat,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: _textDark,
@@ -405,6 +407,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
           IconButton(
             icon: Icon(
               _isSearching ? Icons.close_rounded : Icons.search_rounded,
@@ -522,7 +525,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Orders',
+                                context.tr.orders,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 0 ? FontWeight.w700 : FontWeight.w600,
@@ -582,7 +585,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Chat',
+                                context.tr.chat,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w600,
@@ -680,10 +683,10 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
   // ───────────────────────────────────────────────────────────────────────────
   Widget _buildOrdersTabView() {
     final filterOptions = [
-      {'key': 'All', 'label': 'All', 'count': _state.orders.length},
-      {'key': 'Active', 'label': 'Active', 'count': _activeOrdersCount},
-      {'key': 'Delivered', 'label': 'Delivered', 'count': _deliveredOrdersCount},
-      {'key': 'Cancelled', 'label': 'Cancelled', 'count': _cancelledOrdersCount},
+      {'key': 'All', 'label': context.tr.filterAll, 'count': _state.orders.length},
+      {'key': 'Active', 'label': context.tr.filterActive, 'count': _activeOrdersCount},
+      {'key': 'Delivered', 'label': context.tr.filterDelivered, 'count': _deliveredOrdersCount},
+      {'key': 'Cancelled', 'label': context.tr.filterCancelled, 'count': _cancelledOrdersCount},
     ];
 
     final filteredOrders = _state.orders.where((o) {
@@ -812,8 +815,8 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         const SizedBox(height: 16),
                         Text(
                           _searchQuery.isNotEmpty
-                              ? 'No orders matching "$_searchQuery"'
-                              : 'No $_selectedOrderFilter orders found',
+                              ? context.tr.noOrdersMatching(_searchQuery)
+                              : context.tr.noOrdersFound,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -821,10 +824,10 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Your farm-to-table deliveries and active orders will appear here.',
+                        Text(
+                          context.tr.ordersEmptySub,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 13,
                             color: _textMuted,
                           ),
@@ -840,9 +843,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           ),
                           icon: const Icon(Icons.storefront_rounded, color: Colors.white, size: 18),
-                          label: const Text(
-                            'Browse Marketplace',
-                            style: TextStyle(
+                          label: Text(
+                            context.tr.browseMarketplace,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
@@ -981,7 +984,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         const SizedBox(width: 7),
                         Expanded(
                           child: Text(
-                            'Dispatched · On route to ${order.deliveryAddress.split(',').first.trim()}',
+                            context.tr.dispatchedOnRoute(order.deliveryAddress.split(',').first.trim()),
                             style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -997,9 +1000,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             color: const Color(0xFFDCFCE7),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            '● Live',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr.liveBadge,
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF15803D),
@@ -1071,9 +1074,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Total Amount',
-                          style: TextStyle(
+                        Text(
+                          context.tr.totalAmount,
+                          style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                             color: _textMuted,
@@ -1111,9 +1114,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                               size: 16,
                               color: Colors.white,
                             ),
-                            label: const Text(
-                              'Track Order',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.trackOrder,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -1146,9 +1149,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                               size: 15,
                               color: _forestGreen,
                             ),
-                            label: const Text(
-                              'Reorder',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.reorder,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: _forestGreen,
@@ -1172,7 +1175,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
     Color bg;
     Color border;
     Color text;
-    String label = status.label;
+    String label = status.localizedLabel(context);
 
     switch (status) {
       case OrderStatus.inTransit:
@@ -1257,8 +1260,8 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                       const SizedBox(height: 14),
                       Text(
                         _searchQuery.isNotEmpty
-                            ? 'No chats matching "$_searchQuery"'
-                            : 'No conversations yet',
+                            ? context.tr.noChatsMatching(_searchQuery)
+                            : context.tr.noChatsYet,
                         style: const TextStyle(
                           color: _textDark,
                           fontSize: 15,
@@ -1266,9 +1269,9 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Direct conversations with farmers will show here.',
-                        style: TextStyle(
+                      Text(
+                        context.tr.chatsEmptySub,
+                        style: const TextStyle(
                           color: _textMuted,
                           fontSize: 13,
                         ),
@@ -1310,16 +1313,16 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Showing all active buyer & farmer conversations'),
+                  SnackBar(
+                    content: Text(context.tr.showingAllChats),
                     behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },
-              child: const Text(
-                'View All Chats',
-                style: TextStyle(
+              child: Text(
+                context.tr.viewAllChats,
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,

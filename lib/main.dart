@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'core/localization/app_settings.dart';
 import 'core/routes/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/admin/services/admin_auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +15,9 @@ Future<void> main() async {
   try {
     // ── Supabase single-database initialization ───────────────────────
     await SupabaseConfig.initialize();
+
+    // ── Initialize Master Admin Auth Session ──────────────────────────
+    await AdminAuthService.instance.init();
 
     // Persisted language / onboarding / role
     settings = await AppSettings.load();
@@ -61,33 +64,22 @@ Future<void> main() async {
 class FarmTrustApp extends StatelessWidget {
   const FarmTrustApp({super.key});
 
-  /// Poppins has no Sinhala/Tamil glyphs — fall back to Noto Sans for those.
-  static final List<String> _scriptFallback = [
-    GoogleFonts.notoSansSinhala().fontFamily!,
-    GoogleFonts.notoSansTamil().fontFamily!,
-  ];
-
-  static ThemeData _withScriptFallback(ThemeData t) => t.copyWith(
-        textTheme: t.textTheme.apply(fontFamilyFallback: _scriptFallback),
-        primaryTextTheme:
-            t.primaryTextTheme.apply(fontFamilyFallback: _scriptFallback),
-      );
-
   @override
   Widget build(BuildContext context) {
     // Rebuild the whole app when the language changes.
-    context.watch<AppSettings>();
+    final settings = context.watch<AppSettings>();
+    final currentLang = settings.language ?? AppLanguage.english;
 
     return MaterialApp.router(
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
 
-      // ── Theme ─────────────────────────────────────────────────────────────
-      theme: _withScriptFallback(AppTheme.lightTheme),
-      darkTheme: _withScriptFallback(AppTheme.darkTheme),
+      // ── Theme (Dynamic Typography for Sinhala, Tamil, English) ───────
+      theme: AppTheme.lightTheme(currentLang),
+      darkTheme: AppTheme.darkTheme(currentLang),
       themeMode: ThemeMode.system,
 
-      // ── Navigation ────────────────────────────────────────────────────────
+      // ── Navigation ───────────────────────────────────────────────────
       routerConfig: appRouter,
     );
   }

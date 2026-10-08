@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../services/driver_firestore_service.dart';
+import '../services/driver_profile_manager.dart';
 import 'deliveries_screen.dart';
 import 'delivery_history_screen.dart';
 import 'driver_chat_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
+import '../../admin/presentation/admin_panel_screen.dart';
 
 /// Pixel-perfect Driver Profile Screen matching the reference mockup.
 ///
@@ -32,6 +37,7 @@ class DriverProfileScreen extends StatefulWidget {
   final String? accountNumber;
   final String? cargoCapacity;
   final String? licenseNumber;
+  final String? phone;
 
   const DriverProfileScreen({
     super.key,
@@ -43,6 +49,7 @@ class DriverProfileScreen extends StatefulWidget {
     this.accountNumber,
     this.cargoCapacity,
     this.licenseNumber,
+    this.phone,
   });
 
   @override
@@ -55,6 +62,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   String _accountNumber = '8004 1293 4198';
   String _maskedAccount = 'Commercial Bank LK (****4198)';
   String _accountHolder = 'Ranjith Subha Udhasanak';
+  String _phone = '+94 77 123 4567';
   String _branch = 'Nuwara Eliya (Branch 042)';
   String _vehicleType = 'Chilled / Refrigerated Van';
   String _plateNumber = 'NC-4982';
@@ -66,6 +74,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   @override
   void initState() {
     super.initState();
+    DriverProfileManager.instance.addListener(_onProfileManagerUpdated);
+    _syncFromManager();
+
+    if (widget.phone != null && widget.phone!.trim().isNotEmpty) {
+      _phone = widget.phone!.trim();
+    }
+
     if (widget.driverName != null && widget.driverName!.trim().isNotEmpty) {
       _accountHolder = widget.driverName!.trim();
     }
@@ -93,6 +108,38 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     _maskedAccount = '$_bankName (****$last4)';
 
     _loadDriverProfile();
+  }
+
+  @override
+  void dispose() {
+    DriverProfileManager.instance.removeListener(_onProfileManagerUpdated);
+    super.dispose();
+  }
+
+  void _onProfileManagerUpdated() {
+    if (mounted) {
+      _syncFromManager();
+    }
+  }
+
+  void _syncFromManager() {
+    final d = DriverProfileManager.instance.driver;
+    setState(() {
+      if (d.fullName.isNotEmpty) _accountHolder = d.fullName;
+      if (d.mobileNumber.isNotEmpty) _phone = d.mobileNumber;
+      if (d.vehicleType.isNotEmpty) _vehicleType = d.vehicleType;
+      if (d.plateNumber.isNotEmpty) _plateNumber = d.plateNumber;
+      if (d.cargoCapacity.isNotEmpty) _cargoCapacity = d.cargoCapacity;
+      if (d.licenseNumber.isNotEmpty) _licenseNumber = d.licenseNumber;
+      if (d.bankName.isNotEmpty) _bankName = d.bankName;
+      if (d.accountNumber.isNotEmpty) {
+        _accountNumber = d.accountNumber;
+        final last4 = d.accountNumber.length >= 4
+            ? d.accountNumber.substring(d.accountNumber.length - 4)
+            : d.accountNumber;
+        _maskedAccount = '$_bankName (****$last4)';
+      }
+    });
   }
 
   Future<void> _loadDriverProfile() async {
@@ -215,7 +262,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Brand Name
           Text(
             'Farm2Home',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -232,8 +279,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              'DRIVER',
-              style: GoogleFonts.poppins(
+              'DRIVER'.trAuto(context),
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF047857),
@@ -244,6 +291,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         ],
       ),
       actions: [
+        const Center(child: AppLanguagePill()),
+        const SizedBox(width: 6),
         // Notification Bell Icon with Red Dot Indicator
         Padding(
           padding: const EdgeInsets.only(right: 12),
@@ -364,8 +413,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          '$_plateNumber • $_vehicleType',
-                          style: GoogleFonts.poppins(
+                          '$_plateNumber • ${_vehicleType.trAuto(context)}',
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
@@ -396,8 +445,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          'On Duty',
-                          style: GoogleFonts.poppins(
+                          'On Duty'.trAuto(context),
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
@@ -420,8 +469,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _accountHolder,
-                    style: GoogleFonts.poppins(
+                    _accountHolder.trAuto(context),
+                    style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -441,8 +490,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Agri-Transit Logistics Partner • Central Highlands',
-                        style: GoogleFonts.poppins(
+                        'Agri-Transit Logistics Partner • Central Highlands'.trAuto(context),
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFFE2E8F0),
@@ -554,8 +603,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
 
           // Driver Name
           Text(
-            _accountHolder,
-            style: GoogleFonts.poppins(
+            _accountHolder.trAuto(context),
+            style: TextStyle(
               fontSize: 17.5,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -581,8 +630,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  'Verified Agri-Transit Partner',
-                  style: GoogleFonts.poppins(
+                  'Verified Agri-Transit Partner'.trAuto(context),
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF047857),
@@ -605,15 +654,15 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               const SizedBox(width: 5),
               RichText(
                 text: TextSpan(
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 12.5,
                     color: const Color(0xFF64748B),
                   ),
                   children: [
-                    TextSpan(text: '$_vehicleType • '),
+                    TextSpan(text: '${_vehicleType.trAuto(context)} • '),
                     TextSpan(
                       text: _plateNumber,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E293B),
                       ),
@@ -659,7 +708,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           const SizedBox(width: 4),
                           Text(
                             '4.95',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -669,8 +718,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '340 Reviews',
-                        style: GoogleFonts.poppins(
+                        '340 Reviews'.trAuto(context),
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF64748B),
@@ -712,8 +761,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '6 Yrs',
-                            style: GoogleFonts.poppins(
+                            '6 Yrs'.trAuto(context),
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -723,8 +772,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '1,840+ Trips Finished',
-                        style: GoogleFonts.poppins(
+                        '1,840+ Trips Finished'.trAuto(context),
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF64748B),
@@ -735,6 +784,32 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 14),
+
+          // Edit Profile Details Button
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: _showEditDriverProfileModal,
+              icon: const Icon(Icons.edit_note_rounded, size: 18, color: Color(0xFF047857)),
+              label: Text(
+                'Edit Profile Details'.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF047857),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFA7F3D0), width: 1.2),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -783,16 +858,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cold Chain Hardware',
-                    style: GoogleFonts.poppins(
+                    'Cold Chain Hardware'.trAuto(context),
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
                     ),
                   ),
                   Text(
-                    'Active Telematics Monitoring',
-                    style: GoogleFonts.poppins(
+                    'Active Telematics Monitoring'.trAuto(context),
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF64748B),
@@ -809,8 +884,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 1: Vehicle Model
           _buildHardwareSpecRow(
             icon: Icons.local_shipping_outlined,
-            label: 'Vehicle Model',
-            value: '$_vehicleType ($_plateNumber)',
+            label: 'Vehicle Model'.trAuto(context),
+            value: '${_vehicleType.trAuto(context)} ($_plateNumber)',
             valueColor: const Color(0xFF0F172A),
           ),
           const SizedBox(height: 12),
@@ -818,8 +893,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 2: Cargo Capacity
           _buildHardwareSpecRow(
             icon: Icons.inventory_2_outlined,
-            label: 'Cargo Capacity',
-            value: _cargoCapacity.isNotEmpty ? _cargoCapacity : '1,200 kg',
+            label: 'Cargo Capacity'.trAuto(context),
+            value: (_cargoCapacity.isNotEmpty ? _cargoCapacity : '1,200 kg').trAuto(context),
             valueColor: const Color(0xFF0F172A),
           ),
           const SizedBox(height: 12),
@@ -827,8 +902,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 3: Climate Sensor -> Active (10°C - 16°C) ✓
           _buildHardwareSpecRow(
             icon: Icons.device_thermostat_rounded,
-            label: 'Climate Sensor',
-            value: 'Active (10°C - 16°C) ✓',
+            label: 'Climate Sensor'.trAuto(context),
+            value: 'Active (10°C - 16°C) ✓'.trAuto(context),
             valueColor: const Color(0xFF059669),
             isBold: true,
           ),
@@ -837,8 +912,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Spec 4: Roadworthy Status -> Valid until Nov 2025
           _buildHardwareSpecRow(
             icon: Icons.verified_user_outlined,
-            label: 'Roadworthy Status',
-            value: 'Valid until Nov 2025',
+            label: 'Roadworthy Status'.trAuto(context),
+            value: 'Valid until Nov 2025'.trAuto(context),
             valueColor: const Color(0xFF059669),
             isBold: true,
           ),
@@ -864,7 +939,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF64748B),
@@ -873,7 +948,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         const Spacer(),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
             color: valueColor,
@@ -891,8 +966,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            'DRIVER OPERATIONS',
-            style: GoogleFonts.poppins(
+            'DRIVER OPERATIONS'.trAuto(context),
+            style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF94A3B8),
@@ -917,12 +992,24 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
           child: Column(
             children: [
+              // Tile 0: Edit Driver Profile & Vehicle
+              _buildOperationTile(
+                icon: Icons.person_outline_rounded,
+                iconBg: const Color(0xFFDCFCE7),
+                iconColor: const Color(0xFF047857),
+                title: 'Edit Driver Profile & Vehicle'.trAuto(context),
+                subtitle: '$_accountHolder • $_plateNumber',
+                subtitleColor: const Color(0xFF64748B),
+                onTap: _showEditDriverProfileModal,
+              ),
+              const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
+
               // Tile 1: Delivery History & Statements
               _buildOperationTile(
                 icon: Icons.history_rounded,
                 iconBg: const Color(0xFFEFF6FF),
                 iconColor: const Color(0xFF3B82F6),
-                title: 'Delivery History & Statements',
+                title: context.tr.deliveryHistoryTitle,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -938,8 +1025,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 icon: Icons.account_balance_rounded,
                 iconBg: const Color(0xFFEEF2FF),
                 iconColor: const Color(0xFF6366F1),
-                title: 'Earnings & Bank Account',
-                subtitle: _maskedAccount,
+                title: context.tr.earningsAndBankTitle,
+                subtitle: _maskedAccount.trAuto(context),
                 subtitleColor: const Color(0xFF94A3B8),
                 highlightBorder: true,
                 onTap: () => _showEarningsAndBankSheet(context),
@@ -951,47 +1038,53 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 icon: Icons.description_outlined,
                 iconBg: const Color(0xFFF5F3FF),
                 iconColor: const Color(0xFF8B5CF6),
-                title: 'Vehicle Documents & SL-Transport',
+                title: context.tr.vehicleDocsTitle,
                 onTap: () => _showVehicleDocumentsSheet(context),
               ),
               const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
 
               // Tile 4: Language / සිංහල / தமிழ்
-              _buildOperationTile(
-                icon: Icons.translate_rounded,
-                iconBg: const Color(0xFFECFDF5),
-                iconColor: const Color(0xFF10B981),
-                title: 'Language / භාෂාව / மொழி',
-                subtitle: '$_selectedLanguage Active',
-                subtitleColor: const Color(0xFF059669),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _selectedLanguage,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF047857),
-                        ),
+              Builder(
+                builder: (context) {
+                  final activeLang = context.watch<AppSettings>().language ?? AppLanguage.english;
+                  return _buildOperationTile(
+                    icon: Icons.translate_rounded,
+                    iconBg: const Color(0xFFECFDF5),
+                    iconColor: const Color(0xFF10B981),
+                    title: '${context.tr.language} / Language',
+                    subtitle: '${activeLang.nativeName} (${activeLang.englishName})',
+                    subtitleColor: const Color(0xFF059669),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Color(0xFF047857),
-                        size: 16,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            activeLang.glyph,
+                            style: AppTheme.fontStyle(
+                              activeLang,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF047857),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Color(0xFF047857),
+                            size: 16,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                onTap: () => _showLanguageSheet(context),
+                    ),
+                    onTap: () => showAppLanguageSheet(context),
+                  );
+                },
               ),
               const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
 
@@ -1000,7 +1093,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 icon: Icons.notifications_active_outlined,
                 iconBg: const Color(0xFFFFF7ED),
                 iconColor: const Color(0xFFF97316),
-                title: 'App Notifications & Highway Alerts',
+                title: context.tr.appNotificationsTitle,
                 trailing: _hasUnreadNotifications
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -1009,8 +1102,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '2 NEW',
-                          style: GoogleFonts.poppins(
+                          '2 NEW'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFFDC2626),
@@ -1070,7 +1163,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.poppins(
+                    style: AppTheme.fontStyle(
+                      context.currentLanguage,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF0F172A),
@@ -1080,7 +1174,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: GoogleFonts.poppins(
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                         color: subtitleColor ?? const Color(0xFF94A3B8),
@@ -1133,8 +1228,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Switch Role (Farmer / Buyer Mode)',
-                  style: GoogleFonts.poppins(
+                  'Switch Role (Farmer / Buyer Mode)'.trAuto(context),
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF065F46),
@@ -1173,8 +1268,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Sign Out of Driver Hub',
-                  style: GoogleFonts.poppins(
+                  'Sign Out of Driver Hub'.trAuto(context),
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFFDC2626),
@@ -1194,7 +1289,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       children: [
         Text(
           'Farm2Home Driver OS v2.4.12',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF94A3B8),
@@ -1202,8 +1297,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         ),
         const SizedBox(height: 2),
         Text(
-          'Empowering Sri Lankan Transit & Agri-Cold Chain',
-          style: GoogleFonts.poppins(
+          'Empowering Sri Lankan Transit & Agri-Cold Chain'.trAuto(context),
+          style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w400,
             color: const Color(0xFF94A3B8),
@@ -1232,7 +1327,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 0,
               icon: Icons.grid_view_rounded,
-              label: 'Dashboard',
+              label: context.tr.navHome,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -1248,7 +1343,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 1,
               icon: Icons.fact_check_outlined,
-              label: 'Deliveries',
+              label: context.tr.navDeliveries,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushReplacement(
@@ -1263,7 +1358,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 2,
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chat',
+              label: context.tr.navChat,
               isSelected: false,
               onTap: () {
                 Navigator.of(context).pushReplacement(
@@ -1287,7 +1382,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildNavItem(
               index: 3,
               icon: Icons.person_rounded,
-              label: 'Profile',
+              label: context.tr.navProfile,
               isSelected: true,
               onTap: () {},
             ),
@@ -1326,7 +1421,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
@@ -1346,6 +1441,284 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ===========================================================================
+  // ⭐ EDIT DRIVER & VEHICLE PROFILE MODAL SHEET
+  // ===========================================================================
+  void _showEditDriverProfileModal() {
+    final driver = DriverProfileManager.instance.driver;
+    final nameCtrl = TextEditingController(text: _accountHolder);
+    final phoneCtrl = TextEditingController(
+      text: driver.mobileNumber.isNotEmpty ? driver.mobileNumber : _phone,
+    );
+    final licenseCtrl = TextEditingController(text: _licenseNumber);
+    final vehicleCtrl = TextEditingController(text: _vehicleType);
+    final plateCtrl = TextEditingController(text: _plateNumber);
+    final capacityCtrl = TextEditingController(text: _cargoCapacity);
+    final bankCtrl = TextEditingController(text: _bankName);
+    final accountCtrl = TextEditingController(text: _accountNumber);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Edit Driver & Vehicle Profile'.trAuto(context),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Legal Name
+                _buildDriverEditField(
+                  controller: nameCtrl,
+                  label: 'Full Legal Name',
+                  hint: 'e.g. Ranjith Subha Udhasanak',
+                  prefixIcon: Icons.person_outline_rounded,
+                ),
+                const SizedBox(height: 12),
+
+                // Phone Number
+                _buildDriverEditField(
+                  controller: phoneCtrl,
+                  label: 'Phone Number',
+                  hint: 'e.g. 077 123 4567',
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: Icons.phone_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // License Number
+                _buildDriverEditField(
+                  controller: licenseCtrl,
+                  label: 'Driving License Number',
+                  hint: 'e.g. B-8492019',
+                  prefixIcon: Icons.badge_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // Vehicle Type & Plate Number
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: vehicleCtrl,
+                        label: 'Vehicle Type',
+                        hint: 'e.g. Refrigerated Van',
+                        prefixIcon: Icons.local_shipping_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: plateCtrl,
+                        label: 'Plate Number',
+                        hint: 'e.g. NC-4982',
+                        prefixIcon: Icons.pin_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Cargo Capacity
+                _buildDriverEditField(
+                  controller: capacityCtrl,
+                  label: 'Cargo Capacity',
+                  hint: 'e.g. 1,200 kg',
+                  prefixIcon: Icons.inventory_2_outlined,
+                ),
+                const SizedBox(height: 12),
+
+                // Bank Details
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: bankCtrl,
+                        label: 'Bank Name',
+                        hint: 'e.g. Commercial Bank',
+                        prefixIcon: Icons.account_balance_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildDriverEditField(
+                        controller: accountCtrl,
+                        label: 'Account Number',
+                        hint: 'e.g. 8004 1293',
+                        keyboardType: TextInputType.number,
+                        prefixIcon: Icons.credit_card_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Save Changes Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      HapticFeedback.mediumImpact();
+                      final newName = nameCtrl.text.trim();
+                      final newPhone = phoneCtrl.text.trim();
+                      final newLicense = licenseCtrl.text.trim();
+                      final newVehicle = vehicleCtrl.text.trim();
+                      final newPlate = plateCtrl.text.trim();
+                      final newCapacity = capacityCtrl.text.trim();
+                      final newBank = bankCtrl.text.trim();
+                      final newAccount = accountCtrl.text.trim();
+
+                      Navigator.pop(ctx);
+
+                      await DriverProfileManager.instance.updateProfile(
+                        fullName: newName.isNotEmpty ? newName : null,
+                        mobileNumber: newPhone.isNotEmpty ? newPhone : null,
+                        licenseNumber: newLicense.isNotEmpty ? newLicense : null,
+                        vehicleType: newVehicle.isNotEmpty ? newVehicle : null,
+                        plateNumber: newPlate.isNotEmpty ? newPlate : null,
+                        cargoCapacity: newCapacity.isNotEmpty ? newCapacity : null,
+                        bankName: newBank.isNotEmpty ? newBank : null,
+                        accountNumber: newAccount.isNotEmpty ? newAccount : null,
+                      );
+
+                      if (mounted) {
+                        setState(() {
+                          if (newName.isNotEmpty) _accountHolder = newName;
+                          if (newPhone.isNotEmpty) _phone = newPhone;
+                          if (newVehicle.isNotEmpty) _vehicleType = newVehicle;
+                          if (newPlate.isNotEmpty) _plateNumber = newPlate;
+                          if (newCapacity.isNotEmpty) _cargoCapacity = newCapacity;
+                          if (newLicense.isNotEmpty) _licenseNumber = newLicense;
+                          if (newBank.isNotEmpty) _bankName = newBank;
+                          if (newAccount.isNotEmpty) {
+                            _accountNumber = newAccount;
+                            final last4 = newAccount.length >= 4
+                                ? newAccount.substring(newAccount.length - 4)
+                                : newAccount;
+                            _maskedAccount = '$_bankName (****$last4)';
+                          }
+                        });
+                      }
+
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Profile details updated successfully!'.trAuto(context)),
+                          backgroundColor: const Color(0xFF047857),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF047857),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Save Changes'.trAuto(context),
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDriverEditField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    IconData? prefixIcon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.trAuto(context),
+          style: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF0F172A)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18, color: const Color(0xFF047857)) : null,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF047857), width: 1.5),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1392,7 +1765,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         children: [
                           Text(
                             'Earnings & Bank Account',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -1400,7 +1773,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           ),
                           Text(
                             'Payouts, Bank Linking & COD Settlement',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 12,
                               color: const Color(0xFF64748B),
                             ),
@@ -1457,7 +1830,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             Text(
               'LINKED BANK ACCOUNT',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF94A3B8),
@@ -1479,7 +1852,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     const SizedBox(width: 4),
                     Text(
                       'Update Account',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF047857),
@@ -1533,7 +1906,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _bankName,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -1558,7 +1931,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         const SizedBox(width: 4),
                         Text(
                           'Verified',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFFA7F3D0),
@@ -1574,7 +1947,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               // Masked Account Number
               Text(
                 '•••• •••• •••• ${_accountNumber.length >= 4 ? _accountNumber.substring(_accountNumber.length - 4) : _accountNumber}',
-                style: GoogleFonts.spaceMono(
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 2,
@@ -1593,7 +1966,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     children: [
                       Text(
                         'ACCOUNT HOLDER',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFA7F3D0),
@@ -1602,7 +1975,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       Text(
                         _accountHolder,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -1615,7 +1988,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     children: [
                       Text(
                         'BRANCH',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFA7F3D0),
@@ -1624,7 +1997,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       ),
                       Text(
                         _branch,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -1659,7 +2032,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             children: [
               Text(
                 'AVAILABLE WITHDRAWABLE BALANCE',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF64748B),
@@ -1674,7 +2047,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 child: Text(
                   'Cleared',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF047857),
@@ -1692,7 +2065,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             children: [
               Text(
                 'Rs. ',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF0F172A),
@@ -1700,7 +2073,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               ),
               Text(
                 _availablePayoutBalance.toStringAsFixed(2),
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF065F46),
@@ -1739,7 +2112,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               icon: const Icon(Icons.arrow_upward_rounded, size: 18),
               label: Text(
                 'Withdraw Funds to $_bankName',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1781,7 +2154,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   children: [
                     Text(
                       'Auto-Deposit Schedule',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -1789,7 +2162,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     ),
                     Text(
                       _autoDepositFrequency,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 11,
                         color: const Color(0xFF64748B),
                       ),
@@ -1812,7 +2185,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     SnackBar(
                       content: Text(
                         val ? 'Auto-Deposit enabled for weekly payout.' : 'Auto-Deposit paused.',
-                        style: GoogleFonts.poppins(),
+                        style: TextStyle(),
                       ),
                       backgroundColor: const Color(0xFF064E3B),
                       duration: const Duration(seconds: 2),
@@ -1853,7 +2226,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   const SizedBox(width: 6),
                   Text(
                     'CASH ON DELIVERY (COD) SETTLEMENT',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF92400E),
@@ -1870,7 +2243,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 ),
                 child: Text(
                   'Pending',
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF92400E),
@@ -1917,7 +2290,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           // Explanatory note
           Text(
             '💡 This net balance is automatically deducted from your upcoming weekly bank deposit, or you can remit now via online banking.',
-            style: GoogleFonts.poppins(
+            style: TextStyle(
               fontSize: 11,
               color: const Color(0xFF78350F),
               height: 1.4,
@@ -1934,7 +2307,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               icon: const Icon(Icons.handshake_outlined, size: 16, color: Color(0xFFB45309)),
               label: Text(
                 'Settle COD Balance via Bank / EzCash',
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFFB45309),
@@ -1965,14 +2338,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 12,
             color: const Color(0xFF475569),
           ),
         ),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: valueBold ? FontWeight.w700 : FontWeight.w600,
             color: valueColor ?? const Color(0xFF0F172A),
@@ -2007,7 +2380,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(width: 10),
             Text(
               'Update Bank Account',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -2033,7 +2406,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             onPressed: () => Navigator.pop(dlgContext),
             child: Text(
               'Cancel',
-              style: GoogleFonts.poppins(color: const Color(0xFF64748B)),
+              style: TextStyle(color: const Color(0xFF64748B)),
             ),
           ),
           ElevatedButton(
@@ -2064,7 +2437,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   SnackBar(
                     content: Text(
                       'Bank account updated and verified successfully!',
-                      style: GoogleFonts.poppins(),
+                      style: TextStyle(),
                     ),
                     backgroundColor: const Color(0xFF064E3B),
                   ),
@@ -2089,7 +2462,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF334155),
@@ -2098,7 +2471,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         const SizedBox(height: 4),
         TextField(
           controller: controller,
-          style: GoogleFonts.poppins(fontSize: 13),
+          style: TextStyle(fontSize: 13),
           decoration: InputDecoration(
             hintText: hint,
             isDense: true,
@@ -2123,7 +2496,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Withdraw to Bank',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 16.5,
             fontWeight: FontWeight.w700,
           ),
@@ -2134,7 +2507,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             Text(
               'Transfer payout earnings to your linked bank account:',
-              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 8),
             Container(
@@ -2150,7 +2523,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   Expanded(
                     child: Text(
                       '$_bankName (****${_accountNumber.length >= 4 ? _accountNumber.substring(_accountNumber.length - 4) : _accountNumber})',
-                      style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -2159,13 +2532,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 14),
             Text(
               'Enter Amount (LKR):',
-              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: amountCtrl,
               keyboardType: TextInputType.number,
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               decoration: InputDecoration(
                 prefixText: 'Rs. ',
                 isDense: true,
@@ -2176,14 +2549,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 6),
             Text(
               'Instant CEFT / SLIPS Transfer • Fee: Rs. 0.00',
-              style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF047857)),
+              style: TextStyle(fontSize: 11, color: const Color(0xFF047857)),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dlgContext),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
+            child: Text('Cancel', style: TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2231,13 +2604,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 14),
             Text(
               'Transfer Initiated!',
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
               'Rs. ${amount.toStringAsFixed(2)} has been successfully dispatched to your $_bankName account.\nReference: #WT-89412',
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -2262,7 +2635,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Settle COD Balance',
-          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2270,12 +2643,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             Text(
               'Outstanding Net COD to remit:',
-              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 4),
             Text(
               'Rs. ${_netCodSettlementBalance.toStringAsFixed(2)}',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFFB45309),
@@ -2284,7 +2657,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 12),
             Text(
               'Select remittance channel:',
-              style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             _buildRemitOption('$_bankName Direct Transfer / CEFT', Icons.account_balance),
@@ -2297,7 +2670,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Close', style: GoogleFonts.poppins()),
+            child: Text('Close', style: TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2306,7 +2679,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 SnackBar(
                   content: Text(
                     'Remittance request logged. Verification pending confirmation.',
-                    style: GoogleFonts.poppins(),
+                    style: TextStyle(),
                   ),
                   backgroundColor: const Color(0xFF064E3B),
                 ),
@@ -2338,7 +2711,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -2375,7 +2748,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             const SizedBox(height: 18),
             Text(
               'Vehicle Documents & SL-Transport',
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -2408,8 +2781,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF334155))),
-          Text(status, style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF059669))),
+          Text(title, style: TextStyle(fontSize: 12, color: const Color(0xFF334155))),
+          Text(status, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF059669))),
         ],
       ),
     );
@@ -2433,6 +2806,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             return InkWell(
               onTap: () {
                 HapticFeedback.lightImpact();
+                final appLang = id == 'si'
+                    ? AppLanguage.sinhala
+                    : id == 'ta'
+                        ? AppLanguage.tamil
+                        : AppLanguage.english;
+                context.read<AppSettings>().setLanguage(appLang);
                 setSheetState(() {
                   _selectedLanguage = title;
                 });
@@ -2453,7 +2832,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                                 : id == 'ta'
                                     ? 'மொழி தமிழ் (Tamil) என வெற்றிகரமாக தேர்ந்தெடுக்கப்பட்டது'
                                     : 'Language set to English successfully',
-                            style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600),
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -2499,7 +2878,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       child: Center(
                         child: Text(
                           flag,
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: isSelected ? const Color(0xFF065F46) : const Color(0xFF475569),
@@ -2517,7 +2896,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             children: [
                               Text(
                                 nativeName,
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
@@ -2526,7 +2905,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                               const SizedBox(width: 6),
                               Text(
                                 '($title)',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: isSelected ? const Color(0xFF059669) : const Color(0xFF64748B),
@@ -2537,7 +2916,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           const SizedBox(height: 2),
                           Text(
                             subtitle,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -2618,7 +2997,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         children: [
                           Text(
                             'Select Language / භාෂාව තෝරන්න',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -2626,7 +3005,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           ),
                           Text(
                             'Choose app interface language / மொழியைத் தேர்வுசெய்க',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -2724,7 +3103,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         children: [
                           Text(
                             'Account & Highway Alerts',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -2732,7 +3111,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           ),
                           Text(
                             'Payout receipts, ratings & safety advisories',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -2749,7 +3128,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         ),
                         child: Text(
                           '2 NEW',
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF047857),
@@ -2853,7 +3232,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                     ),
                     child: Text(
                       _hasUnreadNotifications ? 'Mark All as Read' : 'Close Notifications',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2923,7 +3302,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
@@ -2945,7 +3324,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                       const SizedBox(height: 3),
                       Text(
                         message,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF475569),
                           height: 1.4,
@@ -2962,7 +3341,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                             ),
                             child: Text(
                               badge,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: badgeColor,
@@ -2972,7 +3351,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                           const Spacer(),
                           Text(
                             time,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10.5,
                               color: const Color(0xFF94A3B8),
                             ),
@@ -3014,26 +3393,26 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Switch Active Role',
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
+              'Switch Active Role'.trAuto(context),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Select which portal mode you wish to switch into:',
+              'Select which portal mode you wish to switch into:'.trAuto(context),
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 18),
             ListTile(
               tileColor: const Color(0xFFF8FAFC),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: const Icon(Icons.eco_rounded, color: Color(0xFF059669)),
-              title: Text('Farmer Marketplace Portal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+              title: Text('Farmer Marketplace Portal'.trAuto(context), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Switched to Farmer Portal', style: GoogleFonts.poppins())),
+                  SnackBar(content: Text('Switched to Farmer Portal'.trAuto(context), style: TextStyle())),
                 );
               },
             ),
@@ -3042,12 +3421,30 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               tileColor: const Color(0xFFF8FAFC),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB)),
-              title: Text('Buyer / Wholesale Portal', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+              title: Text('Buyer / Wholesale Portal'.trAuto(context), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Switched to Buyer Portal', style: GoogleFonts.poppins())),
+                  SnackBar(content: Text('Switched to Buyer Portal'.trAuto(context), style: TextStyle())),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              tileColor: const Color(0xFFF0FDF4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: Color(0xFFA7F3D0)),
+              ),
+              leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF047857)),
+              title: Text('Marketplace Admin Console'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF047857))),
+              subtitle: Text('Manage Farmers, Buyers, Drivers & Orders'.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF065F46))),
+              trailing: const Icon(Icons.chevron_right, color: Color(0xFF047857)),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
                 );
               },
             ),
@@ -3063,17 +3460,17 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Sign Out of Driver Hub?',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16),
+          'Sign Out of Driver Hub?'.trAuto(context),
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         content: Text(
-          'You will be put offline and will not receive real-time transit dispatch offers until you sign back in.',
-          style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF64748B)),
+          'You will be put offline and will not receive real-time transit dispatch offers until you sign back in.'.trAuto(context),
+          style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.poppins()),
+            child: Text('Cancel'.trAuto(context), style: TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -3084,7 +3481,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Sign Out'),
+            child: Text('Sign Out'.trAuto(context)),
           ),
         ],
       ),
@@ -3115,14 +3512,14 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Driver Support & Dispatch Chat',
-              style: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w700),
+              'Driver Support & Dispatch Chat'.trAuto(context),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Instant chat channel with Agri-Dispatch and Corridor Support team.',
+              'Instant chat channel with Agri-Dispatch and Corridor Support team.'.trAuto(context),
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
             ),
             const SizedBox(height: 18),
             SizedBox(
@@ -3151,7 +3548,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Start Chat with Support'),
+                child: Text('Start Chat with Support'.trAuto(context)),
               ),
             ),
           ],

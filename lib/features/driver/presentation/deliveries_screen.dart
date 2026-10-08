@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../models/delivery_order_model.dart';
 import '../services/driver_firestore_service.dart';
@@ -37,9 +38,9 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
         ? _deliveries.where((d) => d.status == 'En Route to Pickup' || d.status == 'In Transit').length
         : 1;
     return [
-      'All ($totalCount)',
-      'Ready for Pickup ($readyCount)',
-      'In Transit ($transitCount)',
+      '${context.tr.categoryAll} ($totalCount)',
+      '${context.tr.readyForPickup} ($readyCount)',
+      '${context.tr.inTransit} ($transitCount)',
     ];
   }
 
@@ -177,7 +178,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
               Expanded(
                 child: Text(
                   'Order #$cleanId status updated to "$newStatus" in Firestore (UPDATE)',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -222,7 +223,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
               Expanded(
                 child: Text(
                   'Manifest reset: #FH-8850 is "Ready for Pickup" & #FH-8841 is "In Transit"',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -300,8 +301,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             const Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFF94A3B8)),
                             const SizedBox(height: 10),
                             Text(
-                              'No deliveries currently ${_selectedFilterIndex == 1 ? "Ready for Pickup" : "In Transit"}',
-                              style: GoogleFonts.poppins(
+                              '${context.tr.noProduceFound} (${_selectedFilterIndex == 1 ? context.tr.readyForPickup : context.tr.inTransit})',
+                              style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF64748B),
@@ -356,8 +357,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
 
           // Brand Name
           Text(
-            'Farm2Home',
-            style: GoogleFonts.poppins(
+            context.tr.appName,
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF111827),
@@ -374,8 +375,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'DRIVER',
-              style: GoogleFonts.poppins(
+              context.tr.roleDriverTag,
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF065F46),
@@ -436,8 +437,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'ACTIVE MANIFEST',
-              style: GoogleFonts.poppins(
+              context.tr.activeManifest,
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF047857),
@@ -446,8 +447,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              'Assigned Deliveries',
-              style: GoogleFonts.poppins(
+              context.tr.assignedDeliveries,
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -477,8 +478,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF475569)),
                 const SizedBox(width: 4),
                 Text(
-                  'Reset Demo',
-                  style: GoogleFonts.poppins(
+                  context.tr.resetDemo,
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF475569),
@@ -529,8 +530,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 Row(
                   children: [
                     Text(
-                      'OPTIMIZED ROUTE',
-                      style: GoogleFonts.poppins(
+                      context.tr.optimizedRoute.split(':').first,
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E293B),
@@ -545,8 +546,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Save 38 mins',
-                        style: GoogleFonts.poppins(
+                        context.tr.save38Mins,
+                        style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF047857),
@@ -557,16 +558,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Highland Express Corridor',
-                  style: GoogleFonts.poppins(
+                  context.tr.highlandCorridorExpress,
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
                 Text(
-                  'Nuwara Eliya → Kandy → Colombo',
-                  style: GoogleFonts.poppins(
+                  'Nuwara Eliya → Kandy → Colombo'.trAuto(context),
+                  style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
                   ),
@@ -609,7 +610,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 ),
                 child: Text(
                   _filters[index],
-                  style: GoogleFonts.poppins(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected ? Colors.white : const Color(0xFF334155),
@@ -653,7 +654,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 children: [
                   Text(
                     '#FH-8841',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -668,8 +669,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
                     ),
                     child: Text(
-                      '1 Crate',
-                      style: GoogleFonts.poppins(
+                      '1 Crate'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF065F46),
@@ -708,10 +709,11 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _order1.status == 'En Route to Pickup'
-                          ? 'En Route to Pickup'
-                          : _order1.pickupDueText,
-                      style: GoogleFonts.poppins(
+                      (_order1.status == 'En Route to Pickup'
+                              ? 'En Route to Pickup'
+                              : _order1.pickupDueText)
+                          .trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: _order1.status == 'En Route to Pickup'
@@ -789,15 +791,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             children: [
                               Text(
                                 'K. M. Bandara',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
                                 ),
                               ),
                               Text(
-                                'Farm Gate North #2, Nuwara Eliya',
-                                style: GoogleFonts.poppins(
+                                'Farm Gate North #2, Nuwara Eliya'.trAuto(context),
+                                style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
                                 ),
@@ -806,8 +808,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Hakgala Valley Farm',
-                          style: GoogleFonts.poppins(
+                          'Hakgala Valley Farm'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -827,15 +829,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             children: [
                               Text(
                                 'Chaminda Perera',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
                                 ),
                               ),
                               Text(
-                                'No. 42 Havelock Rd, Colombo 05',
-                                style: GoogleFonts.poppins(
+                                'No. 42 Havelock Rd, Colombo 05'.trAuto(context),
+                                style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
                                 ),
@@ -844,8 +846,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Drop-off',
-                          style: GoogleFonts.poppins(
+                          'Drop-off'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -873,16 +875,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '5 kg (Carrots & Leeks)',
-                      style: GoogleFonts.poppins(
+                      '5 kg (Carrots & Leeks)'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      'Cool storage packed',
-                      style: GoogleFonts.poppins(
+                      'Cool storage packed'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         color: const Color(0xFF059669),
                       ),
@@ -893,15 +895,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Driver Fee',
-                      style: GoogleFonts.poppins(
+                      context.tr.driverFee,
+                      style: TextStyle(
                         fontSize: 10,
                         color: const Color(0xFF64748B),
                       ),
                     ),
                     Text(
                       'Rs. 1,450',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF065F46),
@@ -940,8 +942,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       color: Colors.white,
                     ),
                     label: Text(
-                      'Navigate to Farm',
-                      style: GoogleFonts.poppins(
+                      context.tr.navigateToFarm,
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -980,8 +982,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
-                    'Details',
-                    style: GoogleFonts.poppins(
+                    context.tr.deliveryDetails,
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF334155),
@@ -1029,7 +1031,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 children: [
                   Text(
                     '#FH-8850',
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0F172A),
@@ -1044,8 +1046,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       border: Border.all(color: const Color(0xFFC7D2FE), width: 1),
                     ),
                     child: Text(
-                      '2 Crates',
-                      style: GoogleFonts.poppins(
+                      '2 Crates'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF4338CA),
@@ -1084,8 +1086,9 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isOrder2InTransit ? _order2.status : 'Pickup Due in 45m',
-                      style: GoogleFonts.poppins(
+                      (isOrder2InTransit ? _order2.status : 'Pickup Due in 45m')
+                          .trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: isOrder2InTransit
@@ -1150,15 +1153,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             children: [
                               Text(
                                 'Sunil Perera',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
                                 ),
                               ),
                               Text(
-                                'Welimada Main Collection Depot',
-                                style: GoogleFonts.poppins(
+                                'Welimada Main Collection Depot'.trAuto(context),
+                                style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
                                 ),
@@ -1167,8 +1170,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Welimada Hub',
-                          style: GoogleFonts.poppins(
+                          'Welimada Hub'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -1188,15 +1191,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             children: [
                               Text(
                                 'Dilani Jayawardena',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
                                 ),
                               ),
                               Text(
-                                'Dehiwala Urban Center',
-                                style: GoogleFonts.poppins(
+                                'Dehiwala Urban Center'.trAuto(context),
+                                style: TextStyle(
                                   fontSize: 11.5,
                                   color: const Color(0xFF64748B),
                                 ),
@@ -1205,8 +1208,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           ),
                         ),
                         Text(
-                          'Drop-off',
-                          style: GoogleFonts.poppins(
+                          'Drop-off'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10.5,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -1234,16 +1237,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '12 kg (Tomatoes & Cabbages)',
-                      style: GoogleFonts.poppins(
+                      '12 kg (Tomatoes & Cabbages)'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      'Strap secured',
-                      style: GoogleFonts.poppins(
+                      'Strap secured'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 11,
                         color: const Color(0xFF64748B),
                       ),
@@ -1254,15 +1257,15 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Driver Fee',
-                      style: GoogleFonts.poppins(
+                      context.tr.driverFee,
+                      style: TextStyle(
                         fontSize: 10,
                         color: const Color(0xFF64748B),
                       ),
                     ),
                     Text(
                       'Rs. 1,800',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF065F46),
@@ -1301,8 +1304,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       color: Colors.white,
                     ),
                     label: Text(
-                      'Navigate to Farm',
-                      style: GoogleFonts.poppins(
+                      context.tr.navigateToFarm,
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -1341,8 +1344,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     padding: EdgeInsets.zero,
                   ),
                   child: Text(
-                    'Details',
-                    style: GoogleFonts.poppins(
+                    context.tr.deliveryDetails,
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF334155),
@@ -1392,8 +1395,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Today's Potential Earnings",
-                  style: GoogleFonts.poppins(
+                  context.tr.todaysPotentialEarnings,
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
@@ -1401,19 +1404,19 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                 ),
                 RichText(
                   text: TextSpan(
-                    style: GoogleFonts.poppins(
+                    style: const TextStyle(
                       fontSize: 11.5,
-                      color: const Color(0xFF64748B),
+                      color: Color(0xFF64748B),
                     ),
-                    children: const [
+                    children: [
                       TextSpan(
-                        text: 'Rs. 4,200 ',
-                        style: TextStyle(
+                        text: '${context.tr.priceRs} 4,200 ',
+                        style: const TextStyle(
                           color: Color(0xFF059669),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      TextSpan(text: 'total from current trips'),
+                      TextSpan(text: context.tr.totalFromCurrentTrips),
                     ],
                   ),
                 ),
@@ -1452,7 +1455,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
           _buildNavItem(
             index: 0,
             icon: Icons.grid_view_rounded,
-            label: 'Dashboard',
+            label: context.tr.dashboard,
             onTap: () {
               Navigator.of(context).maybePop();
             },
@@ -1460,13 +1463,13 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
           _buildNavItem(
             index: 1,
             icon: Icons.inventory_2_outlined,
-            label: 'Deliveries',
+            label: context.tr.assignedDeliveries,
             onTap: () {},
           ),
           _buildNavItem(
             index: 2,
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: context.tr.chat,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -1478,7 +1481,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
           _buildNavItem(
             index: 3,
             icon: Icons.person_outline_rounded,
-            label: 'Profile',
+            label: context.tr.profile,
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -1521,7 +1524,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
@@ -1603,16 +1606,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Manifest & Dispatch Alerts',
-                            style: GoogleFonts.poppins(
+                            context.tr.manifestAlerts,
+                            style: TextStyle(
                               fontSize: 16.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
                             ),
                           ),
                           Text(
-                            'Pickup run sequencing & cargo verification',
-                            style: GoogleFonts.poppins(
+                            context.tr.manifestAlertsSub,
+                            style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
                             ),
@@ -1628,8 +1631,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '2 NEW',
-                          style: GoogleFonts.poppins(
+                          '2 NEW'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF047857),
@@ -1651,10 +1654,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.alt_route_rounded,
                         iconColor: const Color(0xFF059669),
                         iconBg: const Color(0xFFD1FAE5),
-                        title: 'Optimized Stop Sequence',
-                        message: 'Route scheduled: Stop 1 Hakgala Farm Gate #2 (Bandara), Stop 2 Welimada Main Depot (Sunil).',
-                        time: '10m ago',
-                        badge: 'Manifest',
+                        title: 'Optimized Stop Sequence'.trAuto(context),
+                        message: 'Route scheduled: Stop 1 Hakgala Farm Gate #2 (Bandara), Stop 2 Welimada Main Depot (Sunil).'.trAuto(context),
+                        time: '10m ago'.trAuto(context),
+                        badge: 'Manifest'.trAuto(context),
                         badgeColor: const Color(0xFF047857),
                         badgeBg: const Color(0xFFDCFCE7),
                         isUnread: true,
@@ -1666,10 +1669,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.mark_chat_unread_outlined,
                         iconColor: const Color(0xFF0284C7),
                         iconBg: const Color(0xFFE0F2FE),
-                        title: 'Buyer Instruction • Chaminda',
-                        message: 'Drop-off note: "Ring doorbell twice, keep produce in shade at 42 Havelock Rd."',
-                        time: '20m ago',
-                        badge: 'Buyer Note',
+                        title: 'Buyer Instruction • Chaminda'.trAuto(context),
+                        message: 'Drop-off note: "Ring doorbell twice, keep produce in shade at 42 Havelock Rd."'.trAuto(context),
+                        time: '20m ago'.trAuto(context),
+                        badge: 'Buyer Note'.trAuto(context),
                         badgeColor: const Color(0xFF0369A1),
                         badgeBg: const Color(0xFFE0F2FE),
                         isUnread: true,
@@ -1681,10 +1684,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.payments_outlined,
                         iconColor: const Color(0xFF7C3AED),
                         iconBg: const Color(0xFFF3E8FF),
-                        title: 'Cash Collection Summary',
-                        message: 'COD expected on arrival: Rs. 1,760 for Order #FH-8841 and Rs. 2,450 for Order #FH-8850.',
-                        time: '45m ago',
-                        badge: 'COD Cash',
+                        title: 'Cash Collection Summary'.trAuto(context),
+                        message: 'COD expected on arrival: Rs. 1,760 for Order #FH-8841 and Rs. 2,450 for Order #FH-8850.'.trAuto(context),
+                        time: '45m ago'.trAuto(context),
+                        badge: 'COD Cash'.trAuto(context),
                         badgeColor: const Color(0xFF6B21A8),
                         badgeBg: const Color(0xFFF3E8FF),
                         isUnread: false,
@@ -1696,10 +1699,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         icon: Icons.cloud_done_rounded,
                         iconColor: const Color(0xFF0D9488),
                         iconBg: const Color(0xFFCCFBF1),
-                        title: 'Cloud Manifest Synced',
-                        message: 'Both active orders verified and synced with Central Logistics Hub database.',
-                        time: '1h ago',
-                        badge: 'Database Synced',
+                        title: 'Cloud Manifest Synced'.trAuto(context),
+                        message: 'Both active orders verified and synced with Central Logistics Hub database.'.trAuto(context),
+                        time: '1h ago'.trAuto(context),
+                        badge: 'Database Synced'.trAuto(context),
                         badgeColor: const Color(0xFF0F766E),
                         badgeBg: const Color(0xFFCCFBF1),
                         isUnread: false,
@@ -1732,8 +1735,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       ),
                     ),
                     child: Text(
-                      _hasUnreadNotifications ? 'Mark All as Read' : 'Close Notifications',
-                      style: GoogleFonts.poppins(
+                      _hasUnreadNotifications ? context.tr.markAllAsRead : context.tr.close,
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1803,7 +1806,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           Expanded(
                             child: Text(
                               title,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF0F172A),
@@ -1825,7 +1828,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       const SizedBox(height: 3),
                       Text(
                         message,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 11.5,
                           color: const Color(0xFF475569),
                           height: 1.4,
@@ -1842,7 +1845,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                             ),
                             child: Text(
                               badge,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: badgeColor,
@@ -1852,7 +1855,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           const Spacer(),
                           Text(
                             time,
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 10.5,
                               color: const Color(0xFF94A3B8),
                             ),
@@ -1903,8 +1906,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Call $person',
-              style: GoogleFonts.poppins(
+              context.tr.callPerson(person),
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF0F172A),
@@ -1912,7 +1915,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
             ),
             Text(
               phone,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: const Color(0xFF64748B),
               ),
@@ -1933,7 +1936,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   );
                 },
                 icon: const Icon(Icons.call, size: 18),
-                label: const Text('Call Now'),
+                label: Text(context.tr.callNow),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
@@ -1979,8 +1982,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order #${order.orderNumber.replaceAll('#', '')} Details',
-                  style: GoogleFonts.poppins(
+                  context.tr.orderDetailsId(order.orderNumber),
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F172A),
@@ -1994,7 +1997,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                   ),
                   child: Text(
                     order.status,
-                    style: GoogleFonts.poppins(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF047857),
@@ -2034,16 +2037,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Farmer (Pickup Location)',
-                              style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                              context.tr.pickupFromFarmer,
+                              style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                             ),
                             Text(
-                              order.farmerName,
-                              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
+                              order.farmerName.trAuto(context),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
                             ),
                             Text(
-                              order.farmerAddress,
-                              style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF64748B)),
+                              order.farmerAddress.trAuto(context),
+                              style: TextStyle(fontSize: 11.5, color: const Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -2073,16 +2076,16 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Buyer (Drop-off Destination)',
-                              style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+                              context.tr.deliverToBuyer,
+                              style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500),
                             ),
                             Text(
-                              order.buyerName,
-                              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
+                              order.buyerName.trAuto(context),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
                             ),
                             Text(
-                              order.buyerAddress,
-                              style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF64748B)),
+                              order.buyerAddress.trAuto(context),
+                              style: TextStyle(fontSize: 11.5, color: const Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -2107,9 +2110,9 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Cargo', style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
-                        Text(order.produceDescription, style: GoogleFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text(order.crateCount, style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF64748B))),
+                        Text(context.tr.cargoManifest, style: TextStyle(fontSize: 10.5, color: const Color(0xFF94A3B8), fontWeight: FontWeight.w500)),
+                        Text(order.produceDescription.trAuto(context), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(order.crateCount.trAuto(context), style: TextStyle(fontSize: 11, color: const Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -2126,9 +2129,9 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Driver Payout', style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF059669), fontWeight: FontWeight.w600)),
-                        Text('Rs. ${order.driverFee.toInt()}', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF065F46))),
-                        Text('Net Settlement', style: GoogleFonts.poppins(fontSize: 10.5, color: const Color(0xFF059669))),
+                        Text(context.tr.tripPayout, style: TextStyle(fontSize: 10.5, color: const Color(0xFF059669), fontWeight: FontWeight.w600)),
+                        Text('Rs. ${order.driverFee.toInt()}', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF065F46))),
+                        Text('Net Settlement'.trAuto(context), style: TextStyle(fontSize: 10.5, color: const Color(0xFF059669))),
                       ],
                     ),
                   ),
@@ -2149,8 +2152,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                         side: const BorderSide(color: Color(0xFFE2E8F0)),
                       ),
                       child: Text(
-                        'Close',
-                        style: GoogleFonts.poppins(
+                        context.tr.close,
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF475569),
                         ),
@@ -2179,8 +2182,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
                       },
                       icon: const Icon(Icons.near_me_outlined, size: 16),
                       label: Text(
-                        'Open Delivery Details',
-                        style: GoogleFonts.poppins(
+                        context.tr.deliveryDetails,
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../services/driver_firestore_service.dart';
 import 'delivery_details_screen.dart';
@@ -120,7 +121,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
               Expanded(
                 child: Text(
                   'Order $_orderId completed & Wallet settled (+Rs. ${payout.toInt()}) in DB (UPDATE)',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -269,8 +270,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
 
           // Title
           Text(
-            'Delivery Completed!',
-            style: GoogleFonts.poppins(
+            context.tr.deliveryCompleted,
+            style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
@@ -280,8 +281,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
 
           // Subtitle
           Text(
-            'Order $_orderId dropped off & confirmed',
-            style: GoogleFonts.poppins(
+            context.tr.orderDroppedOff(_orderId),
+            style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF64748B),
@@ -344,8 +345,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              'Drop-off photo verified',
-                              style: GoogleFonts.poppins(
+                              context.tr.dropoffPhotoVerified,
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -377,8 +378,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                             ],
                           ),
                           child: Text(
-                            'Secure Handover',
-                            style: GoogleFonts.poppins(
+                            context.tr.secureHandover,
+                            style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -422,8 +423,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                'TRIP PAYOUT',
-                style: GoogleFonts.poppins(
+                context.tr.tripPayout,
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF059669),
@@ -441,7 +442,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
             children: [
               Text(
                 _totalEarned,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 27,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF047857),
@@ -449,8 +450,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'total earned',
-                style: GoogleFonts.poppins(
+                context.tr.totalEarnedLabel,
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF64748B),
@@ -491,9 +492,9 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                         const SizedBox(width: 8),
                         Text(
                           _orderId.contains('8850')
-                              ? 'Base Transit (18.6 km)'
-                              : 'Base Transit (14.2 km)',
-                          style: GoogleFonts.poppins(
+                              ? context.tr.baseTransitKm('18.6')
+                              : context.tr.baseTransitKm('14.2'),
+                          style: TextStyle(
                             fontSize: 12,
                             color: const Color(0xFF475569),
                             fontWeight: FontWeight.w500,
@@ -503,7 +504,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     ),
                     Text(
                       _baseTransit,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -526,8 +527,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Highland Terrain Bonus',
-                          style: GoogleFonts.poppins(
+                          context.tr.highlandTerrainBonus,
+                          style: TextStyle(
                             fontSize: 12,
                             color: const Color(0xFF475569),
                             fontWeight: FontWeight.w500,
@@ -537,7 +538,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     ),
                     Text(
                       _terrainBonus,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFFD97706),
@@ -560,8 +561,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Direct Tip',
-                          style: GoogleFonts.poppins(
+                          context.tr.directTip,
+                          style: TextStyle(
                             fontSize: 12,
                             color: const Color(0xFF475569),
                             fontWeight: FontWeight.w500,
@@ -571,7 +572,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     ),
                     Text(
                       _directTip,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF059669),
@@ -597,8 +598,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Daily Wallet Total',
-                    style: GoogleFonts.poppins(
+                    context.tr.dailyWalletTotal,
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF334155),
@@ -608,7 +609,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
               ),
               Text(
                 _dailyWalletTotal,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF0F172A),
@@ -646,8 +647,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Delivery Summary',
-                style: GoogleFonts.poppins(
+                context.tr.deliverySummary,
+                style: TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF0F172A),
@@ -660,8 +661,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '✓ Completed',
-                  style: GoogleFonts.poppins(
+                  context.tr.completedBadge,
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF059669),
@@ -697,8 +698,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Delivered To',
-                      style: GoogleFonts.poppins(
+                      context.tr.deliveredTo,
+                      style: TextStyle(
                         fontSize: 10.5,
                         color: const Color(0xFF94A3B8),
                         fontWeight: FontWeight.w500,
@@ -706,15 +707,15 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     ),
                     Text(
                       _buyerName,
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      _buyerAddress,
-                      style: GoogleFonts.poppins(
+                      _buyerAddress.trAuto(context),
+                      style: TextStyle(
                         fontSize: 11.5,
                         color: const Color(0xFF64748B),
                       ),
@@ -751,8 +752,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Delivered At',
-                      style: GoogleFonts.poppins(
+                      context.tr.deliveredAt,
+                      style: TextStyle(
                         fontSize: 10.5,
                         color: const Color(0xFF94A3B8),
                         fontWeight: FontWeight.w500,
@@ -762,26 +763,34 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _deliveryTime.contains(',') ? '${_deliveryTime.split(',').first.trim()},' : 'Today,',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              _deliveryTime.contains(',') ? _deliveryTime.split(',').last.trim() : _deliveryTime,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final localizedTime = _deliveryTime.trAuto(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  localizedTime.contains(',')
+                                      ? '${localizedTime.split(',').first.trim()},'
+                                      : localizedTime,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                if (localizedTime.contains(','))
+                                  Text(
+                                    localizedTime.split(',').last.trim(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                         // 15 mins early pill badge
                         Container(
@@ -794,8 +803,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            _earlyBadge,
-                            style: GoogleFonts.poppins(
+                            _earlyBadge.trAuto(context),
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFFB45309),
@@ -836,24 +845,24 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Handover & Payment',
-                      style: GoogleFonts.poppins(
+                      context.tr.handoverAndPayment,
+                      style: TextStyle(
                         fontSize: 10.5,
                         color: const Color(0xFF94A3B8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
-                      _handoverType,
-                      style: GoogleFonts.poppins(
+                      _handoverType.trAuto(context),
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      _collectedAmount,
-                      style: GoogleFonts.poppins(
+                      _collectedAmount.trAuto(context),
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFFB45309),
@@ -899,16 +908,16 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Customer Rating',
-                      style: GoogleFonts.poppins(
+                      context.tr.customerRating,
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      'Buyer rated instantly',
-                      style: GoogleFonts.poppins(
+                      context.tr.buyerRatedInstantly,
+                      style: TextStyle(
                         fontSize: 10.5,
                         color: const Color(0xFF64748B),
                       ),
@@ -936,8 +945,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${_ratingStars.toStringAsFixed(1)} Star',
-                      style: GoogleFonts.poppins(
+                      '${_ratingStars.toStringAsFixed(1)} ${context.tr.starRating}',
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF0F172A),
@@ -1000,8 +1009,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Settling Wallet & Deliveries...',
-                        style: GoogleFonts.poppins(
+                        context.tr.settlingWallet,
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -1013,8 +1022,8 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Back to Deliveries / Take Next Order',
-                        style: GoogleFonts.poppins(
+                        context.tr.takeNextOrder,
+                        style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,

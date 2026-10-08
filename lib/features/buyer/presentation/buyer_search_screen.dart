@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 import '../../cart/models/cart_item_model.dart';
@@ -147,17 +148,17 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Text(
-                    'Sort Harvests By',
+                    context.tr.sortResultsBy,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
                   ),
                 ),
                 ..._sortOptions.map(
                   (opt) => ListTile(
                     title: Text(
-                      opt,
+                      context.tr.localizedSort(opt),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: opt == _selectedSort ? FontWeight.w700 : FontWeight.w500,
@@ -186,12 +187,15 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
 
   void _addToCart(BuyerProduct prod) {
     HapticFeedback.lightImpact();
+    final lang = context.currentLanguage;
+    final localizedTitle = prod.localizedName(lang);
+    final unit = prod.localizedUnit(lang);
     _cartState.addToCart(
       CartItem(
         id: prod.id,
-        name: prod.name,
+        name: localizedTitle,
         price: prod.price,
-        unit: '/${prod.unit}',
+        unit: '/$unit',
         quantity: 1,
         emoji: '🌿',
         farmName: prod.farmerName,
@@ -207,7 +211,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Added ${prod.name} (${prod.formattedPrice}) to cart!',
+                context.tr.addedToCartNotice(localizedTitle, prod.formattedPrice),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -218,7 +222,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCartBtn,
           textColor: const Color(0xFFFDE68A),
           onPressed: () {
             Navigator.push(
@@ -259,8 +263,8 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                       const SizedBox(width: 10),
                       const Icon(Icons.eco_rounded, color: _forestGreen, size: 22),
                       const SizedBox(width: 6),
-                      const Text(
-                        'Farm2Home Direct',
+                      Text(
+                        '${context.tr.appName} Direct',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -355,9 +359,9 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                                 fontWeight: FontWeight.w600,
                                 color: _textDark,
                               ),
-                              decoration: const InputDecoration(
-                                hintText: 'Search vegetables, fruits, rice, spices...',
-                                hintStyle: TextStyle(
+                              decoration: InputDecoration(
+                                hintText: context.tr.searchProduceHint,
+                                hintStyle: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                   color: Color(0xFF94A3B8),
@@ -459,14 +463,14 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     Row(
                       children: [
-                        Icon(Icons.verified_rounded, size: 14, color: _forestGreen),
-                        SizedBox(width: 6),
+                        const Icon(Icons.verified_rounded, size: 14, color: _forestGreen),
+                        const SizedBox(width: 6),
                         Text(
-                          'Directly from verified Sri Lankan farmers',
-                          style: TextStyle(
+                          context.tr.directlyFromFarmers,
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: _forestGreen,
@@ -475,8 +479,8 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                       ],
                     ),
                     Text(
-                      'No Middlemen Markups',
-                      style: TextStyle(
+                      context.tr.noMiddlemenMarkupsText,
+                      style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF166534),
@@ -493,8 +497,8 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
                 child: Row(
                   children: [
-                    const Text(
-                      'RECENT:',
+                    Text(
+                      context.tr.recentSearchesLabel,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -574,7 +578,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                               const SizedBox(width: 4),
                             ],
                             Text(
-                              _chips[idx],
+                              context.tr.localizedCategory(_chips[idx]),
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -596,34 +600,16 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      text: '${results.length} fresh ${results.length == 1 ? 'item' : 'items'} ',
+                  Expanded(
+                    child: Text(
+                      context.tr.itemsAvailableCount(results.length),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: _textDark,
                       ),
-                      children: [
-                        if (_searchController.text.isNotEmpty)
-                          TextSpan(
-                            text: 'for "${_searchController.text}"',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: _textMuted,
-                            ),
-                          )
-                        else if (_chips[_selectedFilterChip] != 'All')
-                          TextSpan(
-                            text: 'in ${_chips[_selectedFilterChip]}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: _textMuted,
-                            ),
-                          ),
-                      ],
                     ),
                   ),
                   GestureDetector(
@@ -638,7 +624,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                       child: Row(
                         children: [
                           Text(
-                            _selectedSort,
+                            context.tr.localizedSort(_selectedSort),
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark),
                           ),
                           const SizedBox(width: 4),
@@ -678,13 +664,13 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                   border: Border.all(color: const Color(0xFFDCFCE7)),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.shield_outlined, size: 16, color: _forestGreen),
-                    SizedBox(width: 8),
+                  children: [
+                    const Icon(Icons.shield_outlined, size: 16, color: _forestGreen),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '100% Guaranteed Farm Fresh: Guaranteed delivery within 12-24 hours from harvest.',
-                        style: TextStyle(
+                        context.tr.farmFreshGuaranteedBanner,
+                        style: const TextStyle(
                           fontSize: 10,
                           color: Color(0xFF166534),
                           height: 1.25,
@@ -719,13 +705,13 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
               child: const Icon(Icons.search_off_rounded, size: 40, color: _textMuted),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No Fresh Harvests Found',
+            Text(
+              context.tr.noFreshHarvestsFound,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'We could not find any products matching your search or filters. Try adjusting your keywords or clearing active filters.',
+            Text(
+              context.tr.noFreshHarvestsBody,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: _textMuted, height: 1.4),
             ),
@@ -739,7 +725,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                 });
               },
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('Reset All Filters'),
+              label: Text(context.tr.resetAllFilters),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _forestGreen,
                 foregroundColor: Colors.white,
@@ -820,7 +806,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          prod.badge!,
+                          prod.localizedBadge(context.currentLanguage) ?? prod.badge!,
                           style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                       ),
@@ -835,7 +821,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '${prod.availableStock} in stock',
+                        context.tr.inStockCount(prod.availableStock),
                         style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -851,7 +837,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    prod.name,
+                    prod.localizedName(context.currentLanguage),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -899,7 +885,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    prod.harvestTime,
+                    context.tr.localizedHarvestTime(prod.harvestTime),
                     style: const TextStyle(fontSize: 10, color: _textMuted),
                   ),
                   const SizedBox(height: 6),
@@ -909,7 +895,7 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                       Row(
                         children: [
                           Text(
-                            '${prod.formattedPrice} / ${prod.unit}',
+                            '${prod.formattedPrice} / ${prod.localizedUnit(context.currentLanguage)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -944,9 +930,9 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
                               ),
                             ],
                           ),
-                          child: const Text(
-                            '+ Add',
-                            style: TextStyle(
+                          child: Text(
+                            '+ ${context.tr.add}',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,

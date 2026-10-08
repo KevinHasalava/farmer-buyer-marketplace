@@ -25,6 +25,9 @@ import '../../features/driver/presentation/delivery_completed_screen.dart';
 import '../../features/driver/presentation/driver_profile_screen.dart';
 import '../../features/driver/presentation/delivery_history_screen.dart';
 import '../../features/buyer/buyer.dart';
+import '../../features/admin/presentation/admin_login_screen.dart';
+import '../../features/admin/presentation/admin_panel_screen.dart';
+import '../../features/admin/services/admin_auth_service.dart';
 
 /// Named route constants — use these everywhere instead of raw strings.
 abstract final class AppRoutes {
@@ -60,6 +63,8 @@ abstract final class AppRoutes {
   static const String checkout           = '/checkout';
   static const String buyerProfile       = '/buyer-profile';
   static const String buyerNotifications = '/buyer-notifications';
+  static const String adminLogin         = '/admin/login';
+  static const String adminPanel         = '/admin';
 
   /// Role-based home dashboard.
   static String homeFor(UserRole role) => switch (role) {
@@ -282,6 +287,22 @@ final appRouter = GoRouter(
       path: AppRoutes.buyerNotifications,
       name: 'buyerNotifications',
       builder: (context, state) => const BuyerNotificationsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.adminLogin,
+      name: 'adminLogin',
+      builder: (context, state) => const AdminLoginScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.adminPanel,
+      name: 'adminPanel',
+      redirect: (context, state) {
+        if (!AdminAuthService.instance.isAuthenticated) {
+          return AppRoutes.adminLogin;
+        }
+        return null;
+      },
+      builder: (context, state) => const AdminPanelScreen(),
     ),
   ],
 );

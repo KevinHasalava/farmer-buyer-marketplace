@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 
 import '../../dashboard/presentation/product_detail_screen.dart';
 
@@ -220,8 +221,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Select Product Photo',
-              style: GoogleFonts.poppins(
+              context.tr.selectProductPhoto,
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF111827),
@@ -350,13 +351,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     const SizedBox(height: 20),
 
                     // Product Name
-                    _buildFieldLabel('Product Name'),
+                    _buildFieldLabel(context.tr.productName),
                     const SizedBox(height: 6),
                     _buildProductNameDropdown(),
                     const SizedBox(height: 16),
 
                     // Category
-                    _buildFieldLabel('Category'),
+                    _buildFieldLabel(context.tr.category),
                     const SizedBox(height: 6),
                     _buildCategoryDropdown(),
                     const SizedBox(height: 16),
@@ -368,7 +369,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildFieldLabel('Price per Kg (Rs.)'),
+                              _buildFieldLabel(context.tr.pricePerKg),
                               const SizedBox(height: 6),
                               _buildTextInput(
                                 controller: _priceController,
@@ -383,7 +384,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildFieldLabel('Available Quantity (kg)'),
+                              _buildFieldLabel(context.tr.availableQuantity),
                               const SizedBox(height: 6),
                               _buildTextInput(
                                 controller: _quantityController,
@@ -398,13 +399,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     const SizedBox(height: 16),
 
                     // Harvest Date
-                    _buildFieldLabel('Harvest Date'),
+                    _buildFieldLabel(context.tr.harvestDate),
                     const SizedBox(height: 6),
                     _buildHarvestDateField(),
                     const SizedBox(height: 16),
 
                     // Description
-                    _buildFieldLabel('Description'),
+                    _buildFieldLabel(context.tr.description),
                     const SizedBox(height: 6),
                     _buildDescriptionInput(),
                     const SizedBox(height: 18),
@@ -414,7 +415,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     const SizedBox(height: 18),
 
                     // Location
-                    _buildFieldLabel('Location'),
+                    _buildFieldLabel(context.tr.location),
                     const SizedBox(height: 6),
                     _buildLocationField(),
                     const SizedBox(height: 24),
@@ -440,8 +441,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     ),
                   ),
                   child: Text(
-                    'Save Product',
-                    style: GoogleFonts.poppins(
+                    context.tr.saveProduct,
+                    style: AppTheme.fontStyle(context.currentLanguage, 
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -473,8 +474,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             constraints: const BoxConstraints(),
           ),
           Text(
-            'Add/Edit Product',
-            style: GoogleFonts.poppins(
+            widget.productToEdit != null ? context.tr.editProduct : context.tr.addEditProduct,
+            style: AppTheme.fontStyle(context.currentLanguage, 
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF111827),
@@ -485,8 +486,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Product notification settings',
-                    style: GoogleFonts.poppins(),
+                    context.tr.productNotificationSettings,
+                    style: AppTheme.fontStyle(context.currentLanguage, ),
                   ),
                   backgroundColor: const Color(0xFF235A43),
                   behavior: SnackBarBehavior.floating,
@@ -572,8 +573,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Add Photo',
-                        style: GoogleFonts.poppins(
+                        context.tr.addPhoto,
+                        style: AppTheme.fontStyle(context.currentLanguage, 
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF059669),
@@ -594,7 +595,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   Widget _buildFieldLabel(String label) {
     return Text(
       label,
-      style: GoogleFonts.poppins(
+      style: AppTheme.fontStyle(context.currentLanguage, 
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: const Color(0xFF374151),
@@ -620,7 +621,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             color: Color(0xFF9CA3AF),
             size: 24,
           ),
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF111827),
@@ -642,7 +643,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _productOptions.map((opt) {
             return DropdownMenuItem<String>(
               value: opt.name,
-              child: Text(opt.name),
+              child: Text(opt.name.trAuto(context)),
             );
           }).toList(),
         ),
@@ -668,7 +669,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             color: Color(0xFF9CA3AF),
             size: 24,
           ),
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF111827),
@@ -681,7 +682,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _categoryOptions.map((cat) {
             return DropdownMenuItem<String>(
               value: cat,
-              child: Text(cat),
+              child: Text(cat.trAuto(context)),
             );
           }).toList(),
         ),
@@ -705,7 +706,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: GoogleFonts.poppins(
+        style: AppTheme.fontStyle(context.currentLanguage, 
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: const Color(0xFF111827),
@@ -714,7 +715,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
           hintText: hint,
-          hintStyle: GoogleFonts.poppins(
+          hintStyle: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 14,
             color: const Color(0xFF9CA3AF),
           ),
@@ -744,7 +745,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             const SizedBox(width: 10),
             Text(
               _formatDate(_harvestDate),
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF111827),
@@ -768,7 +769,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       child: TextField(
         controller: _descriptionController,
         maxLines: 3,
-        style: GoogleFonts.poppins(
+        style: AppTheme.fontStyle(context.currentLanguage, 
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: const Color(0xFF111827),
@@ -776,7 +777,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: 'Fresh and organic tomatoes from our farm.',
-          hintStyle: GoogleFonts.poppins(
+          hintStyle: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 14,
             color: const Color(0xFF9CA3AF),
           ),
@@ -823,7 +824,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           const SizedBox(width: 8),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: AppTheme.fontStyle(context.currentLanguage, 
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF374151),
@@ -854,7 +855,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           Expanded(
             child: TextField(
               controller: _locationController,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF111827),
@@ -863,7 +864,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 hintText: 'Hambantota',
-                hintStyle: GoogleFonts.poppins(
+                hintStyle: AppTheme.fontStyle(context.currentLanguage, 
                   fontSize: 14,
                   color: const Color(0xFF9CA3AF),
                 ),

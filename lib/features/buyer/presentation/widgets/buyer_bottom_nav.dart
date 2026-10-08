@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/app_settings.dart';
 import '../../../orders_chat/presentation/orders_chat_screen.dart';
 import '../buyer_home_screen.dart';
 import '../buyer_categories_screen.dart';
@@ -97,31 +98,31 @@ class BuyerBottomNav extends StatelessWidget {
             children: [
               _NavItem(
                 icon: Icons.home_rounded,
-                label: 'Home',
+                label: context.tr.navHome,
                 isSelected: selectedIndex == 0,
                 onTap: () => _onItemTapped(context, 0),
               ),
               _NavItem(
                 icon: Icons.grid_view_rounded,
-                label: 'Categories',
+                label: context.tr.navCategories,
                 isSelected: selectedIndex == 1,
                 onTap: () => _onItemTapped(context, 1),
               ),
               _NavItem(
                 icon: Icons.receipt_long_rounded,
-                label: 'Orders',
+                label: context.tr.navOrders,
                 isSelected: selectedIndex == 2,
                 onTap: () => _onItemTapped(context, 2),
               ),
               _NavItem(
                 icon: Icons.chat_bubble_outline_rounded,
-                label: 'Chat',
+                label: context.tr.navChat,
                 isSelected: selectedIndex == 3,
                 onTap: () => _onItemTapped(context, 3),
               ),
               _NavItem(
                 icon: Icons.person_outline_rounded,
-                label: 'Profile',
+                label: context.tr.navProfile,
                 isSelected: selectedIndex == 4,
                 onTap: () => _onItemTapped(context, 4),
               ),

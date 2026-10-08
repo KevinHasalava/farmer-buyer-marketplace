@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
 /// Step 2: Language Selection Screen — matching original Login/Welcome design system.
@@ -51,7 +51,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           AppHeaderBanner(
             title: titleText,
             subtitle: subText,
-            badgeText: 'STEP 1 OF 3',
+            badgeText: preview?.stepOf(1, 3) ?? 'STEP 1 OF 3',
             heightFactor: 0.26,
           ),
 
@@ -68,8 +68,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SELECT YOUR PREFERRED LANGUAGE',
-                    style: GoogleFonts.poppins(
+                    preview?.selectPreferredLanguage ?? context.tr.selectPreferredLanguage,
+                    style: AppTheme.fontStyle(
+                      _selected ?? context.currentLanguage,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textSecondary,

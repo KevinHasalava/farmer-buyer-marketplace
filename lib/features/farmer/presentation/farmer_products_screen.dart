@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 
+import '../../admin/models/admin_models.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../services/farmer_profile_manager.dart';
@@ -25,7 +28,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
   late Animation<double> _fadeAnim;
 
   FarmerData get _farmer => FarmerProfileManager.instance.profile.toFarmerData();
-  static const _filters = ['All Products', 'Active', 'Out of Stock'];
+  List<String> get _filters => [context.tr.allProducts, context.tr.active, context.tr.outOfStock];
 
   late List<ProductData> _products;
 
@@ -118,6 +121,28 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     return _products;
   }
 
+  AdminProductModel _toAdminProduct(ProductData p) {
+    final cleanPrice = p.price.replaceAll('Rs.', '').replaceAll('Rs', '').replaceAll(',', '').trim();
+    final priceNum = double.tryParse(cleanPrice) ?? 250.0;
+    final cleanQty = p.availability.replaceAll('Available:', '').replaceAll('kg', '').replaceAll('Kg', '').trim();
+    final qtyNum = double.tryParse(cleanQty) ?? 50.0;
+    return AdminProductModel(
+      id: 'prod_${p.name.toLowerCase().replaceAll(' ', '_')}',
+      name: p.name,
+      category: p.category,
+      price: priceNum,
+      unit: p.unit,
+      availableQty: qtyNum,
+      farmName: FarmerProfileManager.instance.profile.farmName,
+      farmerName: _farmer.name,
+      isOrganic: p.tag?.toLowerCase().contains('organic') == true || p.tags.contains('Organic'),
+      imageUrl: p.imageUrl ?? '',
+      description: p.description,
+      status: p.isActive ? 'In Stock' : 'Out of Stock',
+      createdAt: DateTime.now(),
+    );
+  }
+
   void _onEditProduct(int index, ProductData prod) async {
     final updated = await Navigator.push<ProductData>(
       context,
@@ -127,7 +152,10 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     );
     if (updated != null && mounted) {
       setState(() => _products[index] = updated);
-      _showSnackBar('${updated.name} updated successfully! ✅');
+      try {
+        AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
+      } catch (_) {}
+      _showSnackBar(context.tr.productUpdated(updated.name));
     }
   }
 
@@ -138,7 +166,10 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     );
     if (newProd != null && mounted) {
       setState(() => _products.insert(0, newProd));
-      _showSnackBar('${newProd.name} added to your products! 🌱');
+      try {
+        AdminMarketplaceService.instance.addProduct(_toAdminProduct(newProd));
+      } catch (_) {}
+      _showSnackBar(context.tr.productAdded(newProd.name));
     }
   }
 
@@ -148,8 +179,11 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       _products[index] = p.copyWith(isActive: !p.isActive);
     });
     final p = _products[index];
+    try {
+      AdminMarketplaceService.instance.updateProduct(_toAdminProduct(p));
+    } catch (_) {}
     _showSnackBar(
-      '${p.name} marked as ${p.isActive ? "Active" : "Out of Stock"}',
+      '${p.name}: ${p.isActive ? context.tr.active : context.tr.outOfStock}',
     );
   }
 
@@ -186,8 +220,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Delete Product?',
-              style: GoogleFonts.poppins(
+              context.tr.deleteProductQuestion,
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF111827),
@@ -195,9 +229,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Are you sure you want to delete "${prod.name}"? This action cannot be undone.',
+              context.tr.deleteProductConfirm(prod.name),
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 13,
                 color: const Color(0xFF6B7280),
               ),
@@ -217,8 +251,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Cancel',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      context.tr.cancel,
+                      style: AppTheme.fontStyle(context.currentLanguage, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -228,6 +262,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     onPressed: () {
                       Navigator.pop(ctx);
                       setState(() => _products.removeAt(index));
+                      try {
+                        AdminMarketplaceService.instance.deleteProduct(_toAdminProduct(prod).id);
+                      } catch (_) {}
                       _showSnackBar('${prod.name} deleted', isError: true);
                     },
                     style: ElevatedButton.styleFrom(
@@ -240,8 +277,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Delete',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+                      context.tr.delete,
+                      style: AppTheme.fontStyle(context.currentLanguage, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -258,7 +295,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       SnackBar(
         content: Text(
           msg,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+          style: AppTheme.fontStyle(context.currentLanguage, fontWeight: FontWeight.w500),
         ),
         backgroundColor:
             isError ? const Color(0xFFEF4444) : const Color(0xFF235A43),
@@ -351,8 +388,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           constraints: const BoxConstraints(),
         ),
         Text(
-          'My Products',
-          style: GoogleFonts.poppins(
+          context.tr.myProducts,
+          style: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF111827),
@@ -364,8 +401,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'No new product alerts',
-                  style: GoogleFonts.poppins(),
+                  context.tr.noProductAlerts,
+                  style: AppTheme.fontStyle(context.currentLanguage, ),
                 ),
                 backgroundColor: const Color(0xFF235A43),
                 behavior: SnackBarBehavior.floating,
@@ -490,8 +527,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                   Row(
                     children: [
                       Text(
-                        'Sunil Perera',
-                        style: GoogleFonts.poppins(
+                        _farmer.name,
+                        style: AppTheme.fontStyle(context.currentLanguage, 
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF111827),
@@ -507,8 +544,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Small-Scale Farmer',
-                    style: GoogleFonts.poppins(
+                    context.tr.farmerRole,
+                    style: AppTheme.fontStyle(context.currentLanguage, 
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF6B7280),
@@ -524,8 +561,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Hambantota',
-                        style: GoogleFonts.poppins(
+                        _farmer.location,
+                        style: AppTheme.fontStyle(context.currentLanguage, 
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF235A43),
@@ -563,7 +600,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
               ),
               child: Text(
                 _filters[i],
-                style: GoogleFonts.poppins(
+                style: AppTheme.fontStyle(context.currentLanguage, 
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? Colors.white : const Color(0xFF374151),
@@ -597,8 +634,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
             const Icon(Icons.add_rounded, size: 20, color: Colors.white),
             const SizedBox(width: 6),
             Text(
-              '+ Add New Product',
-              style: GoogleFonts.poppins(
+              context.tr.addNewProduct,
+              style: AppTheme.fontStyle(context.currentLanguage, 
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -654,8 +691,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      p.name,
-                      style: GoogleFonts.poppins(
+                      p.localizedName(context),
+                      style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF111827),
@@ -665,16 +702,16 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     Row(
                       children: [
                         Text(
-                          p.price,
-                          style: GoogleFonts.poppins(
+                          p.localizedPrice(context),
+                          style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF111827),
                           ),
                         ),
                         Text(
-                          ' ${p.unit}',
-                          style: GoogleFonts.poppins(
+                          ' ${p.localizedUnit(context)}',
+                          style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
                             color: const Color(0xFF6B7280),
@@ -684,8 +721,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      p.availability,
-                      style: GoogleFonts.poppins(
+                      p.localizedAvailability(context),
+                      style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF6B7280),
@@ -718,8 +755,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                           ),
                         ),
                         child: Text(
-                          p.isActive ? 'Active' : 'Out of Stock',
-                          style: GoogleFonts.poppins(
+                          p.isActive ? context.tr.active : context.tr.outOfStock,
+                          style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: p.isActive
@@ -747,13 +784,13 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                           }
                         },
                         itemBuilder: (ctx) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'edit',
                             child: Row(
                               children: [
-                                Icon(Icons.edit_outlined, size: 18),
-                                SizedBox(width: 8),
-                                Text('Edit Product'),
+                                const Icon(Icons.edit_outlined, size: 18),
+                                const SizedBox(width: 8),
+                                Text(context.tr.editProduct),
                               ],
                             ),
                           ),
@@ -769,26 +806,24 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  p.isActive
-                                      ? 'Mark Out of Stock'
-                                      : 'Mark as Active',
+                                  p.isActive ? context.tr.markOutOfStock : context.tr.markActive,
                                 ),
                               ],
                             ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'delete',
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.delete_outline_rounded,
                                   size: 18,
                                   color: Colors.red,
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Delete',
-                                  style: TextStyle(color: Colors.red),
+                                  context.tr.delete,
+                                  style: const TextStyle(color: Colors.red),
                                 ),
                               ],
                             ),
@@ -821,8 +856,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                       ),
                     ),
                     child: Text(
-                      'Edit',
-                      style: GoogleFonts.poppins(
+                      context.tr.edit,
+                      style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -844,8 +879,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                       ),
                     ),
                     child: Text(
-                      'Delete',
-                      style: GoogleFonts.poppins(
+                      context.tr.delete,
+                      style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -884,8 +919,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           const Text('🌱', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 12),
           Text(
-            'No Products Found',
-            style: GoogleFonts.poppins(
+            context.tr.noProductsFound,
+            style: AppTheme.fontStyle(context.currentLanguage, 
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF111827),
@@ -893,9 +928,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            'There are no products matching this filter.',
+            context.tr.noProductsFilter,
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
+            style: AppTheme.fontStyle(context.currentLanguage, 
               fontSize: 13,
               color: const Color(0xFF6B7280),
             ),
@@ -920,7 +955,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
         children: [
           _buildNavItem(
             icon: Icons.home_rounded,
-            label: 'Home',
+            label: context.tr.home,
             isSelected: _selectedNav == 0,
             onTap: () {
               setState(() => _selectedNav = 0);
@@ -938,20 +973,20 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           ),
           _buildNavItem(
             icon: Icons.assignment_outlined,
-            label: 'Orders',
+            label: context.tr.orders,
             hasBadge: true,
             isSelected: _selectedNav == 1,
             onTap: () => setState(() => _selectedNav = 1),
           ),
           _buildNavItem(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
+            label: context.tr.messages,
             isSelected: _selectedNav == 2,
             onTap: () => setState(() => _selectedNav = 2),
           ),
           _buildNavItem(
             icon: Icons.person_outline_rounded,
-            label: 'Profile',
+            label: context.tr.navProfile,
             isSelected: _selectedNav == 3,
             onTap: () {
               setState(() => _selectedNav = 3);
@@ -1010,7 +1045,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.poppins(
+            style: AppTheme.fontStyle(context.currentLanguage, 
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected ? activeColor : inactiveColor,

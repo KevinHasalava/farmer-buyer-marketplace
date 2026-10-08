@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
+import '../../driver/services/driver_profile_manager.dart';
+import 'otp_verification_dialog.dart';
 
 /// Driver Registration Screen — matching Farm2Home Agri-Transit design.
 class DriverRegistrationScreen extends StatefulWidget {
@@ -23,57 +26,21 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   final _authService = const AuthService();
 
   // Controllers
-  final _nameCtrl = TextEditingController(text: 'Ranjith Subha Udhasanak');
-  final _licenseCtrl = TextEditingController(text: 'B-1234567');
-  final _phoneCtrl = TextEditingController(text: '77 123 4567');
-  final _plateCtrl = TextEditingController(text: 'WP NC-4982');
-  final _capacityCtrl = TextEditingController(text: '500 kg / 40 Crates');
-  final _bankCtrl =
-      TextEditingController(text: 'Commercial Bank • 8234892831');
+  final _nameCtrl = TextEditingController();
+  final _licenseCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _plateCtrl = TextEditingController();
+  final _capacityCtrl = TextEditingController();
+  final _bankCtrl = TextEditingController();
 
   // State
-  String _selectedVehicle = 'Chilled / Refrigerated Van';
+  int _selectedVehicleIndex = 0;
   bool _chilledEquipped = true;
   bool _isLoading = false;
+  bool _otpVerified = false;
+  bool _otpSending = false;
 
-  final Set<String> _operatingCorridors = {
-    'Nuwara Eliya ⇌ Colombo (A7)',
-    'Greater Colombo Local Drops',
-  };
-
-  final List<Map<String, dynamic>> _vehicles = [
-    {
-      'title': 'Chilled / Refrigerated Van',
-      'sub': 'Carrier / ThermoKing equipped',
-      'badge': 'TOP EARNER',
-      'icon': Icons.ac_unit_rounded,
-    },
-    {
-      'title': 'Insulated Agro Cargo Van',
-      'sub': 'HiAce / Caravan thermal fit',
-      'badge': null,
-      'icon': Icons.airport_shuttle_rounded,
-    },
-    {
-      'title': 'Covered Light Truck / Lorry',
-      'sub': 'Dimo Batta / Tata Ace Tarpaulin',
-      'badge': null,
-      'icon': Icons.local_shipping_rounded,
-    },
-    {
-      'title': 'Three-Wheeler / Cargo Tuk',
-      'sub': 'Urban last-mile agile delivery',
-      'badge': null,
-      'icon': Icons.electric_rickshaw_rounded,
-    },
-  ];
-
-  final List<String> _corridors = [
-    'Nuwara Eliya ⇌ Colombo (A7)',
-    'Dambulla ⇌ Colombo (A6)',
-    'Kandy ⇌ Colombo',
-    'Greater Colombo Local Drops',
-  ];
+  final Set<int> _operatingCorridorIndices = {0, 3};
 
   @override
   void dispose() {
@@ -86,13 +53,117 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     super.dispose();
   }
 
+  Future<void> _sendOtp() async {
+    final rawPhone = _phoneCtrl.text.trim();
+    if (rawPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your mobile phone number first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid Sri Lankan mobile number (e.g., 77 123 4567).'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    setState(() => _otpSending = true);
+
+    final res = await NotifySmsService.instance.sendOtp(rawPhone);
+
+    if (!mounted) return;
+    setState(() => _otpSending = false);
+
+    if (res.success) {
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.error ?? 'Could not send SMS.'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_otpVerified) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please verify your mobile number with the SMS OTP code first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _sendOtp();
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
       final name = _nameCtrl.text.trim();
+      final phone = _phoneCtrl.text.trim();
+      final license = _licenseCtrl.text.trim();
+      final plate = _plateCtrl.text.trim();
+      final capacity = _capacityCtrl.text.trim();
+      final bank = _bankCtrl.text.trim();
+
+      final vehicleType = _selectedVehicleIndex == 0
+          ? 'Chilled / Refrigerated Van'
+          : (_selectedVehicleIndex == 1
+              ? 'Insulated Light Truck (2.5T)'
+              : 'Electric Three-Wheeler');
+
+      String bankName = 'Commercial Bank';
+      String accountNumber = '';
+      if (bank.contains('•')) {
+        final parts = bank.split('•');
+        bankName = parts[0].trim();
+        accountNumber = parts[1].trim();
+      } else if (bank.isNotEmpty) {
+        bankName = bank;
+      }
+
+      await DriverProfileManager.instance.saveRegistrationData(
+        name: name,
+        phone: phone,
+        licenseNumber: license,
+        plateNumber: plate,
+        vehicleType: vehicleType,
+        capacity: capacity,
+        bankName: bankName,
+        accountNumber: accountNumber,
+      );
+
       if (name.isNotEmpty) {
         await _authService.updateProfile(
           fullName: name,
@@ -142,8 +213,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Driver Application Approved!',
-              style: GoogleFonts.poppins(
+              context.tr.driverApprovedTitle,
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -151,9 +222,9 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Your Farm2Home Agri-Transit partner account is ready. 100% delivery fees direct to you!',
+              context.tr.driverApprovedMsg,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -175,8 +246,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                   ),
                 ),
                 child: Text(
-                  'Launch Driver Dashboard',
-                  style: GoogleFonts.poppins(
+                  context.tr.launchDriverDashboard,
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -210,16 +281,16 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
         title: Column(
           children: [
             Text(
-              'Driver Registration',
-              style: GoogleFonts.poppins(
+              context.tr.driverRegistrationTitle,
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
               ),
             ),
             Text(
-              'FARM2HOME AGRI-TRANSIT',
-              style: GoogleFonts.poppins(
+              context.tr.agriTransitTitle,
+              style: TextStyle(
                 fontSize: 9.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
@@ -296,8 +367,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           Row(
                             children: [
                               Text(
-                                '100% Delivery Fee To You',
-                                style: GoogleFonts.poppins(
+                                context.tr.feeToYouBanner,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -314,8 +385,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'FAIR TRANSIT',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.fairTransit,
+                                  style: const TextStyle(
                                     fontSize: 8.5,
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
@@ -327,8 +398,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Zero platform commissions. Earn Rs. 250 - 350/drop + highland cold bonuses.',
-                            style: GoogleFonts.poppins(
+                            context.tr.zeroPlatformCommissions,
+                            style: TextStyle(
                               fontSize: 11,
                               color: Colors.white.withValues(alpha: 0.85),
                               height: 1.35,
@@ -359,8 +430,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'DRIVER INFORMATION',
-                        style: GoogleFonts.poppins(
+                        context.tr.driverInformation,
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
@@ -376,11 +447,11 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Verified Step 1/3',
-                      style: GoogleFonts.poppins(
+                      context.tr.verifiedStep13,
+                      style: const TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF15803D),
+                        color: Color(0xFF15803D),
                       ),
                     ),
                   ),
@@ -388,7 +459,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
               ),
               const SizedBox(height: 12),
 
-              _buildFieldLabel('Full Legal Name'),
+              _buildFieldLabel(context.tr.fullLegalName),
               _buildTextInput(
                 controller: _nameCtrl,
                 hintText: 'e.g., Ranjith Subha Udhasanak',
@@ -399,7 +470,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('Driving License Number'),
+              _buildFieldLabel(context.tr.drivingLicenseNumber),
               _buildTextInput(
                 controller: _licenseCtrl,
                 hintText: 'e.g., B-1234567',
@@ -408,13 +479,44 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('Mobile Number (for OTP)'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildFieldLabel(context.tr.mobileNumberOtp),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _otpVerified
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _otpVerified
+                          ? context.tr.smsOtpVerified
+                          : context.tr.smsOtpVerification,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: _otpVerified
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFE65100),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               Container(
                 height: 52,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: _otpVerified
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFE2E8F0),
+                    width: _otpVerified ? 1.5 : 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -432,7 +534,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           const SizedBox(width: 6),
                           Text(
                             '+94',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textDark,
@@ -446,20 +548,86 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       child: TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
-                        style: GoogleFonts.poppins(
+                        enabled: !_otpVerified,
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textDark,
                         ),
                         decoration: InputDecoration(
                           hintText: '77 123 4567',
-                          hintStyle: GoogleFonts.poppins(
+                          hintStyle: TextStyle(
                             fontSize: 13.5,
                             color: AppColors.textHint,
                           ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.zero,
                         ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: TextButton(
+                        onPressed: _otpSending
+                            ? null
+                            : (_otpVerified ? null : _sendOtp),
+                        style: TextButton.styleFrom(
+                          backgroundColor: _otpVerified
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFF15803D),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: _otpSending
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_otpVerified) ...[
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 14,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.verified,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const Icon(
+                                      Icons.sms_outlined,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.sendOtp,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                       ),
                     ),
                   ],
@@ -475,8 +643,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    'SMS verification will be sent for instant dispatch clearance.',
-                    style: GoogleFonts.poppins(
+                    context.tr.smsVerificationClearance,
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,
                     ),
@@ -502,8 +670,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'VEHICLE TYPE',
-                        style: GoogleFonts.poppins(
+                        context.tr.vehicleTypeLabel,
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
@@ -519,11 +687,11 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'PRIMARY TRANSIT',
-                      style: GoogleFonts.poppins(
+                      context.tr.primaryTransit,
+                      style: const TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF15803D),
+                        color: Color(0xFF15803D),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -533,15 +701,42 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
               const SizedBox(height: 12),
 
               // Vehicle Options List
-              ..._vehicles.map((v) {
-                final isSel = _selectedVehicle == v['title'];
+              ...[
+                {
+                  'title': context.tr.chilledVanTitle,
+                  'sub': context.tr.chilledVanSub,
+                  'badge': context.tr.topEarnerBadge,
+                  'icon': Icons.ac_unit_rounded,
+                },
+                {
+                  'title': context.tr.cargoVanTitle,
+                  'sub': context.tr.cargoVanSub,
+                  'badge': null,
+                  'icon': Icons.airport_shuttle_rounded,
+                },
+                {
+                  'title': context.tr.lightTruckTitle,
+                  'sub': context.tr.lightTruckSub,
+                  'badge': null,
+                  'icon': Icons.local_shipping_rounded,
+                },
+                {
+                  'title': context.tr.tukTukTitle,
+                  'sub': context.tr.tukTukSub,
+                  'badge': null,
+                  'icon': Icons.electric_rickshaw_rounded,
+                },
+              ].asMap().entries.map((entry) {
+                final idx = entry.key;
+                final v = entry.value;
+                final isSel = _selectedVehicleIndex == idx;
                 final hasBadge = v['badge'] != null;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: InkWell(
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      setState(() => _selectedVehicle = v['title'] as String);
+                      setState(() => _selectedVehicleIndex = idx);
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
@@ -583,7 +778,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                     Expanded(
                                       child: Text(
                                         v['title'] as String,
-                                        style: GoogleFonts.poppins(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                           color: AppColors.textDark,
@@ -603,7 +798,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                         ),
                                         child: Text(
                                           v['badge'] as String,
-                                          style: GoogleFonts.poppins(
+                                          style: const TextStyle(
                                             fontSize: 9,
                                             fontWeight: FontWeight.w800,
                                             color: Colors.white,
@@ -616,7 +811,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   v['sub'] as String,
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(
                                     fontSize: 11,
                                     color: AppColors.textSecondary,
                                   ),
@@ -664,7 +859,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildFieldLabel('Reg Plate No.'),
+                        _buildFieldLabel(context.tr.regPlateNo),
                         _buildTextInput(
                           controller: _plateCtrl,
                           hintText: 'WP NC-4982',
@@ -678,7 +873,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildFieldLabel('Cargo Capacity'),
+                        _buildFieldLabel(context.tr.cargoCapacityLabel),
                         _buildTextInput(
                           controller: _capacityCtrl,
                           hintText: '500 kg / 40 Crates',
@@ -707,8 +902,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Chilled Unit / Cold Box Equipped',
-                            style: GoogleFonts.poppins(
+                            context.tr.chilledUnitEquipped,
+                            style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textDark,
@@ -716,11 +911,11 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '+Rs. 50 bonus per cold-chain delivery',
-                            style: GoogleFonts.poppins(
+                            context.tr.chilledBonus,
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF15803D),
+                              color: Color(0xFF15803D),
                             ),
                           ),
                         ],
@@ -754,8 +949,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'OPERATING CORRIDORS',
-                        style: GoogleFonts.poppins(
+                        context.tr.operatingCorridorsLabel,
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textDark,
@@ -771,8 +966,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Multi-select',
-                      style: GoogleFonts.poppins(
+                      context.tr.multiSelectPill,
+                      style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -786,17 +981,24 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _corridors.map((c) {
-                  final isSel = _operatingCorridors.contains(c);
+                children: [
+                  context.tr.corridorNuwaraEliyaColombo,
+                  context.tr.corridorDambullaColombo,
+                  context.tr.corridorKandyColombo,
+                  context.tr.corridorColomboLocal,
+                ].asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final c = entry.value;
+                  final isSel = _operatingCorridorIndices.contains(idx);
                   return FilterChip(
                     label: Text(c),
                     selected: isSel,
                     onSelected: (selected) {
                       setState(() {
                         if (selected) {
-                          _operatingCorridors.add(c);
+                          _operatingCorridorIndices.add(idx);
                         } else {
-                          _operatingCorridors.remove(c);
+                          _operatingCorridorIndices.remove(idx);
                         }
                       });
                     },
@@ -811,7 +1013,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                             : const Color(0xFFCBD5E1),
                       ),
                     ),
-                    labelStyle: GoogleFonts.poppins(
+                    labelStyle: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                       color: isSel
@@ -829,8 +1031,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'PAYOUT ACCOUNT',
-                    style: GoogleFonts.poppins(
+                    context.tr.payoutAccount,
+                    style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textDark,
@@ -838,11 +1040,11 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     ),
                   ),
                   Text(
-                    'Instant Daily Payouts',
-                    style: GoogleFonts.poppins(
+                    context.tr.instantDailyPayouts,
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF15803D),
+                      color: Color(0xFF15803D),
                     ),
                   ),
                 ],
@@ -871,23 +1073,13 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     const Text('⚠️', style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(
-                            fontSize: 11.5,
-                            color: const Color(0xFF92400E),
-                            height: 1.4,
-                          ),
-                          children: const [
-                            TextSpan(
-                              text: 'Next step: ',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            TextSpan(
-                              text:
-                                  'Quick photo verification of Driving License & Vehicle Revenue papers for instant clearance.',
-                            ),
-                          ],
+                      child: Text(
+                        context.tr.nextStepVerification,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF92400E),
+                          height: 1.4,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -924,8 +1116,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Submit Application & continue',
-                              style: GoogleFonts.poppins(
+                              context.tr.submitApplicationContinue,
+                              style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -945,8 +1137,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Already a registered driver? ',
-                      style: GoogleFonts.poppins(
+                      context.tr.alreadyRegisteredDriver,
+                      style: TextStyle(
                         fontSize: 12.5,
                         color: AppColors.textSecondary,
                       ),
@@ -954,11 +1146,11 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
                       child: Text(
-                        'Log In',
-                        style: GoogleFonts.poppins(
+                        context.tr.logIn,
+                        style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF15803D),
+                          color: Color(0xFF15803D),
                         ),
                       ),
                     ),
@@ -977,7 +1169,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textDark,
@@ -1003,7 +1195,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.w500,
           color: AppColors.textDark,
@@ -1011,7 +1203,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
           hintText: hintText,
-          hintStyle: GoogleFonts.poppins(
+          hintStyle: TextStyle(
             fontSize: 13,
             color: AppColors.textHint,
           ),

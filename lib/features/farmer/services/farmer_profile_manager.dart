@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../admin/services/admin_marketplace_service.dart';
 import '../models/farmer_profile_model.dart';
 
 class FarmerProfileManager extends ChangeNotifier {
@@ -133,6 +134,11 @@ class FarmerProfileManager extends ChangeNotifier {
       debugPrint('[FarmerProfileManager] Supabase update note: $e');
     }
 
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncFarmerFromApp(_profile);
+    } catch (_) {}
+
     notifyListeners();
   }
 
@@ -143,12 +149,19 @@ class FarmerProfileManager extends ChangeNotifier {
     String? farmName,
     String? location,
     String? district,
+    String? agrarianCenter,
     String? phone,
+    String? email,
     String? yearsExperience,
     String? happyCustomers,
     String? about,
     String? avatarUrl,
     String? coverUrl,
+    String? bankName,
+    String? accountNumber,
+    String? farmingPractice,
+    String? scale,
+    String? nic,
   }) async {
     _profile = _profile.copyWith(
       name: name,
@@ -156,12 +169,19 @@ class FarmerProfileManager extends ChangeNotifier {
       farmName: farmName,
       location: location,
       district: district ?? location,
+      agrarianCenter: agrarianCenter,
       phone: phone,
+      email: email,
       yearsExperience: yearsExperience,
       happyCustomers: happyCustomers,
       about: about,
       avatarUrl: avatarUrl,
       coverUrl: coverUrl,
+      bankName: bankName,
+      accountNumber: accountNumber,
+      farmingPractice: farmingPractice,
+      scale: scale,
+      nic: nic,
     );
 
     try {
@@ -178,12 +198,23 @@ class FarmerProfileManager extends ChangeNotifier {
               'phone': _profile.phone,
               'farm_name': _profile.farmName,
               'location': _profile.location,
+              'district': _profile.district,
+              'agrarian_center': _profile.agrarianCenter,
               'role': _profile.role,
               'about': _profile.about,
+              'bank_name': _profile.bankName,
+              'account_number': _profile.accountNumber,
+              'practice': _profile.farmingPractice,
+              'scale': _profile.scale,
             },
           ),
         );
       }
+    } catch (_) {}
+
+    // Two-way synchronization with Admin Panel and remote database
+    try {
+      AdminMarketplaceService.instance.syncFarmerFromApp(_profile);
     } catch (_) {}
 
     notifyListeners();

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import 'role_meta.dart';
 
@@ -45,7 +45,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           AppHeaderBanner(
             title: tr.whoAreYou.replaceAll('\n', ' '),
             subtitle: tr.whoAreYouSub,
-            badgeText: 'STEP 2 OF 3',
+            badgeText: tr.stepOf(2, 3),
             showBack: true,
             onBack: () => context.go(AppRoutes.onboarding),
             trailing: const AppLanguagePill(isDarkHeader: true),
@@ -78,7 +78,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         ),
                         child: Text(
                           tr.roleSelectHint,
-                          style: GoogleFonts.poppins(
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryGreen,
@@ -89,7 +90,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       const Spacer(),
                       Text(
                         '🌾 Farm2Home Direct',
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
@@ -107,8 +109,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     iconEmoji: '🌾',
                     imageUrl:
                         'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80',
-                    categoryTag: '🌾 PRODUCER • ගොවි මහතා',
-                    badgeText: '100% DIRECT',
+                    categoryTag: '🌾 ${tr.roleFarmer}',
+                    badgeText: tr.direct100,
                     selectedLabel: tr.roleSelectedBadge,
                     featureChips: [
                       '🌾 ${tr.onb1ChipA}',
@@ -131,8 +133,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     iconEmoji: '🥕',
                     imageUrl:
                         'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
-                    categoryTag: '🥕 CONSUMER • ගැණුම්කරු',
-                    badgeText: 'POPULAR',
+                    categoryTag: '🥕 ${tr.roleBuyer}',
+                    badgeText: tr.badgePopular,
                     selectedLabel: tr.roleSelectedBadge,
                     featureChips: [
                       '🥕 ${tr.onb2ChipA}',
@@ -155,8 +157,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     iconEmoji: '🛵',
                     imageUrl:
                         'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&auto=format&fit=crop&q=80',
-                    categoryTag: '🛵 LOGISTICS • ප්‍රවාහකයා',
-                    badgeText: 'EARN',
+                    categoryTag: '🛵 ${tr.roleDriver}',
+                    badgeText: tr.badgeEarn,
                     selectedLabel: tr.roleSelectedBadge,
                     featureChips: [
                       '⏰ ${tr.onb3ChipA}',

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../data/buyer_mock_data.dart';
@@ -88,13 +90,13 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Added ${prod.name} to cart!'),
+        content: Text(context.tr.addedToCart(prod.localizedName(context.currentLanguage))),
         backgroundColor: _forestGreen,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
-          label: 'View Cart',
+          label: context.tr.viewCart,
           textColor: const Color(0xFFFDE68A),
           onPressed: () {
             Navigator.push(
@@ -140,9 +142,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Select Delivery Location',
-              style: TextStyle(
+            Text(
+              context.tr.selectDeliveryLocation,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -252,7 +254,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome, ${profile.name.trim().isNotEmpty ? profile.name.trim().split(' ').first : "Buyer"} 👋',
+                            context.tr.welcomeBuyer(profile.name.trim().isNotEmpty ? profile.name.trim().split(' ').first : "Buyer"),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -297,7 +299,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       ),
                     ),
 
-
+                    // Quick Language Switcher Pill
+                    const AppLanguagePill(),
+                    const SizedBox(width: 8),
 
                     // Notification Bell Button with live badge
                     GestureDetector(
@@ -416,20 +420,20 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Row(
-                      children: const [
-                        Icon(Icons.search_rounded, color: _textMuted, size: 20),
-                        SizedBox(width: 10),
+                      children: [
+                        const Icon(Icons.search_rounded, color: _textMuted, size: 20),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Search vegetables, fruits, spices...',
-                            style: TextStyle(
+                            context.tr.searchPlaceholder,
+                            style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 13,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
-                        Icon(Icons.tune_rounded, color: _textMuted, size: 19),
+                        const Icon(Icons.tune_rounded, color: _textMuted, size: 19),
                       ],
                     ),
                   ),
@@ -507,12 +511,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
-                                  SizedBox(width: 5),
+                                children: [
+                                  const Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
+                                  const SizedBox(width: 5),
                                   Text(
-                                    'SPRING HARVEST FEST',
-                                    style: TextStyle(
+                                    context.tr.springHarvestFest,
+                                    style: const TextStyle(
                                       color: Color(0xFF86EFAC),
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
@@ -525,10 +529,10 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                             // Headline & Subheading
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 Text(
-                                  'Up to 25% Off Fresh\nGreens',
-                                  style: TextStyle(
+                                  context.tr.promoHeadline,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 21,
                                     fontWeight: FontWeight.w800,
@@ -536,10 +540,10 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                                     letterSpacing: -0.4,
                                   ),
                                 ),
-                                SizedBox(height: 5),
+                                const SizedBox(height: 5),
                                 Text(
-                                  'Hand-cut at dawn from local organic\nfarmers across the valley.',
-                                  style: TextStyle(
+                                  context.tr.promoSub,
+                                  style: const TextStyle(
                                     color: Color(0xFFD1FAE5),
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
@@ -553,8 +557,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const BuyerProductListScreen(
-                                    categoryTitle: 'Season Specials',
+                                  builder: (_) => BuyerProductListScreen(
+                                    categoryTitle: context.tr.categoryVegetables,
                                   ),
                                 ),
                               ),
@@ -571,9 +575,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                                     ),
                                   ],
                                 ),
-                                child: const Text(
-                                  'Shop Season Specials',
-                                  style: TextStyle(
+                                child: Text(
+                                  context.tr.shopSeasonSpecials,
+                                  style: const TextStyle(
                                     color: Color(0xFF0D3820),
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
@@ -598,9 +602,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Categories',
-                      style: TextStyle(
+                    Text(
+                      context.tr.categories,
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: _textDark,
@@ -611,9 +615,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         context,
                         MaterialPageRoute(builder: (_) => const BuyerCategoriesScreen()),
                       ),
-                      child: const Text(
-                        'See All',
-                        style: TextStyle(
+                      child: Text(
+                        context.tr.seeAll,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: _forestGreen,
@@ -636,7 +640,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   children: [
                     _buildCategoryRoundItem(
                       icon: Icons.eco_rounded,
-                      label: 'Vegetables',
+                      label: context.tr.categoryVegetables,
                       color: const Color(0xFFE8F5E9),
                       iconColor: _forestGreen,
                       onTap: () => Navigator.push(
@@ -648,7 +652,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     _buildCategoryRoundItem(
                       icon: Icons.apple_rounded,
-                      label: 'Fruits',
+                      label: context.tr.categoryFruits,
                       color: const Color(0xFFFFF7ED),
                       iconColor: const Color(0xFFEA580C),
                       onTap: () => Navigator.push(
@@ -660,7 +664,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     _buildCategoryRoundItem(
                       icon: Icons.grain_rounded,
-                      label: 'Grains & Rice',
+                      label: context.tr.categoryGrains,
                       color: const Color(0xFFFEF3C7),
                       iconColor: const Color(0xFFD97706),
                       onTap: () => Navigator.push(
@@ -672,7 +676,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     _buildCategoryRoundItem(
                       icon: Icons.whatshot_rounded,
-                      label: 'Spices',
+                      label: context.tr.categorySpices,
                       color: const Color(0xFFFEE2E2),
                       iconColor: const Color(0xFFDC2626),
                       onTap: () => Navigator.push(
@@ -684,7 +688,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     _buildCategoryRoundItem(
                       icon: Icons.spa_rounded,
-                      label: 'Organic',
+                      label: context.tr.categoryOrganic,
                       color: const Color(0xFFDCFCE7),
                       iconColor: const Color(0xFF059669),
                       onTap: () => Navigator.push(
@@ -696,7 +700,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                     ),
                     _buildCategoryRoundItem(
                       icon: Icons.water_drop_rounded,
-                      label: 'Dairy & Fresh',
+                      label: context.tr.categoryDairy,
                       color: const Color(0xFFE0F2FE),
                       iconColor: const Color(0xFF0284C7),
                       onTap: () => Navigator.push(
@@ -719,12 +723,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.bolt_rounded, color: Color(0xFFEA580C), size: 19),
-                        SizedBox(width: 4),
+                      children: [
+                        const Icon(Icons.bolt_rounded, color: Color(0xFFEA580C), size: 19),
+                        const SizedBox(width: 4),
                         Text(
-                          'Daily Harvest Deals',
-                          style: TextStyle(
+                          context.tr.dailyHarvestDeals,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: _textDark,
@@ -772,7 +776,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       padding: const EdgeInsets.only(right: 12),
                       child: _buildDealCard(
                         product: prod,
-                        discountTag: prod.badge ?? 'Fresh Pick',
+                        discountTag: prod.localizedBadge(context.currentLanguage) ?? context.tr.badgeFreshPick,
                         onAdd: () => _addBuyerProductToCart(prod),
                       ),
                     );
@@ -791,19 +795,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'Popular Right Now',
-                          style: TextStyle(
+                          context.tr.popularRightNow,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: _textDark,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Verified fresh from island-wide partner farms',
-                          style: TextStyle(
+                          context.tr.verifiedFreshPartner,
+                          style: const TextStyle(
                             fontSize: 11,
                             color: _textMuted,
                           ),
@@ -823,12 +827,12 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: Row(
-                          children: const [
-                            Icon(Icons.tune_rounded, size: 12, color: _textDark),
-                            SizedBox(width: 4),
+                          children: [
+                            const Icon(Icons.tune_rounded, size: 12, color: _textDark),
+                            const SizedBox(width: 4),
                             Text(
-                              'Filter',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _textDark),
+                              context.tr.filter,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _textDark),
                             ),
                           ],
                         ),
@@ -992,7 +996,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    product.name,
+                    product.localizedName(context.currentLanguage),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1035,9 +1039,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                             color: _forestGreen,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Text(
-                            '+ Add',
-                            style: TextStyle(
+                          child: Text(
+                            context.tr.addProduct,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -1099,7 +1103,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          product.badge!,
+                          product.localizedBadge(context.currentLanguage) ?? product.badge!,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -1117,7 +1121,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
+                    product.localizedName(context.currentLanguage),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

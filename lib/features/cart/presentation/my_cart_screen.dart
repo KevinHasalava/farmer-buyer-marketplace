@@ -1,8 +1,11 @@
+import '../../buyer/models/buyer_models.dart';
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../models/cart_item_model.dart';
 import '../services/cart_state.dart';
 import 'checkout_delivery_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Premium "My Cart" screen matching the exact design aesthetic of the Checkout & Delivery UI.
 class MyCartScreen extends StatefulWidget {
@@ -78,8 +81,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'My Cart',
+            Text(
+              context.tr.myCart,
               style: TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w700,
@@ -96,7 +99,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '$totalCount items',
+                  context.tr.itemsCountLabel(totalCount),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -109,6 +112,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
         ),
         centerTitle: true,
         actions: [
+          const Center(child: AppLanguagePill()),
+          const SizedBox(width: 4),
           if (items.isNotEmpty)
             IconButton(
               icon: const Icon(
@@ -120,9 +125,9 @@ class _MyCartScreenState extends State<MyCartScreen> {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Clear Shopping Cart?'),
-                    content: const Text(
-                      'Are you sure you want to remove all fresh produce items from your cart?',
+                    title: Text(context.tr.clearShoppingCartTitle),
+                    content: Text(
+                      context.tr.clearShoppingCartBody,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -130,7 +135,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
+                        child: Text(context.tr.cancel),
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -140,8 +145,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
                           _state.clearCart();
                           Navigator.pop(ctx);
                         },
-                        child: const Text(
-                          'Clear All',
+                        child: Text(
+                          context.tr.clearAll,
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -207,8 +212,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Order Total',
+                        Text(
+                          context.tr.orderTotal,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -246,8 +251,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
                             ),
                           );
                         },
-                        child: const Text(
-                          'Proceed to Checkout',
+                        child: Text(
+                          context.tr.proceedToCheckout,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -318,7 +323,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  item.localizedName(context.currentLanguage),
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -428,8 +433,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'PROMO CODE & VOUCHERS',
+          Text(
+            context.tr.promoCodeVouchers,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -463,9 +468,9 @@ class _MyCartScreenState extends State<MyCartScreen> {
                             fontWeight: FontWeight.w700,
                             color: _textDark,
                           ),
-                          decoration: const InputDecoration(
-                            hintText: 'Enter promo code',
-                            hintStyle: TextStyle(
+                          decoration: InputDecoration(
+                            hintText: context.tr.enterPromoCode,
+                            hintStyle: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w400,
                               color: Color(0xFF94A3B8),
@@ -494,8 +499,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                   ),
                   onPressed: _applyPromo,
-                  child: const Text(
-                    'Apply',
+                  child: Text(
+                    context.tr.apply,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -542,8 +547,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'ORDER SUMMARY',
+          Text(
+            context.tr.orderSummary,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -553,20 +558,20 @@ class _MyCartScreenState extends State<MyCartScreen> {
           ),
           const SizedBox(height: 14),
           _buildSummaryRow(
-            label: 'Items Subtotal',
+            label: context.tr.itemsSubtotal,
             value: 'Rs. ${_state.subtotal.toStringAsFixed(0)}',
           ),
           const SizedBox(height: 8),
           _buildSummaryRow(
-            label: 'Discount (${_state.promoCode})',
+            label: context.tr.discountWithCode(_state.promoCode),
             value: '-Rs. ${_state.promoDiscount.toStringAsFixed(0)}',
             valueColor: const Color(0xFF16A34A),
           ),
           const SizedBox(height: 8),
           _buildSummaryRow(
-            label: 'Delivery Fee',
+            label: context.tr.deliveryFee,
             value: _state.deliveryFee == 0
-                ? 'FREE'
+                ? context.tr.freeDelivery
                 : 'Rs. ${_state.deliveryFee.toStringAsFixed(0)}',
             valueColor: _state.deliveryFee == 0 ? const Color(0xFF16A34A) : _textDark,
           ),
@@ -574,7 +579,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 12),
           _buildSummaryRow(
-            label: 'Total Payment',
+            label: context.tr.totalPayment,
             value: 'Rs. ${_state.totalAmount.toStringAsFixed(0)}',
             isBold: true,
           ),
@@ -633,8 +638,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Your Cart is Empty',
+            Text(
+              context.tr.yourCartIsEmpty,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -642,8 +647,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Explore fresh fruits, vegetables, and spices directly from verified local farmers.',
+            Text(
+              context.tr.cartEmptyDesc,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -661,8 +666,8 @@ class _MyCartScreenState extends State<MyCartScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
               onPressed: () => Navigator.maybePop(context),
-              child: const Text(
-                'Explore Produce',
+              child: Text(
+                context.tr.exploreProduce,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

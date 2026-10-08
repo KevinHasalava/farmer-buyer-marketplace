@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/cart_item_model.dart';
+import '../../admin/models/admin_models.dart';
+import '../../admin/services/admin_marketplace_service.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
 import '../../orders_chat/models/chat_model.dart';
 import '../../orders_chat/models/order_model.dart';
 
@@ -469,6 +472,34 @@ class MarketplaceState extends ChangeNotifier {
 
     _orders.insert(0, newOrder);
     _cartItems.clear();
+
+    // Two-way synchronization with Admin Panel and Supabase
+    try {
+      final buyerProfile = BuyerProfileManager.instance.profile;
+      final adminOrder = AdminOrderModel(
+        id: newOrder.id,
+        customerName: buyerProfile.name.isNotEmpty ? buyerProfile.name : 'Valued Buyer',
+        customerPhone: newOrder.contactNumber.isNotEmpty
+            ? newOrder.contactNumber
+            : (buyerProfile.phone.isNotEmpty ? buyerProfile.phone : '+94771234567'),
+        farmName: 'Upcountry Green Farm',
+        itemsSummary: newOrder.items.isNotEmpty
+            ? newOrder.items.map((i) => '${i.name} (${i.quantity.toInt()} ${i.unit})').join(', ')
+            : 'Fresh Agricultural Harvest Basket',
+        totalAmount: newOrder.totalAmount,
+        status: 'Pending',
+        deliveryAddress: newOrder.deliveryAddress.isNotEmpty
+            ? newOrder.deliveryAddress
+            : buyerProfile.deliveryAddress,
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: newOrder.orderDate,
+      );
+      AdminMarketplaceService.instance.addOrder(adminOrder);
+    } catch (e) {
+      debugPrint('[MarketplaceState] Admin marketplace order sync note: $e');
+    }
+
     notifyListeners();
     return newOrder;
   }

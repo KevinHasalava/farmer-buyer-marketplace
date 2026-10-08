@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/localization/app_settings.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 class _OnboardSlideData {
   const _OnboardSlideData({
@@ -184,7 +185,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       // Headline
                       Text(
                         slides[_currentPage].title,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 29,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -198,7 +200,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       // Subtitle
                       Text(
                         slides[_currentPage].subtitle,
-                        style: GoogleFonts.poppins(
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                           color: Colors.white.withValues(alpha: 0.85),
@@ -296,78 +299,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── Language Toggle Pill [ EN | සිං ] (Slide 2) ──────────────────────────
+  // ── Language Toggle Pill (Slide 2) ──────────────────────────
   Widget _buildLanguageTogglePill() {
-    final settings = context.watch<AppSettings>();
-    final isSinhala = settings.language == AppLanguage.sinhala;
-
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.22),
-          width: 0.8,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // English Pill
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              settings.setLanguage(AppLanguage.english);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: !isSinhala ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                'EN',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: !isSinhala
-                      ? const Color(0xFF0A2E1A)
-                      : Colors.white.withValues(alpha: 0.75),
-                ),
-              ),
-            ),
-          ),
-
-          // Sinhala Pill
-          GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              settings.setLanguage(AppLanguage.sinhala);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSinhala ? Colors.white : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                'සිං',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSinhala
-                      ? const Color(0xFF0A2E1A)
-                      : Colors.white.withValues(alpha: 0.75),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const AppLanguagePill(isDarkHeader: true);
   }
 
   // ── Frosted "Skip" Pill ──────────────────────────────────────────────────
@@ -386,7 +320,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -412,7 +347,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(width: 8),
         Text(
           tag.toUpperCase(),
-          style: GoogleFonts.poppins(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             color: const Color(0xFF6EE7B7),
             fontSize: 12,
             letterSpacing: 1.3,
@@ -476,7 +412,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
                     fontSize: 16.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF0F2B1D),

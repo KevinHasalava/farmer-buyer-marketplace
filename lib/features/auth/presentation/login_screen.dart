@@ -1,12 +1,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
+import '../../driver/services/driver_profile_manager.dart';
+import '../../admin/services/admin_auth_service.dart';
 
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
@@ -92,15 +98,64 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final inputEmail = _emailCtrl.text.trim();
+    final inputPassword = _passwordCtrl.text;
+
+    // ── Master Administrator Credentials Intercept ───────────────────
+    if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
+      setState(() => _isLoading = true);
+      HapticFeedback.mediumImpact();
+      final success = await AdminAuthService.instance.login(
+        email: inputEmail,
+        password: inputPassword,
+      );
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Master Administrator Access Granted. Opening Console...'),
+            backgroundColor: Color(0xFF047857),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.go(AppRoutes.adminPanel);
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
     try {
-      await _authService.signIn(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
+      final user = await _authService.signIn(
+        email: inputEmail,
+        password: inputPassword,
       );
 
       if (!mounted) return;
       await context.read<AppSettings>().setRole(_selectedRole);
+
+      final effectiveName = user.name.isNotEmpty && !user.name.startsWith('User ')
+          ? user.name
+          : _emailCtrl.text.trim().split('@').first;
+      final phone = user.phone;
+
+      if (_selectedRole == UserRole.farmer) {
+        await FarmerProfileManager.instance.updateProfile(
+          name: effectiveName,
+          email: user.email,
+          phone: phone.isNotEmpty ? phone : null,
+        );
+      } else if (_selectedRole == UserRole.buyer) {
+        await BuyerProfileManager.instance.updateProfile(
+          name: effectiveName,
+          email: user.email,
+          phone: phone.isNotEmpty ? phone : null,
+        );
+      } else if (_selectedRole == UserRole.driver) {
+        await DriverProfileManager.instance.updateProfile(
+          fullName: effectiveName,
+          mobileNumber: phone.isNotEmpty ? phone : null,
+        );
+      }
+
       if (mounted) {
         context.go(AppRoutes.homeFor(_selectedRole));
       }
@@ -129,14 +184,14 @@ class _LoginScreenState extends State<LoginScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
-            SizedBox(width: 10),
+            const Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Email Rate Limit',
-                style: TextStyle(
+                context.tr.emailNoticeTitle,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textDark,
@@ -149,9 +204,9 @@ class _LoginScreenState extends State<LoginScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Supabase free tier limits confirmation emails to 3 per hour. Since you tested multiple times, Supabase has paused sending confirmation emails temporarily.',
-              style: TextStyle(
+            Text(
+              context.tr.emailNoticeBody,
+              style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
                 height: 1.45,
@@ -165,9 +220,9 @@ class _LoginScreenState extends State<LoginScreen>
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFFFFE082)),
               ),
-              child: const Text(
-                '💡 Tip: To permanently fix this in Supabase, go to Authentication > Providers > Email and turn OFF "Confirm email".',
-                style: TextStyle(
+              child: Text(
+                context.tr.emailNoticeTip,
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFF795548),
                   height: 1.4,
@@ -175,9 +230,9 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Would you like to enter directly into the app now?',
-              style: TextStyle(
+            Text(
+              context.tr.enterDirectlyPrompt,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF235D3A),
@@ -188,15 +243,36 @@ class _LoginScreenState extends State<LoginScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
+            child: Text(
+              context.tr.cancel,
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.go(AppRoutes.homeFor(_selectedRole));
+              final inputEmail = _emailCtrl.text.trim();
+              if (inputEmail.isNotEmpty) {
+                final derivedName = inputEmail.split('@').first;
+                if (_selectedRole == UserRole.farmer) {
+                  await FarmerProfileManager.instance.updateProfile(
+                    name: derivedName,
+                    email: inputEmail,
+                  );
+                } else if (_selectedRole == UserRole.buyer) {
+                  await BuyerProfileManager.instance.updateProfile(
+                    name: derivedName,
+                    email: inputEmail,
+                  );
+                } else if (_selectedRole == UserRole.driver) {
+                  await DriverProfileManager.instance.updateProfile(
+                    fullName: derivedName,
+                  );
+                }
+              }
+              if (mounted) {
+                context.go(AppRoutes.homeFor(_selectedRole));
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF235D3A),
@@ -205,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen>
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('Continue to App'),
+            child: Text(context.tr.continueToApp),
           ),
         ],
       ),
@@ -259,9 +335,9 @@ class _LoginScreenState extends State<LoginScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Title
-                        const Text(
-                          'Sign in to your account',
-                          style: TextStyle(
+                        Text(
+                          context.tr.signInToYourAccount,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
@@ -269,9 +345,9 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Enter your email & password to continue',
-                          style: TextStyle(
+                        Text(
+                          context.tr.enterEmailPassword,
+                          style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
@@ -280,14 +356,14 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: AppDimensions.spaceLG),
 
                         // ── Account Type ───────────────────────────────
-                        _SectionLabel('SELECT YOUR ACCOUNT TYPE'),
+                        _SectionLabel(context.tr.selectAccountType),
                         const SizedBox(height: AppDimensions.spaceXS),
                         Row(
                           children: [
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Buyer",
-                                sublabel: 'Household',
+                                label: context.tr.buyer,
+                                sublabel: context.tr.householdRole,
                                 icon: Icons.shopping_basket_rounded,
                                 isSelected: _selectedRole == UserRole.buyer,
                                 onTap: () =>
@@ -297,8 +373,8 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Farmer",
-                                sublabel: 'Producer',
+                                label: context.tr.farmer,
+                                sublabel: context.tr.producerRole,
                                 icon: Icons.agriculture_rounded,
                                 isSelected: _selectedRole == UserRole.farmer,
                                 onTap: () =>
@@ -308,8 +384,8 @@ class _LoginScreenState extends State<LoginScreen>
                             const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: _PremiumAccountCard(
-                                label: "Driver",
-                                sublabel: 'Transit',
+                                label: context.tr.driver,
+                                sublabel: context.tr.transitRole,
                                 icon: Icons.delivery_dining_rounded,
                                 isSelected: _selectedRole == UserRole.driver,
                                 onTap: () =>
@@ -323,13 +399,13 @@ class _LoginScreenState extends State<LoginScreen>
 
                         // ── Fields ────────────────────────────────────
                         _PremiumField(
-                          label: 'Email Address',
+                          label: context.tr.email,
                           hint: 'your.email@example.com',
                           icon: Icons.mail_outline_rounded,
                           keyboardType: TextInputType.emailAddress,
                           controller: _emailCtrl,
                           validator: (v) =>
-                              (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                              (v == null || !v.contains('@')) ? context.tr.invalidEmail : null,
                         ),
                         const SizedBox(height: AppDimensions.spaceMD),
 
@@ -340,14 +416,14 @@ class _LoginScreenState extends State<LoginScreen>
                           onToggle: () =>
                               setState(() => _obscurePassword = !_obscurePassword),
                           validator: (v) =>
-                              (v == null || v.length < 6) ? 'Min. 6 characters' : null,
+                              (v == null || v.length < 6) ? context.tr.passwordMinLength : null,
                         ),
 
                         const SizedBox(height: AppDimensions.spaceLG),
 
                         // CTA Button
                         _PremiumCTAButton(
-                          label: 'Sign In',
+                          label: context.tr.signIn,
                           isLoading: _isLoading,
                           onPressed: _submit,
                         ),
@@ -359,9 +435,9 @@ class _LoginScreenState extends State<LoginScreen>
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
-                                "Don't have an account? ",
-                                style: TextStyle(
+                              Text(
+                                context.tr.dontHaveAccount,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
                                 ),
@@ -371,9 +447,9 @@ class _LoginScreenState extends State<LoginScreen>
                                     context.push(AppRoutes.registerFor(_selectedRole)),
                                 child: Text(
                                   switch (_selectedRole) {
-                                    UserRole.buyer => 'Register as Buyer',
-                                    UserRole.farmer => 'Register as Farmer',
-                                    UserRole.driver => 'Register as Driver',
+                                    UserRole.buyer => context.tr.registerAsBuyer,
+                                    UserRole.farmer => context.tr.registerAsFarmer,
+                                    UserRole.driver => context.tr.registerAsDriver,
                                   },
                                   style: const TextStyle(
                                     color: AppColors.primaryGreen,
@@ -394,9 +470,9 @@ class _LoginScreenState extends State<LoginScreen>
                           child: TextButton.icon(
                             onPressed: () => context.go(AppRoutes.phoneAuth),
                             icon: const Icon(Icons.phone_iphone_rounded, size: 16),
-                            label: const Text(
-                              'Sign in with Mobile OTP instead',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.mobileOtpInstead,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryGreen,
@@ -414,8 +490,8 @@ class _LoginScreenState extends State<LoginScreen>
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
-                                'OR',
-                                style: TextStyle(
+                                context.tr.orDivider,
+                                style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textHint,
@@ -440,9 +516,9 @@ class _LoginScreenState extends State<LoginScreen>
                               size: 18,
                               color: Color(0xFF235D3A),
                             ),
-                            label: const Text(
-                              'Skip & Explore as Demo User',
-                              style: TextStyle(
+                            label: Text(
+                              context.tr.skipDemoUser,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF235D3A),
@@ -595,12 +671,12 @@ class _PremiumHeader extends StatelessWidget {
                     _dot(),
                     const SizedBox(width: 6),
                     Text(
-                      'FRESH • DIRECT • HONEST',
+                      context.tr.freshDirectHonest,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: Colors.white.withValues(alpha: 0.6),
-                        letterSpacing: 3,
+                        letterSpacing: 2,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -609,6 +685,15 @@ class _PremiumHeader extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+
+        // Top-right Language Selector Pill
+        const Positioned(
+          top: 12,
+          right: 16,
+          child: SafeArea(
+            child: AppLanguagePill(isDarkHeader: true),
           ),
         ),
 
@@ -924,9 +1009,9 @@ class _PremiumPasswordField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Password',
-          style: TextStyle(
+        Text(
+          context.tr.password,
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: AppColors.textDark,

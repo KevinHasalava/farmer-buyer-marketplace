@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
+import 'otp_verification_dialog.dart';
 
 /// Farmer / Producer Registration Screen — matching Farm2Home design.
 class FarmerRegistrationScreen extends StatefulWidget {
@@ -36,7 +38,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
   String? _selectedDistrict = 'Nuwara Eliya';
   String _selectedScale = '1 - 3 Acres';
   String _selectedPractice = 'Certified Organic (SL-GAP)';
-  bool _otpSent = false;
+  bool _otpVerified = false;
+  bool _otpSending = false;
   bool _isAttached = false;
   bool _isLoading = false;
 
@@ -94,20 +97,81 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
+    final rawPhone = _phoneCtrl.text.trim();
+    if (rawPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your mobile phone number first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please enter a valid Sri Lankan mobile number (e.g., 77 234 5678).'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
-    setState(() => _otpSent = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP verification code sent via SMS!'),
-        backgroundColor: Color(0xFF1E8342),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    setState(() => _otpSending = true);
+
+    final res = await NotifySmsService.instance.sendOtp(rawPhone);
+
+    if (!mounted) return;
+    setState(() => _otpSending = false);
+
+    if (res.success) {
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.error ?? 'Could not send SMS.'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      OtpVerificationSheet.show(
+        context,
+        rawPhone: rawPhone,
+        onVerified: () {
+          setState(() => _otpVerified = true);
+        },
+      );
+    }
   }
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_otpVerified) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please verify your mobile number with the SMS OTP code first.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _sendOtp();
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -178,8 +242,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Producer Account Registered!',
-              style: GoogleFonts.poppins(
+              context.tr.producerAccountRegistered,
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textDark,
@@ -187,9 +251,9 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Your farm is now registered with Farm2Home. Direct payouts & zero middleman commission activated!',
+              context.tr.producerWelcomeMsg,
               textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
+              style: TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
               ),
@@ -211,8 +275,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                   ),
                 ),
                 child: Text(
-                  'Go to Farmer Dashboard',
-                  style: GoogleFonts.poppins(
+                  context.tr.goToFarmerDashboard,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -245,7 +309,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
         ),
         title: Text(
           'Phone Authentication',
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.textDark,
@@ -306,8 +370,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'PRODUCER PORTAL',
-                          style: GoogleFonts.poppins(
+                          context.tr.producerPortalPill,
+                          style: TextStyle(
                             fontSize: 10,
                             letterSpacing: 0.8,
                             color: AppColors.textSecondary,
@@ -315,8 +379,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           ),
                         ),
                         Text(
-                          'Farmer & Grower Partner',
-                          style: GoogleFonts.poppins(
+                          context.tr.farmerGrowerPartner,
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
@@ -328,8 +392,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.roleSelection),
                       child: Text(
-                        'Change Role',
-                        style: GoogleFonts.poppins(
+                        context.tr.changeRole,
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF1E8342),
@@ -344,8 +408,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               // ── Title & Subtitle ───────────────────────────────────────────
               Text(
-                'Register as a Farm2Home Producer',
-                style: GoogleFonts.poppins(
+                context.tr.registerFarmerTitle,
+                style: TextStyle(
                   fontSize: 21,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
@@ -354,8 +418,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Sell direct to consumers & bulk buyers. Keep up to 88% of retail harvest value with zero middlemen.',
-                style: GoogleFonts.poppins(
+                context.tr.farmerRegisterSub,
+                style: TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                   height: 1.4,
@@ -410,8 +474,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                               ),
                               const SizedBox(width: 5),
                               Text(
-                                'GOVT AGRARIAN PARTNERSHIP',
-                                style: GoogleFonts.poppins(
+                                context.tr.govtAgrarianPartnership,
+                                style: TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF16A34A),
@@ -422,16 +486,16 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Registered with SL Agrarian Collective',
-                            style: GoogleFonts.poppins(
+                            context.tr.registeredWithAgrarianCollective,
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textDark,
                             ),
                           ),
                           Text(
-                            'Free crate collection right from your farm gate',
-                            style: GoogleFonts.poppins(
+                            context.tr.freeCrateCollection,
+                            style: TextStyle(
                               fontSize: 11,
                               color: AppColors.textSecondary,
                             ),
@@ -448,11 +512,11 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               // ── Section 1: Producer Details ────────────────────────────────
               _buildSectionHeader(
                 icon: Icons.badge_outlined,
-                title: 'Producer Details',
+                title: context.tr.producerDetails,
               ),
               const SizedBox(height: 12),
 
-              _buildFieldLabel('Full Name / Farm Lead'),
+              _buildFieldLabel(context.tr.fullNameFarmLead),
               _buildTextInput(
                 controller: _nameCtrl,
                 hintText: 'e.g., K. M. Bandara',
@@ -463,7 +527,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('NIC (National Identity Card) Number'),
+              _buildFieldLabel(context.tr.nicLabel),
               _buildTextInput(
                 controller: _nicCtrl,
                 hintText: 'e.g., 198214502341 or 821452341V',
@@ -475,19 +539,25 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFieldLabel('Mobile Number'),
+                  _buildFieldLabel(context.tr.mobileNumber),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: _otpVerified
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFF3E0),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      _otpSent ? '✅ SMS OTP Verified' : 'SMS OTP Verification',
-                      style: GoogleFonts.poppins(
+                      _otpVerified
+                          ? context.tr.smsOtpVerified
+                          : context.tr.smsOtpVerification,
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF15803D),
+                        color: _otpVerified
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFE65100),
                       ),
                     ),
                   ),
@@ -498,7 +568,12 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: _otpVerified
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFE2E8F0),
+                    width: _otpVerified ? 1.5 : 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -511,7 +586,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       ),
                       child: Text(
                         '+94',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textDark,
@@ -523,7 +598,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       child: TextFormField(
                         controller: _phoneCtrl,
                         keyboardType: TextInputType.phone,
-                        style: GoogleFonts.poppins(
+                        enabled: !_otpVerified,
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textDark,
@@ -534,7 +610,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                         ],
                         decoration: InputDecoration(
                           hintText: '77 234 5678',
-                          hintStyle: GoogleFonts.poppins(
+                          hintStyle: TextStyle(
                             fontSize: 13.5,
                             color: AppColors.textHint,
                           ),
@@ -546,9 +622,13 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: TextButton(
-                        onPressed: _sendOtp,
+                        onPressed: _otpSending
+                            ? null
+                            : (_otpVerified ? null : _sendOtp),
                         style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFFE8F5E9),
+                          backgroundColor: _otpVerified
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFF15803D),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
@@ -557,14 +637,51 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          _otpSent ? 'Verified' : 'Send OTP',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF15803D),
-                          ),
-                        ),
+                        child: _otpSending
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_otpVerified) ...[
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 14,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.verified,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    const Icon(
+                                      Icons.sms_outlined,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      context.tr.sendOtp,
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                       ),
                     ),
                   ],
@@ -573,7 +690,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('Farm Name / Registered Agro Entity'),
+              _buildFieldLabel(context.tr.farmNameLabel),
               _buildTextInput(
                 controller: _farmNameCtrl,
                 hintText: 'e.g., Hakgala Mountain Organic Gardens',
@@ -585,11 +702,11 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               // ── Section 2: Location & Logistics Hub ────────────────────────
               _buildSectionHeader(
                 icon: Icons.location_on_outlined,
-                title: 'Location & Logistics Hub',
+                title: context.tr.locationLogisticsHub,
               ),
               const SizedBox(height: 12),
 
-              _buildFieldLabel('Farming Region / District'),
+              _buildFieldLabel(context.tr.farmingRegionDistrict),
               Container(
                 height: 52,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -612,7 +729,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           value: _selectedDistrict,
                           isExpanded: true,
                           icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          style: GoogleFonts.poppins(
+                          style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: AppColors.textDark,
@@ -631,7 +748,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('Nearest Agrarian Service Center / Co-op'),
+              _buildFieldLabel(context.tr.nearestAgrarianCenter),
               _buildTextInput(
                 controller: _agrarianCenterCtrl,
                 hintText: 'e.g., Hakgala Agrarian Center #04',
@@ -643,17 +760,17 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               // ── Section 3: Crops & Scale ───────────────────────────────────
               _buildSectionHeader(
                 icon: Icons.grass_rounded,
-                title: 'Crops & Scale',
+                title: context.tr.cropsAndScale,
               ),
               const SizedBox(height: 12),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildFieldLabel('Primary Crops & Harvest Types'),
+                  _buildFieldLabel(context.tr.primaryCropsHarvestTypes),
                   Text(
-                    'Select multiple',
-                    style: GoogleFonts.poppins(
+                    context.tr.selectMultiple,
+                    style: TextStyle(
                       fontSize: 10.5,
                       color: AppColors.textSecondary,
                     ),
@@ -688,7 +805,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             : const Color(0xFFCBD5E1),
                       ),
                     ),
-                    labelStyle: GoogleFonts.poppins(
+                    labelStyle: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                       color: isSel ? Colors.white : AppColors.textDark,
@@ -699,7 +816,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 16),
 
-              _buildFieldLabel('Total Cultivation Area / Scale'),
+              _buildFieldLabel(context.tr.totalCultivationArea),
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -742,7 +859,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           Expanded(
                             child: Text(
                               scale,
-                              style: GoogleFonts.poppins(
+                              style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight:
                                     isSel ? FontWeight.w700 : FontWeight.w500,
@@ -761,7 +878,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 16),
 
-              _buildFieldLabel('Farming Practice & Certification'),
+              _buildFieldLabel(context.tr.farmingPracticeCertification),
               Column(
                 children: _practiceOptions.map((prac) {
                   final isSel = _selectedPractice == prac;
@@ -804,7 +921,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             Expanded(
                               child: Text(
                                 prac,
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight:
                                       isSel ? FontWeight.w700 : FontWeight.w500,
@@ -825,11 +942,11 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'Top Rate',
-                                  style: GoogleFonts.poppins(
+                                  context.tr.topRate,
+                                  style: const TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF15803D),
+                                    color: Color(0xFF15803D),
                                   ),
                                 ),
                               ),
@@ -849,7 +966,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 children: [
                   _buildSectionHeader(
                     icon: Icons.account_balance_outlined,
-                    title: 'Direct Bank Payouts',
+                    title: context.tr.directBankPayouts,
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -858,8 +975,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Daily / Weekly',
-                      style: GoogleFonts.poppins(
+                      context.tr.dailyWeekly,
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -870,8 +987,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                '100% zero-commission bank settlement deposited directly to your rural or commercial savings account.',
-                style: GoogleFonts.poppins(
+                context.tr.zeroCommissionBankSettlement,
+                style: TextStyle(
                   fontSize: 11.5,
                   color: AppColors.textSecondary,
                   height: 1.4,
@@ -879,7 +996,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
               const SizedBox(height: 12),
 
-              _buildFieldLabel('Bank Name & Branch'),
+              _buildFieldLabel(context.tr.bankNameBranch),
               _buildTextInput(
                 controller: _bankCtrl,
                 hintText: 'e.g., Bank of Ceylon - Nuwara Eliya Branch',
@@ -888,7 +1005,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               const SizedBox(height: 14),
 
-              _buildFieldLabel('Account Number'),
+              _buildFieldLabel(context.tr.accountNumberLabel),
               _buildTextInput(
                 controller: _accountNumberCtrl,
                 hintText: 'e.g., 008432198001',
@@ -904,7 +1021,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 children: [
                   _buildSectionHeader(
                     icon: Icons.document_scanner_outlined,
-                    title: 'Certificates & Land Deed',
+                    title: context.tr.certificatesLandDeed,
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -913,8 +1030,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Optional Now',
-                      style: GoogleFonts.poppins(
+                      context.tr.optionalNow,
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -925,8 +1042,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Upload Land Deed / Agrarian Card / ID Photo now or finish during farm verification visit.',
-                style: GoogleFonts.poppins(
+                context.tr.uploadLandDeedDesc,
+                style: TextStyle(
                   fontSize: 11.5,
                   color: AppColors.textSecondary,
                   height: 1.4,
@@ -979,11 +1096,11 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       Text(
                         _isAttached
                             ? 'Agrarian_Deed_Doc.pdf Attached'
-                            : 'Attach Photos / Documents',
-                        style: GoogleFonts.poppins(
+                            : context.tr.attachPhotosDocuments,
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF15803D),
+                          color: Color(0xFF15803D),
                         ),
                       ),
                     ],
@@ -1020,8 +1137,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Register My Farm',
-                              style: GoogleFonts.poppins(
+                              context.tr.registerMyFarm,
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1041,8 +1158,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Already a registered farmer? ',
-                      style: GoogleFonts.poppins(
+                      context.tr.alreadyRegisteredFarmer,
+                      style: TextStyle(
                         fontSize: 12.5,
                         color: AppColors.textSecondary,
                       ),
@@ -1050,11 +1167,11 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
                       child: Text(
-                        'Log In',
-                        style: GoogleFonts.poppins(
+                        context.tr.login,
+                        style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF15803D),
+                          color: Color(0xFF15803D),
                         ),
                       ),
                     ),
@@ -1078,7 +1195,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: GoogleFonts.poppins(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             color: AppColors.textDark,
@@ -1093,7 +1210,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: AppColors.textDark,
@@ -1119,7 +1236,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
-        style: GoogleFonts.poppins(
+        style: TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.w500,
           color: AppColors.textDark,
@@ -1127,7 +1244,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
           hintText: hintText,
-          hintStyle: GoogleFonts.poppins(
+          hintStyle: TextStyle(
             fontSize: 13,
             color: AppColors.textHint,
           ),

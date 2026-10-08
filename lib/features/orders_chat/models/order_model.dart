@@ -1,3 +1,6 @@
+import 'package:flutter/widgets.dart';
+import '../../../core/localization/app_settings.dart';
+
 enum OrderStatus {
   pending,
   confirmed,
@@ -24,6 +27,23 @@ extension OrderStatusX on OrderStatus {
         return 'Cancelled';
     }
   }
+
+  String localizedLabel(BuildContext context) {
+    switch (this) {
+      case OrderStatus.pending:
+        return context.tr.statusPending;
+      case OrderStatus.confirmed:
+        return context.tr.statusConfirmed;
+      case OrderStatus.processing:
+        return context.tr.statusProcessing;
+      case OrderStatus.inTransit:
+        return context.tr.statusInTransit;
+      case OrderStatus.delivered:
+        return context.tr.statusDelivered;
+      case OrderStatus.cancelled:
+        return context.tr.statusCancelled;
+    }
+  }
 }
 
 class OrderItemSummary {
@@ -42,6 +62,9 @@ class OrderItemSummary {
   });
 
   double get totalPrice => unitPrice * quantity;
+
+  String localizedName(BuildContext context) => name.trAuto(context);
+  String localizedUnit(BuildContext context) => unit.trAuto(context);
 }
 
 class OrderTrackingStep {

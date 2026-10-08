@@ -2,7 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'app_strings.dart';
+import 'package:farmer_buyer_marketplace/core/localization/app_strings.dart';
+import 'package:farmer_buyer_marketplace/core/localization/auto_translator.dart';
+
+export 'auto_translator.dart';
 
 /// Supported app languages.
 enum AppLanguage {
@@ -60,6 +63,7 @@ class AppSettings extends ChangeNotifier {
 
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
+    await AppAutoTranslator.instance.init();
     return AppSettings._(prefs);
   }
 
@@ -100,8 +104,30 @@ class AppSettings extends ChangeNotifier {
 /// Convenience accessors.
 extension AppSettingsX on BuildContext {
   /// Strings that rebuild the widget when the language changes.
-  AppStrings get tr => watch<AppSettings>().strings;
+  AppStrings get tr {
+    try {
+      return watch<AppSettings>().strings;
+    } catch (_) {
+      return const AppStrings(AppLanguage.english);
+    }
+  }
+
+  /// Current active language that rebuilds on change.
+  AppLanguage get currentLanguage {
+    try {
+      return watch<AppSettings>().language ?? AppLanguage.english;
+    } catch (_) {
+      return AppLanguage.english;
+    }
+  }
 
   /// Settings without listening (use inside callbacks).
-  AppSettings get settings => read<AppSettings>();
+  AppSettings get settings {
+    try {
+      return read<AppSettings>();
+    } catch (_) {
+      throw StateError('AppSettings provider not found in context.');
+    }
+  }
 }
+

@@ -5,8 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Uses the project credentials directly for seamless startup without .env file dependencies.
 abstract final class SupabaseConfig {
   static const String url = 'https://tyuogpbtxudhtxhfmezm.supabase.co';
-  static const String anonKey =
+  static const String publishableKey =
       'sb_publishable_qOC4hvCWUdqOyHunlBLXCg_pvUvtb4E';
+  static const String anonKey = publishableKey;
+  static const String secretKey =
+      'sb_secret_2QGkP4D7bwezsnjOGtcbrA_g3SZeN5F';
+  static const String jwksUrl =
+      'https://tyuogpbtxudhtxhfmezm.supabase.co/auth/v1/.well-known/jwks.json';
 
   static bool _initialized = false;
   static bool get isInitialized => _initialized;
@@ -16,7 +21,7 @@ abstract final class SupabaseConfig {
     try {
       await Supabase.initialize(
         url: url,
-        publishableKey: anonKey,
+        publishableKey: publishableKey,
         authOptions: const FlutterAuthClientOptions(
           authFlowType: AuthFlowType.pkce,
         ),

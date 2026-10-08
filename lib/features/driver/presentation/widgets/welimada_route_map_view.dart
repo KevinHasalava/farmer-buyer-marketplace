@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 /// Pixel-perfect vector Google Maps component for Order #FH-8850:
 /// Welimada Agro Collection Depot ⇄ Dehiwala Urban Center (Corridor A5/B509)
@@ -57,8 +58,8 @@ class WelimadaRouteMapView extends StatelessWidget {
                     const Icon(Icons.navigation_rounded, size: 12, color: Color(0xFF047857)),
                     const SizedBox(width: 4),
                     Text(
-                      'Corridor A5/B509 • Live',
-                      style: GoogleFonts.poppins(
+                      'Corridor A5/B509 • Live'.trAuto(context),
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF065F46),
@@ -97,8 +98,8 @@ class WelimadaRouteMapView extends StatelessWidget {
                           const Icon(Icons.storefront_rounded, size: 11, color: Colors.white),
                           const SizedBox(width: 3),
                           Text(
-                            'Welimada Depot',
-                            style: GoogleFonts.poppins(
+                            'Welimada Depot'.trAuto(context),
+                            style: TextStyle(
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -143,8 +144,8 @@ class WelimadaRouteMapView extends StatelessWidget {
                         const Icon(Icons.local_shipping_rounded, size: 11, color: Colors.white),
                         const SizedBox(width: 3),
                         Text(
-                          'Dehiwala Hub',
-                          style: GoogleFonts.poppins(
+                          'Dehiwala Hub'.trAuto(context),
+                          style: TextStyle(
                             fontSize: 9.5,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -174,8 +175,8 @@ class WelimadaRouteMapView extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFCBD5E1), width: 0.8),
                 ),
                 child: Text(
-                  'Nuwara Eliya A5',
-                  style: GoogleFonts.poppins(
+                  'Nuwara Eliya A5'.trAuto(context),
+                  style: TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF334155),
@@ -230,8 +231,8 @@ class WelimadaRouteMapView extends StatelessWidget {
                           const Icon(Icons.map_outlined, size: 14, color: Color(0xFF047857)),
                           const SizedBox(width: 4),
                           Text(
-                            'Route Map',
-                            style: GoogleFonts.poppins(
+                            context.tr.routeMap,
+                            style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
@@ -269,7 +270,7 @@ class WelimadaRouteMapView extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '22.8 km',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF15803D),
@@ -602,7 +603,7 @@ class WelimadaPickupMapView extends StatelessWidget {
                             children: [
                               Text(
                                 'In 150m',
-                                style: GoogleFonts.poppins(
+                                style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF0F172A),
@@ -617,7 +618,7 @@ class WelimadaPickupMapView extends StatelessWidget {
                                 ),
                                 child: Text(
                                   'ETA 11:15 AM',
-                                  style: GoogleFonts.poppins(
+                                  style: TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF15803D),
@@ -628,7 +629,7 @@ class WelimadaPickupMapView extends StatelessWidget {
                           ),
                           Text(
                             'Turn Right • Welimada Depot Platform Gate #1',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontSize: 11,
                               color: const Color(0xFF64748B),
                             ),
@@ -667,7 +668,7 @@ class WelimadaPickupMapView extends StatelessWidget {
                     const SizedBox(width: 3),
                     Text(
                       'Depot Gate #1 / C',
-                      style: GoogleFonts.poppins(
+                      style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
