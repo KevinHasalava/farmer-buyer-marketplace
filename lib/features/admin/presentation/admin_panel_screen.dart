@@ -8,6 +8,7 @@ import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
+import '../../pre_order/presentation/pre_order_detail_screen.dart';
 
 /// Ultra-Premium Farm2Home Enterprise Master Admin Console
 /// Features: Side Navigation Rail/Sidebar, High-end Executive UI, Full Role CRUD & Dispatch
@@ -2429,6 +2430,42 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       Text('Farmer: ${o.farmerName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Color(0xFF047857), fontWeight: FontWeight.w600)),
                     ],
                   ),
+
+                  // Show Farmer's Proposal Details if available
+                  if (o.farmerExpectedHarvestDate != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _borderLight),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Farmer\'s Proposal:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _buildMetaPill(Icons.calendar_today_rounded, 'Harvest: ${o.farmerExpectedHarvestDate!.day}/${o.farmerExpectedHarvestDate!.month}'),
+                              if (o.farmerEstimatedYieldKg != null)
+                                _buildMetaPill(Icons.monitor_weight_rounded, 'Yield: ${o.farmerEstimatedYieldKg} Kg'),
+                              if (o.farmerLocation.isNotEmpty)
+                                _buildMetaPill(Icons.location_city_rounded, o.farmerLocation),
+                            ],
+                          ),
+                          if (o.farmerNotes.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text('Notes: ${o.farmerNotes}', style: const TextStyle(fontSize: 11, color: _textMuted)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 10),
@@ -2436,6 +2473,30 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Allow admin to view the full detail screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PreOrderDetailScreen(
+                                preOrderId: o.id,
+                                isFarmerMode: false, // Treat as observer
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_rounded, size: 16),
+                        label: const Text('View Full Timeline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0EA5E9),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       IconButton(
                         onPressed: () {
                           showDeleteConfirmDialog(

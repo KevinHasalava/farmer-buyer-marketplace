@@ -24,6 +24,11 @@ class PreOrderModel {
   final String farmerLocation;
   final String farmerNotes;
 
+  // Rating Details
+  final double? farmerRating;
+  final String? farmerReview;
+  final DateTime? ratedAt;
+
   const PreOrderModel({
     required this.id,
     required this.buyerId,
@@ -45,6 +50,9 @@ class PreOrderModel {
     this.farmerEstimatedYieldKg,
     this.farmerLocation = '',
     this.farmerNotes = '',
+    this.farmerRating,
+    this.farmerReview,
+    this.ratedAt,
   });
 
   PreOrderModel copyWith({
@@ -68,6 +76,9 @@ class PreOrderModel {
     double? farmerEstimatedYieldKg,
     String? farmerLocation,
     String? farmerNotes,
+    double? farmerRating,
+    String? farmerReview,
+    DateTime? ratedAt,
   }) {
     return PreOrderModel(
       id: id ?? this.id,
@@ -90,6 +101,9 @@ class PreOrderModel {
       farmerEstimatedYieldKg: farmerEstimatedYieldKg ?? this.farmerEstimatedYieldKg,
       farmerLocation: farmerLocation ?? this.farmerLocation,
       farmerNotes: farmerNotes ?? this.farmerNotes,
+      farmerRating: farmerRating ?? this.farmerRating,
+      farmerReview: farmerReview ?? this.farmerReview,
+      ratedAt: ratedAt ?? this.ratedAt,
     );
   }
 
@@ -115,6 +129,9 @@ class PreOrderModel {
       'farmer_estimated_yield_kg': farmerEstimatedYieldKg,
       'farmer_location': farmerLocation,
       'farmer_notes': farmerNotes,
+      'farmer_rating': farmerRating,
+      'farmer_review': farmerReview,
+      'rated_at': ratedAt?.toIso8601String(),
     };
   }
 
@@ -146,6 +163,9 @@ class PreOrderModel {
       farmerEstimatedYieldKg: (map['farmer_estimated_yield_kg'] as num?)?.toDouble(),
       farmerLocation: map['farmer_location'] as String? ?? '',
       farmerNotes: map['farmer_notes'] as String? ?? '',
+      farmerRating: (map['farmer_rating'] as num?)?.toDouble(),
+      farmerReview: map['farmer_review'] as String?,
+      ratedAt: map['rated_at'] != null ? DateTime.tryParse(map['rated_at'] as String) : null,
     );
   }
 

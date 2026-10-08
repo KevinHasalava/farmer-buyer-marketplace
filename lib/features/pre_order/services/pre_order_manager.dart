@@ -151,6 +151,24 @@ class PreOrderManager extends ChangeNotifier {
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
+  /// 3.5. RATE (R): Buyer rates the Farmer
+  /// ──────────────────────────────────────────────────────────────────────────
+  Future<void> ratePreOrder(String preOrderId, double rating, String review) async {
+    final index = _preOrders.indexWhere((o) => o.id == preOrderId);
+    if (index == -1) return;
+
+    final order = _preOrders[index].copyWith(
+      farmerRating: rating,
+      farmerReview: review,
+      ratedAt: DateTime.now(),
+    );
+
+    _preOrders[index] = order;
+    await _savePreOrdersToLocal();
+    notifyListeners();
+  }
+
+  /// ──────────────────────────────────────────────────────────────────────────
   /// 4. CREATE PROGRESS: Add progress update (Farmer side)
   /// ──────────────────────────────────────────────────────────────────────────
   Future<PreOrderProgressModel> addProgressUpdate({
@@ -158,6 +176,9 @@ class PreOrderManager extends ChangeNotifier {
     required String stage,
     required String description,
     List<String> images = const [],
+    String updateType = 'Progress',
+    DateTime? newExpectedDate,
+    String? issueType,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -170,6 +191,9 @@ class PreOrderManager extends ChangeNotifier {
         description: description,
         images: images,
         date: DateTime.now(),
+        updateType: updateType,
+        newExpectedDate: newExpectedDate,
+        issueType: issueType,
       );
 
       _progressUpdates.insert(0, update);

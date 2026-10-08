@@ -6,6 +6,7 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../services/pre_order_manager.dart';
 import 'add_progress_update_screen.dart';
 import 'farmer_contract_acceptance_screen.dart';
+import 'farmer_rating_dialog.dart';
 
 class PreOrderDetailScreen extends StatefulWidget {
   final String preOrderId;
@@ -35,6 +36,20 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
     );
 
     if (success == true) {
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _rateFarmer(String cropName, String farmerName) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => FarmerRatingDialog(farmerName: farmerName, cropName: cropName),
+    );
+
+    if (result != null) {
+      final rating = result['rating'] as double;
+      final review = result['review'] as String;
+      await PreOrderManager.instance.ratePreOrder(widget.preOrderId, rating, review);
       if (mounted) setState(() {});
     }
   }
@@ -167,6 +182,42 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                           ),
                         ),
                       ],
+
+                      // Rating Display (if rated)
+                      if (order.farmerRating != null) ...[
+                        const SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 24),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${order.farmerRating} / 5.0 Rating Given',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                  ),
+                                ],
+                              ),
+                              if (order.farmerReview != null && order.farmerReview!.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  '"${order.farmerReview}"',
+                                  style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                       
                       const SizedBox(height: 24),
 
@@ -208,6 +259,34 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                         ),
                       ),
 
+                      // Buyer Actions
+                      if (!widget.isFarmerMode && order.status == 'In Progress') ...[
+                        const SizedBox(height: 16),
+                        AppPrimaryButton(
+                          label: 'Mark as Completed',
+                          icon: Icons.check_circle_rounded,
+                          onPressed: () async {
+                            await PreOrderManager.instance.updatePreOrderStatus(order.id, 'Completed');
+                            if (mounted) setState(() {});
+                          },
+                        ),
+                      ],
+
+                      if (!widget.isFarmerMode && order.status == 'Completed' && order.farmerRating == null && order.farmerName != null) ...[
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => _rateFarmer(order.cropName, order.farmerName!),
+                          icon: const Icon(Icons.star_rounded),
+                          label: const Text('Rate Farmer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 55),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+
                       if (progressList.isNotEmpty) ...[
                         const SizedBox(height: 32),
                         const Text(
@@ -229,15 +308,23 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                                   Container(
                                     width: 16,
                                     height: 16,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primaryGreen,
+                                    decoration: BoxDecoration(
+                                      color: prog.updateType == 'Issue' 
+                                          ? Colors.red 
+                                          : prog.updateType == 'Delay' 
+                                              ? Colors.orange 
+                                              : AppColors.primaryGreen,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
                                   Container(
                                     width: 2,
-                                    height: 50,
-                                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                                    height: 70, // Slightly taller to accommodate more text
+                                    color: (prog.updateType == 'Issue' 
+                                          ? Colors.red 
+                                          : prog.updateType == 'Delay' 
+                                              ? Colors.orange 
+                                              : AppColors.primaryGreen).withValues(alpha: 0.3),
                                   ),
                                 ],
                               ),
@@ -250,11 +337,19 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          prog.stage,
-                                          style: const TextStyle(
+                                          prog.updateType == 'Issue' && prog.issueType != null 
+                                              ? 'Alert: ${prog.issueType}'
+                                              : prog.updateType == 'Delay' 
+                                                  ? 'Delay Reported'
+                                                  : prog.stage,
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
-                                            color: AppColors.textDark,
+                                            color: prog.updateType == 'Issue' 
+                                              ? Colors.red.shade700 
+                                              : prog.updateType == 'Delay' 
+                                                  ? Colors.orange.shade800 
+                                                  : AppColors.textDark,
                                           ),
                                         ),
                                         Text(
@@ -274,6 +369,17 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                                         color: AppColors.textSecondary,
                                       ),
                                     ),
+                                    if (prog.newExpectedDate != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'New Harvest Date: ${prog.newExpectedDate!.day}/${prog.newExpectedDate!.month}/${prog.newExpectedDate!.year}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange.shade800,
+                                        ),
+                                      ),
+                                    ],
                                     if (prog.images.isNotEmpty) ...[
                                       const SizedBox(height: 8),
                                       SizedBox(

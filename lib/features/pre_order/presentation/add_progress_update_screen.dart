@@ -17,6 +17,9 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descCtrl = TextEditingController();
   
+  String _updateType = 'Progress Update';
+  final List<String> _updateTypes = ['Progress Update', 'Report Delay', 'Report Issue'];
+
   String _selectedStage = 'Land Preparation';
   final List<String> _stages = [
     'Land Preparation',
@@ -26,6 +29,17 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
     'Harvesting Soon',
     'Ready for Pickup'
   ];
+
+  String _selectedIssue = 'Weather / Rain';
+  final List<String> _issueTypes = [
+    'Weather / Rain',
+    'Pest / Disease',
+    'Labor Shortage',
+    'Transport Issue',
+    'Other'
+  ];
+
+  DateTime? _newExpectedDate;
 
   final List<String> _selectedImages = [];
   bool _isSubmitting = false;
@@ -38,9 +52,12 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
     try {
       await PreOrderManager.instance.addProgressUpdate(
         preOrderId: widget.preOrderId,
-        stage: _selectedStage,
+        stage: _updateType == 'Progress Update' ? _selectedStage : 'Alert',
         description: _descCtrl.text.trim(),
         images: _selectedImages,
+        updateType: _updateType.split(' ').last, // 'Update', 'Delay', 'Issue'
+        newExpectedDate: _newExpectedDate,
+        issueType: _updateType == 'Report Issue' ? _selectedIssue : null,
       );
 
       if (!mounted) return;
@@ -69,7 +86,7 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Current Stage'),
+                    _buildLabel('Type of Update'),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
@@ -79,29 +96,126 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: _selectedStage,
+                          value: _updateType,
                           isExpanded: true,
                           icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
-                          items: _stages.map((stage) {
+                          items: _updateTypes.map((type) {
                             return DropdownMenuItem(
-                              value: stage,
-                              child: Text(stage),
+                              value: type,
+                              child: Text(type),
                             );
                           }).toList(),
                           onChanged: (val) {
-                            if (val != null) setState(() => _selectedStage = val);
+                            if (val != null) setState(() => _updateType = val);
                           },
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
 
+                    if (_updateType == 'Progress Update') ...[
+                      _buildLabel('Current Stage'),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedStage,
+                            isExpanded: true,
+                            icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
+                            items: _stages.map((stage) {
+                              return DropdownMenuItem(
+                                value: stage,
+                                child: Text(stage),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedStage = val);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ] else if (_updateType == 'Report Issue') ...[
+                      _buildLabel('Type of Issue'),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade300),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedIssue,
+                            isExpanded: true,
+                            icon: const Icon(Icons.arrow_drop_down, color: Colors.red),
+                            items: _issueTypes.map((issue) {
+                              return DropdownMenuItem(
+                                value: issue,
+                                child: Text(issue, style: const TextStyle(color: Colors.red)),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedIssue = val);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ] else if (_updateType == 'Report Delay') ...[
+                      _buildLabel('New Expected Harvest Date'),
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now().add(const Duration(days: 7)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (picked != null) {
+                            setState(() => _newExpectedDate = picked);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.orange.shade300),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _newExpectedDate == null 
+                                  ? 'Select New Date' 
+                                  : '${_newExpectedDate!.day}/${_newExpectedDate!.month}/${_newExpectedDate!.year}',
+                                style: TextStyle(
+                                  color: _newExpectedDate == null ? AppColors.textSecondary : Colors.orange.shade900,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Icon(Icons.calendar_today_rounded, color: Colors.orange.shade700, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
                     _buildLabel('Description / Notes'),
                     TextFormField(
                       controller: _descCtrl,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'What did you do today? How is the crop?',
+                        hintText: _updateType == 'Progress Update'
+                            ? 'What did you do today? How is the crop?'
+                            : 'Please describe the situation in detail...',
                         filled: true,
                         fillColor: Colors.white,
                         contentPadding: const EdgeInsets.all(16),
@@ -122,7 +236,7 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    _buildLabel('Attach Photos (Optional)'),
+                    _buildLabel('Attach Photos (Important for Delays/Issues)'),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 12,

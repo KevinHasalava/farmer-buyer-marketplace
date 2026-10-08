@@ -5,6 +5,11 @@ class PreOrderProgressModel {
   final String description;
   final List<String> images;
   final DateTime date;
+  
+  // New fields for reporting Delays & Issues
+  final String updateType; // 'Progress', 'Delay', 'Issue'
+  final DateTime? newExpectedDate;
+  final String? issueType;
 
   const PreOrderProgressModel({
     required this.id,
@@ -13,6 +18,9 @@ class PreOrderProgressModel {
     required this.description,
     this.images = const [],
     required this.date,
+    this.updateType = 'Progress',
+    this.newExpectedDate,
+    this.issueType,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +31,9 @@ class PreOrderProgressModel {
       'description': description,
       'images': images,
       'date': date.toIso8601String(),
+      'update_type': updateType,
+      'new_expected_date': newExpectedDate?.toIso8601String(),
+      'issue_type': issueType,
     };
   }
 
@@ -36,6 +47,11 @@ class PreOrderProgressModel {
       date: map['date'] != null
           ? DateTime.tryParse(map['date'] as String) ?? DateTime.now()
           : DateTime.now(),
+      updateType: map['update_type'] as String? ?? 'Progress',
+      newExpectedDate: map['new_expected_date'] != null
+          ? DateTime.tryParse(map['new_expected_date'] as String)
+          : null,
+      issueType: map['issue_type'] as String?,
     );
   }
 
