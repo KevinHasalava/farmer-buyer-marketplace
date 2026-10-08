@@ -364,7 +364,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                             const Icon(Icons.location_on_rounded, size: 10, color: Colors.white),
                             const SizedBox(width: 2),
                             Text(
-                              'Welimada Depot Gate #1',
+                              'Welimada Depot Gate #1'.trAuto(context),
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
@@ -433,7 +433,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF065F46),
+                              color: const Color(0xFF064E3B),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Center(
@@ -460,9 +460,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                                   ),
                                 ),
                                 Text(
-                                  isOrder8850
+                                  (isOrder8850
                                       ? 'In 150m, Turn Right'
-                                      : 'In 400m, Turn Right',
+                                      : 'In 400m, Turn Right').trAuto(context),
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w700,
@@ -471,9 +471,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                                   ),
                                 ),
                                 Text(
-                                  isOrder8850
+                                  (isOrder8850
                                       ? 'Welimada Depot Platform Gate #1 / C'
-                                      : 'Hakgala Farm Gate #2 Access Rd',
+                                      : 'Hakgala Farm Gate #2 Access Rd').trAuto(context),
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: const Color(0xFF64748B),
@@ -548,9 +548,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            isOrder8850
+                            (isOrder8850
                                 ? 'Welimada – Badulla Rd'
-                                : 'Badulla – Nuwara Eliya Rd',
+                                : 'Badulla – Nuwara Eliya Rd').trAuto(context),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -592,7 +592,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            isOrder8850 ? '4 mins • 1.8 km' : '8 mins • 2.1 km',
+                            (isOrder8850 ? '4 mins • 1.8 km' : '8 mins • 2.1 km').trAuto(context),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -654,7 +654,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                       ),
                     ),
                     Text(
-                      'En route to Hakgala Farm Gate #2',
+                      (_orderId.contains('8850')
+                          ? 'En route to Welimada Depot Platform Gate #1'
+                          : 'En route to Hakgala Farm Gate #2').trAuto(context),
                       style: TextStyle(
                         fontSize: 12.5,
                         color: const Color(0xFF64748B),
@@ -682,9 +684,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        _orderId.contains('8850')
+                        (_orderId.contains('8850')
                             ? '4 mins • 1.8 km'
-                            : '8 mins • 2.1 km',
+                            : '8 mins • 2.1 km').trAuto(context),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
@@ -726,9 +728,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _orderId.contains('8850')
+                          (_orderId.contains('8850')
                               ? 'Upcoming: In 150m, Turn Right'
-                              : 'Upcoming: In 400m, Turn Right',
+                              : 'Upcoming: In 400m, Turn Right').trAuto(context),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -736,9 +738,9 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                           ),
                         ),
                         Text(
-                          _orderId.contains('8850')
+                          (_orderId.contains('8850')
                               ? 'Welimada Depot Platform Gate #1 / C • B322 Highway'
-                              : 'Hakgala Farm Gate #2 Access Rd • Badulla – Nuwara Eliya Rd',
+                              : 'Hakgala Farm Gate #2 Access Rd • Badulla – Nuwara Eliya Rd').trAuto(context),
                           style: TextStyle(
                             fontSize: 11.5,
                             color: const Color(0xFF64748B),
@@ -853,7 +855,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      _farmLocation,
+                      _farmLocation.trAuto(context),
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
@@ -898,7 +900,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                               ),
                             ),
                             Text(
-                              _farmerName,
+                              _farmerName.trAuto(context),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -942,7 +944,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
                               ),
                             ),
                             Text(
-                              _gateInfo,
+                              _gateInfo.trAuto(context),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -1037,7 +1039,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
           // Checklist Item 1: Fresh bundled, hydro-cooled
           _buildChecklistItem(
             title: context.tr.freshBundledHydroCooled,
-            badgeText: 'Verified',
+            badgeText: 'Verified'.trAuto(context),
           ),
           const SizedBox(height: 8),
 
@@ -1045,7 +1047,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
           _buildChecklistItem(
             title: context.tr.crateTagScanned,
             subtitle: _crateId,
-            badgeText: 'Verified',
+            badgeText: 'Verified'.trAuto(context),
           ),
           const SizedBox(height: 8),
 

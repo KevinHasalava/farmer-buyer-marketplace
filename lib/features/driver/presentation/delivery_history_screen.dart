@@ -873,7 +873,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               ),
               const Spacer(),
               Text(
-                '+${item.amount}',
+                '+${item.amount.trAuto(context)}',
                 style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
@@ -915,7 +915,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  item.pickupLocation,
+                  item.pickupLocation.trAuto(context),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
@@ -949,7 +949,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  item.dropLocation,
+                  item.dropLocation.trAuto(context),
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
@@ -982,7 +982,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  item.cargo,
+                  item.cargo.trAuto(context),
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
@@ -995,7 +995,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    item.time,
+                    item.time.trAuto(context),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -1163,7 +1163,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tax & Payment Statement',
+                            'Tax & Payment Statement'.trAuto(context),
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w700,
@@ -1171,7 +1171,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                             ),
                           ),
                           Text(
-                            '${period.label} Summary • PDF Document',
+                            '${_localizedPeriodLabel(context, period.label)} ${'Summary'.trAuto(context)} • PDF',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: const Color(0xFF64748B),
@@ -1240,7 +1240,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Agri-Transit Sri Lanka Ltd.',
+                                    'Agri-Transit Sri Lanka Ltd.'.trAuto(context),
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: const Color(0xFF64748B),
@@ -1254,13 +1254,13 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                'OFFICIAL STATEMENT',
+                                'OFFICIAL STATEMENT'.trAuto(context),
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF047857),
-                                  letterSpacing: 0.5,
-                                ),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF047857),
+                                    letterSpacing: 0.5,
+                                  ),
                               ),
                               Text(
                                 '#STMT-2026-LK',
@@ -1284,21 +1284,21 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('DRIVER DETAILS', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('DRIVER DETAILS'.trAuto(context), style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
                               const SizedBox(height: 2),
-                              Text('Ranjith Subha Udhasanak', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                              Text('Vehicle: WP NC-4982 (Cooled Agro)', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
-                              Text('Bank: Commercial Bank LK (****4198)', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Ranjith Subha Udhasanak'.trAuto(context), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              Text('Vehicle: WP NC-4982 (Cooled Agro)'.trAuto(context), style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Bank: Commercial Bank LK (****4198)'.trAuto(context), style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
                             ],
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('STATEMENT PERIOD', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('STATEMENT PERIOD'.trAuto(context), style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
                               const SizedBox(height: 2),
-                              Text(period.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF064E3B))),
-                              Text('Generated: 01 Oct 2026', style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
-                              Text('Status: Dispatched & Cleared ✓', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF047857))),
+                              Text(_localizedPeriodLabel(context, period.label), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF064E3B))),
+                              Text('Generated: 01 Oct 2026'.trAuto(context), style: TextStyle(fontSize: 11, color: const Color(0xFF475569))),
+                              Text('Status: Dispatched & Cleared ✓'.trAuto(context), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF047857))),
                             ],
                           ),
                         ],
@@ -1306,7 +1306,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                       const SizedBox(height: 18),
 
                       // Itemized Table of Completed Deliveries
-                      Text('ITEMIZED TRANSIT LOGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF64748B), letterSpacing: 0.5)),
+                      Text('ITEMIZED TRANSIT LOGS'.trAuto(context), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF64748B), letterSpacing: 0.5)),
                       const SizedBox(height: 8),
 
                       Container(
@@ -1321,9 +1321,9 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                               color: const Color(0xFFF8FAFC),
                               child: Row(
                                 children: [
-                                  Expanded(flex: 3, child: Text('Order', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
-                                  Expanded(flex: 5, child: Text('Corridor Route', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
-                                  Expanded(flex: 3, child: Text('Net Pay', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 3, child: Text('Order'.trAuto(context), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 5, child: Text('Corridor Route'.trAuto(context), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                                  Expanded(flex: 3, child: Text('Net Pay'.trAuto(context), textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
                                 ],
                               ),
                             ),
@@ -1339,7 +1339,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                       Expanded(
                                         flex: 5,
                                         child: Text(
-                                          '${t.pickupLocation.split(',').first} → ${t.dropLocation.split('(').first}',
+                                          '${t.pickupLocation.split(',').first.trAuto(context)} → ${t.dropLocation.split('(').first.trAuto(context)}',
                                           style: TextStyle(fontSize: 10.5, color: const Color(0xFF334155)),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -1348,7 +1348,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                                       Expanded(
                                         flex: 3,
                                         child: Text(
-                                          t.amount,
+                                          t.amount.trAuto(context),
                                           textAlign: TextAlign.right,
                                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF047857)),
                                         ),
@@ -1371,19 +1371,19 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                         ),
                         child: Column(
                           children: [
-                            _buildPdfSummaryRow('Total Trips Completed', '${period.tripsCount} Deliveries'),
+                            _buildPdfSummaryRow('Total Trips Completed'.trAuto(context), '${period.tripsCount} ${'Deliveries'.trAuto(context)}'),
                             const SizedBox(height: 4),
-                            _buildPdfSummaryRow('On-Time Arrival SLA', period.onTimeRate),
+                            _buildPdfSummaryRow('On-Time Arrival SLA'.trAuto(context), period.onTimeRate),
                             const SizedBox(height: 4),
-                            _buildPdfSummaryRow('Direct Customer Tips Included', 'Rs. 2,800.00'),
+                            _buildPdfSummaryRow('Direct Customer Tips Included'.trAuto(context), 'Rs. 2,800.00'.trAuto(context)),
                             const SizedBox(height: 4),
-                            _buildPdfSummaryRow('Highland Eco-Transit Incentive', 'Rs. 1,500.00'),
+                            _buildPdfSummaryRow('Highland Eco-Transit Incentive'.trAuto(context), 'Rs. 1,500.00'.trAuto(context)),
                             const SizedBox(height: 4),
-                            _buildPdfSummaryRow('Withholding Tax (WHT)', 'Rs. 0.00 (Agri Exempt)'),
+                            _buildPdfSummaryRow('Withholding Tax (WHT)'.trAuto(context), 'Rs. 0.00 (Agri Exempt)'.trAuto(context)),
                             const Divider(height: 14, color: Color(0xFF86EFAC)),
                             _buildPdfSummaryRow(
-                              'TOTAL DISPATCHED PAYOUT',
-                              period.earnings,
+                              'TOTAL DISPATCHED PAYOUT'.trAuto(context),
+                              period.earnings.trAuto(context),
                               isBold: true,
                               valueColor: const Color(0xFF064E3B),
                             ),
@@ -1399,9 +1399,9 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('ISSUED BY', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
-                              Text('Automated Transit Settlement', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
-                              Text('Sri Lanka Agri-Board Approved', style: TextStyle(fontSize: 9.5, color: const Color(0xFF047857))),
+                              Text('ISSUED BY'.trAuto(context), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF94A3B8))),
+                              Text('Automated Transit Settlement'.trAuto(context), style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
+                              Text('Sri Lanka Agri-Board Approved'.trAuto(context), style: TextStyle(fontSize: 9.5, color: const Color(0xFF047857))),
                             ],
                           ),
                           Container(
@@ -1412,7 +1412,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                             ),
                             child: Column(
                               children: [
-                                Text('VERIFIED & STAMPED', style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
+                                Text('VERIFIED & STAMPED'.trAuto(context), style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF047857))),
                                 Text('FARM2HOME 2026', style: const TextStyle(fontSize: 8, color: Color(0xFF047857))),
                               ],
                             ),
@@ -1444,7 +1444,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
                     },
                     icon: const Icon(Icons.download_rounded, size: 19),
                     label: Text(
-                      'Save PDF Statement to Device',
+                      'Save PDF Statement to Device'.trAuto(context),
                       style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -1512,7 +1512,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Statement_${period.label.replaceAll(' ', '_')}_2026.pdf has been saved to your Downloads folder.\nTotal: ${period.earnings}',
+              '${'Statement'.trAuto(context)} ${_localizedPeriodLabel(context, period.label)} ${'has been saved to your Downloads folder.'.trAuto(context)}\n${'Total:'.trAuto(context)} ${period.earnings.trAuto(context)}',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: const Color(0xFF64748B), height: 1.5),
             ),
@@ -1591,7 +1591,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
               isSelected: false,
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Chat tab selected', style: TextStyle())),
+                  SnackBar(content: Text('Chat tab selected'.trAuto(context), style: const TextStyle())),
                 );
               },
             ),

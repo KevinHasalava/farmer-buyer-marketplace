@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +13,9 @@ import '../../../core/routes/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
+import '../../driver/services/driver_profile_manager.dart';
 import 'role_meta.dart';
 
 enum _AuthStep { phone, otp, name }
@@ -26,7 +29,6 @@ class PhoneAuthScreen extends StatefulWidget {
 }
 
 class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
-  static const _demoCode = '123456';
   static const _resendSeconds = 30;
 
   final _authService = const AuthService();
@@ -129,22 +131,26 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       _error = null;
     });
     try {
-      if (_demoMode) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (code != _demoCode) throw Exception('bad code');
-        if (mounted) _goStep(_AuthStep.name);
-        return;
-      }
-
       final user =
           await _authService.verifyPhoneOtp(phone: _e164!, token: code);
       final existingName = user.userMetadata?['full_name'] as String?;
       if (!mounted) return;
-      if (existingName != null && existingName.trim().isNotEmpty) {
+      if (existingName != null &&
+          existingName.trim().isNotEmpty &&
+          !existingName.startsWith('User ')) {
+        final currentRole = context.settings.role ?? UserRole.buyer;
         await _authService.updateProfile(
           fullName: existingName,
-          role: context.settings.role?.name ?? 'buyer',
+          role: currentRole.name,
         );
+        final phone = _e164 ?? '';
+        if (currentRole == UserRole.farmer) {
+          await FarmerProfileManager.instance.updateProfile(name: existingName, phone: phone);
+        } else if (currentRole == UserRole.buyer) {
+          await BuyerProfileManager.instance.updateProfile(name: existingName, phone: phone);
+        } else if (currentRole == UserRole.driver) {
+          await DriverProfileManager.instance.updateProfile(fullName: existingName, mobileNumber: phone);
+        }
         if (mounted) _goHome();
       } else {
         _goStep(_AuthStep.name);
@@ -172,12 +178,47 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       _error = null;
     });
     try {
-      if (!_demoMode) {
-        await _authService.updateProfile(
-          fullName: name,
-          role: context.settings.role?.name ?? 'buyer',
+      final currentRole = context.settings.role ?? UserRole.buyer;
+      await _authService.updateProfile(
+        fullName: name,
+        role: currentRole.name,
+      );
+
+      final phone = _e164 ?? '';
+      if (currentRole == UserRole.farmer) {
+        await FarmerProfileManager.instance.saveRegistrationData(
+          name: name,
+          phone: phone,
+          farmName: '$name\'s Farm',
+          district: 'Colombo',
+          agrarianCenter: 'Regional Agrarian Center',
+          scale: '1 - 3 Acres',
+          practice: 'Certified Organic (SL-GAP)',
+          crops: const ['Carrots & Root Veg', 'Tomatoes'],
+        );
+      } else if (currentRole == UserRole.buyer) {
+        await BuyerProfileManager.instance.saveRegistrationData(
+          name: name,
+          email: phone.isNotEmpty ? '$phone@farm2home.lk' : '',
+          phone: phone,
+          address: 'Colombo, Western Province',
+          buyerType: 'Family',
+          hub: 'Colombo Regional Hub (Western Province)',
+          preferences: const ['100% Organic'],
+        );
+      } else if (currentRole == UserRole.driver) {
+        await DriverProfileManager.instance.saveRegistrationData(
+          name: name,
+          phone: phone,
+          licenseNumber: 'B-Pending',
+          plateNumber: 'WP-Pending',
+          vehicleType: 'Chilled / Refrigerated Van',
+          capacity: '500 kg',
+          bankName: 'Commercial Bank',
+          accountNumber: '',
         );
       }
+
       if (mounted) _goHome();
     } catch (_) {
       if (mounted) setState(() => _error = tr.somethingWrong);

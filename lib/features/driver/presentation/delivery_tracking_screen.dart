@@ -325,7 +325,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        _isOrder2 ? 'A4 / COASTAL' : 'A7 ROUTE',
+                        (_isOrder2 ? 'A4 / COASTAL' : 'A7 ROUTE').trAuto(context),
                         style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w700,
@@ -338,9 +338,10 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  _isOrder2
-                      ? 'Continue toward Station Rd, Dehiwala'
-                      : 'Continue on A7 toward Kaduwela /...',
+                  (_isOrder2
+                          ? 'Continue toward Station Rd, Dehiwala'
+                          : 'Continue on A7 toward Kaduwela /...')
+                      .trAuto(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -696,7 +697,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                             ],
                           ),
                           Text(
-                            _isOrder2 ? 'Dehiwala' : 'Colombo 05',
+                            (_isOrder2 ? 'Dehiwala' : 'Colombo 05').trAuto(context),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -807,7 +808,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   ),
                 ),
                 Text(
-                  _isOrder2 ? 'via A4 Hwy' : 'via A7 Hwy',
+                  (_isOrder2 ? 'via A4 Hwy' : 'via A7 Hwy').trAuto(context),
                   style: TextStyle(
                     fontSize: 11,
                     color: const Color(0xFF64748B),
@@ -978,7 +979,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                       ],
                     ),
                     Text(
-                      _buyerAddress,
+                      _buyerAddress.trAuto(context),
                       style: TextStyle(
                         fontSize: 11.5,
                         color: const Color(0xFF64748B),
@@ -1109,7 +1110,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                     border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
                   ),
                   child: Text(
-                    _cratesCount,
+                    _cratesCount.trAuto(context),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w700,
@@ -1152,7 +1153,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                         ),
                       ),
                       TextSpan(
-                        text: ' • $_dropoffNotes',
+                        text: ' • ${_dropoffNotes.trAuto(context)}',
                       ),
                     ],
                   ),
@@ -1318,7 +1319,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              'Call $_buyerName',
+              '${'Call'.trAuto(context)} $_buyerName',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -1326,7 +1327,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
               ),
             ),
             Text(
-              '$_buyerPhone • $_buyerAddress',
+              '$_buyerPhone • ${_buyerAddress.trAuto(context)}',
               style: TextStyle(
                 fontSize: 12.5,
                 color: const Color(0xFF64748B),
@@ -1341,7 +1342,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Calling $_buyerName ($_buyerPhone)...'),
+                      content: Text('${'Calling'.trAuto(context)} $_buyerName ($_buyerPhone)...'),
                       backgroundColor: const Color(0xFF064E3B),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -1515,9 +1516,10 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              _isOrder2
-                  ? 'Arrived at Station Rd, Dehiwala • 2 crates verified.\nUpdating delivery status to Completed...'
-                  : 'Arrived at Havelock Rd, Colombo 05 • 3 crates verified.\nUpdating delivery status to Completed...',
+              (_isOrder2
+                      ? 'Arrived at Station Rd, Dehiwala • 2 crates verified.\nUpdating delivery status to Completed...'
+                      : 'Arrived at Havelock Rd, Colombo 05 • 3 crates verified.\nUpdating delivery status to Completed...')
+                  .trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12.5,

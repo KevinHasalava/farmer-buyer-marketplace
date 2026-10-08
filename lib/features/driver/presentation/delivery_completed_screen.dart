@@ -714,7 +714,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       ),
                     ),
                     Text(
-                      _buyerAddress,
+                      _buyerAddress.trAuto(context),
                       style: TextStyle(
                         fontSize: 11.5,
                         color: const Color(0xFF64748B),
@@ -763,26 +763,34 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _deliveryTime.contains(',') ? '${_deliveryTime.split(',').first.trim()},' : 'Today,',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              _deliveryTime.contains(',') ? _deliveryTime.split(',').last.trim() : _deliveryTime,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                          ],
+                        Builder(
+                          builder: (context) {
+                            final localizedTime = _deliveryTime.trAuto(context);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  localizedTime.contains(',')
+                                      ? '${localizedTime.split(',').first.trim()},'
+                                      : localizedTime,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                if (localizedTime.contains(','))
+                                  Text(
+                                    localizedTime.split(',').last.trim(),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                         // 15 mins early pill badge
                         Container(
@@ -795,7 +803,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            _earlyBadge,
+                            _earlyBadge.trAuto(context),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -845,7 +853,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       ),
                     ),
                     Text(
-                      _handoverType,
+                      _handoverType.trAuto(context),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -853,7 +861,7 @@ class _DeliveryCompletedScreenState extends State<DeliveryCompletedScreen> {
                       ),
                     ),
                     Text(
-                      _collectedAmount,
+                      _collectedAmount.trAuto(context),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,

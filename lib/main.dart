@@ -6,6 +6,7 @@ import 'core/localization/app_settings.dart';
 import 'core/routes/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
+import 'features/admin/services/admin_auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,9 @@ Future<void> main() async {
   try {
     // ── Supabase single-database initialization ───────────────────────
     await SupabaseConfig.initialize();
+
+    // ── Initialize Master Admin Auth Session ──────────────────────────
+    await AdminAuthService.instance.init();
 
     // Persisted language / onboarding / role
     settings = await AppSettings.load();

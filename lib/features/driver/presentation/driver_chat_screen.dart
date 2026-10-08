@@ -150,22 +150,22 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
   String _title(String id) {
     switch (id) {
       case 'bandara':
-        return 'Bandara (Farmer)';
+        return 'Bandara (Farmer)'.trAuto(context);
       case 'chaminda':
-        return 'Chaminda (Buyer)';
+        return 'Chaminda (Buyer)'.trAuto(context);
       default:
-        return 'Central Dispatch';
+        return 'Central Dispatch'.trAuto(context);
     }
   }
 
   String _subtitle(String id) {
     switch (id) {
       case 'bandara':
-        return 'Hakgala Organic Farm';
+        return 'Hakgala Organic Farm'.trAuto(context);
       case 'chaminda':
         return 'Order #FH-8841';
       default:
-        return 'Support & Dispatch Hub';
+        return 'Support & Dispatch Hub'.trAuto(context);
     }
   }
 
@@ -258,7 +258,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                       children: [
                         if (!m.isMe && m.senderName != null) ...[
                           Text(
-                            m.senderName!,
+                            m.senderName!.trAuto(context),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -268,7 +268,7 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
                           const SizedBox(height: 2),
                         ],
                         Text(
-                          m.text,
+                          m.text.trAuto(context),
                           style: TextStyle(
                             fontSize: 13,
                             color: m.isMe ? Colors.white : const Color(0xFF1E293B),
