@@ -18,6 +18,12 @@ class PreOrderModel {
   final String status; // 'Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'
   final DateTime createdAt;
 
+  // Farmer's Proposal / Acceptance Details
+  final DateTime? farmerExpectedHarvestDate;
+  final double? farmerEstimatedYieldKg;
+  final String farmerLocation;
+  final String farmerNotes;
+
   const PreOrderModel({
     required this.id,
     required this.buyerId,
@@ -35,6 +41,10 @@ class PreOrderModel {
     this.advancePaymentRs = 0.0,
     this.status = 'Pending',
     required this.createdAt,
+    this.farmerExpectedHarvestDate,
+    this.farmerEstimatedYieldKg,
+    this.farmerLocation = '',
+    this.farmerNotes = '',
   });
 
   PreOrderModel copyWith({
@@ -54,6 +64,10 @@ class PreOrderModel {
     double? advancePaymentRs,
     String? status,
     DateTime? createdAt,
+    DateTime? farmerExpectedHarvestDate,
+    double? farmerEstimatedYieldKg,
+    String? farmerLocation,
+    String? farmerNotes,
   }) {
     return PreOrderModel(
       id: id ?? this.id,
@@ -72,6 +86,10 @@ class PreOrderModel {
       advancePaymentRs: advancePaymentRs ?? this.advancePaymentRs,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      farmerExpectedHarvestDate: farmerExpectedHarvestDate ?? this.farmerExpectedHarvestDate,
+      farmerEstimatedYieldKg: farmerEstimatedYieldKg ?? this.farmerEstimatedYieldKg,
+      farmerLocation: farmerLocation ?? this.farmerLocation,
+      farmerNotes: farmerNotes ?? this.farmerNotes,
     );
   }
 
@@ -93,6 +111,10 @@ class PreOrderModel {
       'advance_payment_rs': advancePaymentRs,
       'status': status,
       'created_at': createdAt.toIso8601String(),
+      'farmer_expected_harvest_date': farmerExpectedHarvestDate?.toIso8601String(),
+      'farmer_estimated_yield_kg': farmerEstimatedYieldKg,
+      'farmer_location': farmerLocation,
+      'farmer_notes': farmerNotes,
     };
   }
 
@@ -118,6 +140,12 @@ class PreOrderModel {
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
+      farmerExpectedHarvestDate: map['farmer_expected_harvest_date'] != null
+          ? DateTime.tryParse(map['farmer_expected_harvest_date'] as String)
+          : null,
+      farmerEstimatedYieldKg: (map['farmer_estimated_yield_kg'] as num?)?.toDouble(),
+      farmerLocation: map['farmer_location'] as String? ?? '',
+      farmerNotes: map['farmer_notes'] as String? ?? '',
     );
   }
 

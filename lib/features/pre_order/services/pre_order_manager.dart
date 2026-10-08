@@ -124,13 +124,26 @@ class PreOrderManager extends ChangeNotifier {
   /// ──────────────────────────────────────────────────────────────────────────
   /// 3. UPDATE (U): Update pre-order status (e.g. Farmer accepts)
   /// ──────────────────────────────────────────────────────────────────────────
-  Future<void> updatePreOrderStatus(String preOrderId, String newStatus, {String? farmerId, String? farmerName}) async {
+  Future<void> updatePreOrderStatus(
+    String preOrderId, 
+    String newStatus, {
+    String? farmerId, 
+    String? farmerName,
+    DateTime? farmerExpectedHarvestDate,
+    double? farmerEstimatedYieldKg,
+    String? farmerLocation,
+    String? farmerNotes,
+  }) async {
     final index = _preOrders.indexWhere((o) => o.id == preOrderId);
     if (index == -1) return;
 
     var order = _preOrders[index].copyWith(status: newStatus);
     if (farmerId != null) order = order.copyWith(farmerId: farmerId);
     if (farmerName != null) order = order.copyWith(farmerName: farmerName);
+    if (farmerExpectedHarvestDate != null) order = order.copyWith(farmerExpectedHarvestDate: farmerExpectedHarvestDate);
+    if (farmerEstimatedYieldKg != null) order = order.copyWith(farmerEstimatedYieldKg: farmerEstimatedYieldKg);
+    if (farmerLocation != null) order = order.copyWith(farmerLocation: farmerLocation);
+    if (farmerNotes != null) order = order.copyWith(farmerNotes: farmerNotes);
 
     _preOrders[index] = order;
     await _savePreOrdersToLocal();

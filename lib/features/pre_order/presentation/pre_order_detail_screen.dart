@@ -5,6 +5,7 @@ import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/pre_order_manager.dart';
 import 'add_progress_update_screen.dart';
+import 'farmer_contract_acceptance_screen.dart';
 
 class PreOrderDetailScreen extends StatefulWidget {
   final String preOrderId;
@@ -21,17 +22,21 @@ class PreOrderDetailScreen extends StatefulWidget {
 }
 
 class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
-  void _acceptContract() async {
-    await PreOrderManager.instance.updatePreOrderStatus(
-      widget.preOrderId,
-      'In Progress',
-      farmerId: 'farmer_01', // Mocked farmer ID
-      farmerName: 'Kamal Perera', // Mocked farmer Name
+  Future<void> _acceptContract(String cropName, double quantity) async {
+    final success = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FarmerContractAcceptanceScreen(
+          preOrderId: widget.preOrderId,
+          cropName: cropName,
+          requestedQuantity: quantity,
+        ),
+      ),
     );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Contract Accepted Successfully!')),
-    );
+
+    if (success == true) {
+      if (mounted) setState(() {});
+    }
   }
 
   @override
@@ -122,13 +127,54 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                         ),
                       ),
                       
+                      // Farmer's Proposal Details (if Accepted / In Progress)
+                      if (order.farmerExpectedHarvestDate != null) ...[
+                        const SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFC8E6C9)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Farmer\'s Proposal Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                              const SizedBox(height: 12),
+                              _buildDetailRow(
+                                'Estimated Harvest', 
+                                '${order.farmerExpectedHarvestDate!.day}/${order.farmerExpectedHarvestDate!.month}/${order.farmerExpectedHarvestDate!.year}'
+                              ),
+                              if (order.farmerEstimatedYieldKg != null)
+                                _buildDetailRow('Estimated Yield', '${order.farmerEstimatedYieldKg} Kg'),
+                              if (order.farmerLocation.isNotEmpty)
+                                _buildDetailRow('Farm Location', order.farmerLocation),
+                              if (order.farmerNotes.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Additional Notes:',
+                                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  order.farmerNotes,
+                                  style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                      
                       const SizedBox(height: 24),
 
                       // Action Buttons for Farmer
                       if (widget.isFarmerMode && order.status == 'Pending')
                         AppPrimaryButton(
                           label: 'Accept Contract',
-                          onPressed: _acceptContract,
+                          onPressed: () => _acceptContract(order.cropName, order.requiredQuantityKg),
                         ),
 
                       if (widget.isFarmerMode && order.status == 'In Progress')
