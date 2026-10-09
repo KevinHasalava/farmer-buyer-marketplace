@@ -11,6 +11,9 @@ import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_products_screen.dart';
 import '../../admin/presentation/admin_panel_screen.dart';
+import '../../auction/presentation/farmer/farmer_auction_list_screen.dart';
+import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
+import '../../auction/services/auction_manager.dart';
 
 /// Pixel-perfect Farmer Dashboard Screen matching reference design
 class FarmerDashboardScreen extends StatefulWidget {
@@ -150,6 +153,33 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            // Crop Auctions / Bidding button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FarmerAuctionListScreen()),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF166534),
+                  side: const BorderSide(color: Color(0xFF166534), width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.gavel_rounded),
+                label: const Text(
+                  'Crop Auctions / Bidding System',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -272,6 +302,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Quick Actions ─────────────────────────────────────────
                 _buildQuickActions(context),
+                const SizedBox(height: 20),
+
+                // ── Crop Auctions & Bidding Live Banner ───────────────────
+                _buildAuctionBanner(context),
                 const SizedBox(height: 24),
 
                 // ── Recent Orders ─────────────────────────────────────────
@@ -802,6 +836,144 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // ── Crop Auctions / Bidding Live Banner ─────────────────────────────────────
+  Widget _buildAuctionBanner(BuildContext context) {
+    return ListenableBuilder(
+      listenable: AuctionManager.instance,
+      builder: (context, _) {
+        final activeCount = AuctionManager.instance.activeAuctionsCount;
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F3822), Color(0xFF1E5E3A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1E5E3A).withValues(alpha: 0.3),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A).withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF4ADE80).withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF4ADE80)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$activeCount LIVE LOTS OPEN',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF86EFAC),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.gavel_rounded, color: Color(0xFFFDE047), size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Crop Bidding / Auction System 🌾',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Auction bulk harvests directly to buyers. Receive competitive bids for top market value.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFD1FAE5),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const FarmerAuctionListScreen()),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF0F3822),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                      ),
+                      icon: const Icon(Icons.dashboard_customize_rounded, size: 16),
+                      label: const Text(
+                        'Manage Auctions',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.add_rounded, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'New Lot',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
