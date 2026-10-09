@@ -49,6 +49,14 @@ class AdminAuthService extends ChangeNotifier {
     }
   }
 
+  /// Check if the email belongs to a Master Admin account
+  bool isMasterAdminEmail(String email) {
+    final cleanEmail = email.trim().toLowerCase();
+    return _masterCredentials.containsKey(cleanEmail) ||
+        cleanEmail == 'admin@farm2home.lk' ||
+        cleanEmail == 'admin@farm2home.com';
+  }
+
   /// Check if the given credentials match any Master Admin account
   bool isValidAdminCredentials(String email, String password) {
     final cleanEmail = email.trim().toLowerCase();

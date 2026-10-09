@@ -12,6 +12,7 @@ import '../../../services/auth_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
+import '../../admin/services/admin_auth_service.dart';
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -99,7 +100,50 @@ class _LoginScreenState extends State<LoginScreen>
     final inputEmail = _emailCtrl.text.trim();
     final inputPassword = _passwordCtrl.text;
 
+    // ── Master Admin Authentication Interceptor ─────────────────────────
+    // Allows logging in as Master Admin from any role screen (Buyer, Farmer, Driver)
+    if (AdminAuthService.instance.isMasterAdminEmail(inputEmail)) {
+      if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
+        setState(() => _isLoading = true);
+        HapticFeedback.mediumImpact();
 
+        final success = await AdminAuthService.instance.login(
+          email: inputEmail,
+          password: inputPassword,
+          rememberSession: true,
+        );
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '✓ Master Admin verified. Redirecting to Admin Console...',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF047857),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          context.go(AppRoutes.adminPanel);
+          return;
+        }
+      } else {
+        _showError('Invalid administrator password. Please check your credentials.');
+        return;
+      }
+    }
 
     setState(() => _isLoading = true);
     try {
