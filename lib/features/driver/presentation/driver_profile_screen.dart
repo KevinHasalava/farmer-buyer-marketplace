@@ -12,7 +12,9 @@ import 'delivery_history_screen.dart';
 import 'driver_chat_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 
 /// Pixel-perfect Driver Profile Screen matching the reference mockup.
 ///
@@ -3430,24 +3432,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 );
               },
             ),
-            const SizedBox(height: 8),
-            ListTile(
-              tileColor: const Color(0xFFF0FDF4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFA7F3D0)),
-              ),
-              leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF047857)),
-              title: Text('Marketplace Admin Console'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF047857))),
-              subtitle: Text('Manage Farmers, Buyers, Drivers & Orders'.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF065F46))),
-              trailing: const Icon(Icons.chevron_right, color: Color(0xFF047857)),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-                );
-              },
-            ),
+
           ],
         ),
       ),
@@ -3473,9 +3458,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             child: Text('Cancel'.trAuto(context), style: TextStyle()),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              try {
+                await const AuthService().signOut();
+              } catch (_) {}
+              if (!context.mounted) return;
+              await context.settings.clearRole();
+              if (context.mounted) {
+                context.go(AppRoutes.roleSelection);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),

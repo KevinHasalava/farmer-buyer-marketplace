@@ -17,6 +17,10 @@ import 'buyer_cart_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 import '../services/buyer_profile_manager.dart';
 import '../services/buyer_notification_service.dart';
+import '../../auction/presentation/buyer/buyer_auction_list_screen.dart';
+import '../../auction/presentation/buyer/buyer_auction_detail_screen.dart';
+import '../../auction/services/auction_manager.dart';
+import '../../auction/models/auction_model.dart';
 
 /// 9. Buyer Home Screen — matching Screenshot 9
 class BuyerHomeScreen extends StatefulWidget {
@@ -45,6 +49,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _cartState.addListener(_onCartChanged);
     _profileManager.addListener(_onProfileChanged);
     _notifService.addListener(_onNotifChanged);
+    AuctionManager.instance.addListener(_onCartChanged);
     _profileManager.loadProfile();
   }
 
@@ -53,6 +58,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _cartState.removeListener(_onCartChanged);
     _profileManager.removeListener(_onProfileChanged);
     _notifService.removeListener(_onNotifChanged);
+    AuctionManager.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -785,6 +791,93 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               ),
             ),
 
+            // Live Crop Auctions & Bidding Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.gavel_rounded, color: _forestGreen, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Live Crop Auctions & Bidding 🌾',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _textDark,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            Text(
+                              'Bid on bulk harvest lots direct from farmers',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BuyerAuctionListScreen()),
+                      ),
+                      child: const Text(
+                        'See All',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _forestGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Live Auctions Horizontal Cards
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 235,
+                child: ListenableBuilder(
+                  listenable: AuctionManager.instance,
+                  builder: (context, _) {
+                    final auctions = AuctionManager.instance.activeAuctions;
+                    if (auctions.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: auctions.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, idx) {
+                        final a = auctions[idx];
+                        return _buildBuyerAuctionCard(a);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+
             // Popular Right Now Section Header
             SliverToBoxAdapter(
               child: Padding(
@@ -1047,6 +1140,172 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuyerAuctionCard(AuctionModel auction) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuyerAuctionDetailScreen(auctionId: auction.id),
+        ),
+      ),
+      child: Container(
+        width: 220,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Stack with LIVE BADGE & TIMER
+            Stack(
+              children: [
+                SizedBox(
+                  height: 115,
+                  width: double.infinity,
+                  child: Image.network(
+                    auction.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: _forestGreen),
+                  ),
+                ),
+                Container(
+                  height: 115,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x59000000),
+                        Colors.transparent,
+                        Color(0xB3000000),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.bolt_rounded, size: 11, color: Colors.white),
+                        SizedBox(width: 2),
+                        Text(
+                          'LIVE BID',
+                          style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.timer_outlined, size: 10, color: Color(0xFFFDBA74)),
+                        const SizedBox(width: 3),
+                        Text(
+                          auction.remainingTimeString,
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 6,
+                  left: 8,
+                  right: 8,
+                  child: Text(
+                    '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+
+            // Card Body
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auction.cropName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Farmer: ${auction.farmerName}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10.5, color: _textMuted),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            auction.totalBids > 0 ? 'Top Bid' : 'Starting Bid',
+                            style: const TextStyle(fontSize: 9.5, color: _textMuted, fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            'Rs. ${auction.effectivePrice.toStringAsFixed(0)}/${auction.unit}',
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _forestGreen),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _forestGreen,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Bid Now',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],

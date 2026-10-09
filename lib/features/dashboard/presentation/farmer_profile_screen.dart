@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import '../../../core/localization/app_settings.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
@@ -898,7 +900,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                   const SizedBox(width: 8),
                   // Notification Button
                   Container(
-                    margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
@@ -932,6 +934,36 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Quick Logout Button in Top Bar
+                  Tooltip(
+                    message: context.tr.logout,
+                    child: GestureDetector(
+                      onTap: () => _handleLogout(context),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.logout_rounded,
+                          size: 18,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1346,80 +1378,36 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             ),
                           ),
 
-                          // ── Account & Logout Section ───────────────────────
-                          const SizedBox(height: 24),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(color: const Color(0xFFEDF2EF)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                          // ── Logout & Switch Account Button ─────────────────
+                          Padding(
+                            padding: const EdgeInsets.only(top: 28, bottom: 84),
+                            child: InkWell(
+                              onTap: () => _handleLogout(context),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEE2E2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFFECACA)),
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.manage_accounts_outlined,
-                                        size: 16,
-                                        color: Color(0xFF475569),
-                                      ),
-                                    ),
+                                    const Icon(Icons.logout_rounded, size: 18, color: Color(0xFFDC2626)),
                                     const SizedBox(width: 8),
-                                    const Text(
-                                      'Account & Session',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: _textDark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 48,
-                                  child: OutlinedButton.icon(
-                                    onPressed: _handleLogout,
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.2),
-                                      backgroundColor: const Color(0xFFFEF2F2),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    icon: const Icon(
-                                      Icons.logout_rounded,
-                                      color: Color(0xFFDC2626),
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      context.tr.logout,
+                                    Text(
+                                      context.tr.switchAccountOrLogout,
                                       style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
                                         color: Color(0xFFDC2626),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ],
@@ -1493,6 +1481,60 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+            const SizedBox(width: 8),
+            Text(
+              context.tr.logout,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: Text(context.tr.logoutConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              context.tr.cancel,
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(context.tr.logout),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await const AuthService().signOut();
+    } catch (_) {}
+
+    if (!context.mounted) return;
+    await context.settings.clearRole();
+
+    if (context.mounted) {
+      context.go(AppRoutes.roleSelection);
+    }
   }
 }
 

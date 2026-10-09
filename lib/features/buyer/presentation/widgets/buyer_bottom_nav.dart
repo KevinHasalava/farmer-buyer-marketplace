@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/localization/app_settings.dart';
 import '../../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../../orders_chat/presentation/chat_list_screen.dart';
 import '../buyer_home_screen.dart';
 import '../buyer_categories_screen.dart';
 import '../buyer_profile_screen.dart';
@@ -55,7 +56,7 @@ class BuyerBottomNav extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const OrdersChatScreen(initialTab: 1),
+            builder: (_) => const ChatListScreen(),
           ),
         );
         break;

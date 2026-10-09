@@ -524,7 +524,7 @@ class AppStrings {
   String get registerAsFarmer => _t('Register as Farmer', 'ගොවි මහතෙකු ලෙස ලියාපදිංචි වන්න', 'விவசாயியாக பதிவு செய்க');
   String get registerAsDriver => _t('Register as Driver', 'රියදුරෙකු ලෙස ලියාපදිංචි වන්න', 'ஓட்டுநராக பதிவு செய்க');
   String get mobileOtpInstead => _t('Sign in with Mobile OTP instead', 'ජංගම OTP මඟින් ඇතුල් වන්න', 'மொபைல் OTP மூலம் உள்நுழைக');
-  String get skipDemoUser => _t('Skip & Explore as Demo User', 'පරීක්ෂණ ආකාරයෙන් ඉදිරියට යන්න', 'டெமோ பயனராக தொடர்க');
+  String get skipDemoUser => _t('Explore as Guest (No Registration Needed)', 'ලියාපදිංචි නොවී App එක බලන්න (Guest Demo)', 'பதிவு செய்யாமல் டெமோ பார்க்க (Guest Mode)');
   String get orDivider => _t('OR', 'හෝ', 'அல்லது');
   String get alreadyHaveAccount => _t('Already have an account? ', 'දැනටමත් ගිණුමක් තිබේද? ', 'ஏற்கனவே கணக்கு உள்ளதா? ');
   String get categoryDairy => _t('Dairy & Farm Fresh', 'කිරි සහ නැවුම් නිෂ්පාදන', 'பால் & பண்ணை புதியவை');
@@ -1563,5 +1563,17 @@ class AppStrings {
   String get appNotificationsTitle => _t('App Notifications', 'යෙදුම් දැනුම්දීම්', 'பயன்பாட்டு அறிவிப்புகள்');
 
   String get farmerChatSub => _t('Connect directly with buyers and drivers about orders and harvest', 'ඇණවුම් සහ අස්වනු පිළිබඳව ගැනුම්කරුවන් සහ රියදුරන් සමඟ සෘජුවම සම්බන්ධ වන්න', 'ஆர்டர்கள் மற்றும் அறுவடை பற்றி வாங்குபவர்கள் மற்றும் ஓட்டுநர்களுடன் நேரடியாக தொடர்பு கொள்ளுங்கள்');
+
+  // ── Crop Auctions & Bidding System ──────────────────────────────────────
+  String get cropAuctions => _t('Crop Auctions & Bidding', 'බෝග වෙන්දේසි ක්‍රමය', 'பயிர் ஏல முறை');
+  String get cropAuctionsSub => _t('Bid on bulk harvests directly from farmers', 'ගොවීන්ගෙන් සෘජුවම තොග අස්වැන්න සඳහා ලංසු තබන්න', 'விவசாயிகளிடமிருந்து நேரடியாக மொத்த அறுவடைக்கு ஏலம் கேளுங்கள்');
+  String get placeBid => _t('Place Bid', 'මිල ලංසු තබන්න', 'ஏலம் கேட்க');
+  String get currentHighestBid => _t('Current Highest Bid', 'දැනට ඉහළම ලංසුව', 'தற்போதைய அதிகபட்ச ஏலம்');
+  String get startingBid => _t('Starting Bid', 'ආරම්භක ලංසුව', 'தொடக்க ஏலம்');
+  String get createAuction => _t('Create Auction', 'වෙන්දේසියක් එක් කරන්න', 'புதிய ஏலத்தை உருவாக்கவும்');
+  String get myAuctions => _t('My Crop Auctions', 'මගේ බෝග වෙන්දේසි', 'என் பயிர் ஏலங்கள்');
+  String get bidsCount => _t('Bids', 'ලංසු', 'ஏலங்கள்');
+  String get minIncrement => _t('Min. Increment', 'අවම වැඩිවීම', 'குறைந்தபட்ச அதிகரிப்பு');
+  String get liveAuction => _t('LIVE AUCTION', 'සජීවී වෙන්දේසිය', 'நேரலை ஏலம்');
 
 }

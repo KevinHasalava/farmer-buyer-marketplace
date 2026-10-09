@@ -1,19 +1,22 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../../widgets/premium/google_brand_button.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
 import '../../admin/services/admin_auth_service.dart';
-
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,6 +37,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordCtrl = TextEditingController();
 
   final _authService  = const AuthService();
+  StreamSubscription<AuthState>? _authSubscription;
 
   late final AnimationController _headerController;
   late final AnimationController _formController;
@@ -74,6 +78,57 @@ class _LoginScreenState extends State<LoginScreen>
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _formController.forward();
     });
+
+    if (SupabaseConfig.isInitialized) {
+      _authSubscription =
+          SupabaseConfig.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null && mounted) {
+          final sbUser = session.user;
+          final metadata = sbUser.userMetadata ?? {};
+          UserRole targetRole = _selectedRole;
+          final registeredRoleStr =
+              (metadata['role'] as String?)?.toLowerCase();
+          if (registeredRoleStr == 'farmer' ||
+              (metadata['is_farmer'] as bool? ?? false)) {
+            targetRole = UserRole.farmer;
+          } else if (registeredRoleStr == 'buyer') {
+            targetRole = UserRole.buyer;
+          } else if (registeredRoleStr == 'driver') {
+            targetRole = UserRole.driver;
+          }
+
+          await context.read<AppSettings>().setRole(targetRole);
+          final effectiveName = (metadata['full_name'] as String?) ??
+              sbUser.email?.split('@').first ??
+              'User';
+          final phone = sbUser.phone ?? (metadata['phone'] as String? ?? '');
+
+          if (targetRole == UserRole.farmer) {
+            await FarmerProfileManager.instance.updateProfile(
+              name: effectiveName,
+              email: sbUser.email,
+              phone: phone.isNotEmpty ? phone : null,
+            );
+          } else if (targetRole == UserRole.buyer) {
+            await BuyerProfileManager.instance.updateProfile(
+              name: effectiveName,
+              email: sbUser.email,
+              phone: phone.isNotEmpty ? phone : null,
+            );
+          } else if (targetRole == UserRole.driver) {
+            await DriverProfileManager.instance.updateProfile(
+              fullName: effectiveName,
+              mobileNumber: phone.isNotEmpty ? phone : null,
+            );
+          }
+
+          if (mounted) {
+            context.go(AppRoutes.homeFor(targetRole));
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -87,6 +142,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _headerController.dispose();
     _formController.dispose();
     _emailCtrl.dispose();
@@ -101,23 +157,47 @@ class _LoginScreenState extends State<LoginScreen>
     final inputEmail = _emailCtrl.text.trim();
     final inputPassword = _passwordCtrl.text;
 
-    // ── Master Administrator Credentials Intercept ───────────────────
-    if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
-      setState(() => _isLoading = true);
-      HapticFeedback.mediumImpact();
-      final success = await AdminAuthService.instance.login(
-        email: inputEmail,
-        password: inputPassword,
-      );
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Master Administrator Access Granted. Opening Console...'),
-            backgroundColor: Color(0xFF047857),
-            behavior: SnackBarBehavior.floating,
-          ),
+    // ── Master Admin Authentication Interceptor ─────────────────────────
+    // Allows logging in as Master Admin from any role screen (Buyer, Farmer, Driver)
+    if (AdminAuthService.instance.isMasterAdminEmail(inputEmail)) {
+      if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
+        setState(() => _isLoading = true);
+        HapticFeedback.mediumImpact();
+
+        final success = await AdminAuthService.instance.login(
+          email: inputEmail,
+          password: inputPassword,
+          rememberSession: true,
         );
-        context.go(AppRoutes.adminPanel);
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.shield_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '✓ Master Admin verified. Redirecting to Admin Console...',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF047857),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          context.go(AppRoutes.adminPanel);
+          return;
+        }
+      } else {
+        _showError('Invalid administrator password. Please check your credentials.');
         return;
       }
     }
@@ -130,26 +210,40 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (!mounted) return;
-      await context.read<AppSettings>().setRole(_selectedRole);
 
-      final effectiveName = user.name.isNotEmpty && !user.name.startsWith('User ')
-          ? user.name
-          : _emailCtrl.text.trim().split('@').first;
+      // Auto-detect registered role from Supabase metadata
+      UserRole targetRole = _selectedRole;
+      final registeredRoleStr =
+          (user.userMetadata?['role'] as String?)?.toLowerCase();
+      if (registeredRoleStr == 'farmer' || user.isFarmer) {
+        targetRole = UserRole.farmer;
+      } else if (registeredRoleStr == 'buyer') {
+        targetRole = UserRole.buyer;
+      } else if (registeredRoleStr == 'driver') {
+        targetRole = UserRole.driver;
+      }
+
+      await context.read<AppSettings>().setRole(targetRole);
+
+      final effectiveName =
+          user.name.isNotEmpty && !user.name.startsWith('User ')
+              ? user.name
+              : _emailCtrl.text.trim().split('@').first;
       final phone = user.phone;
 
-      if (_selectedRole == UserRole.farmer) {
+      if (targetRole == UserRole.farmer) {
         await FarmerProfileManager.instance.updateProfile(
           name: effectiveName,
           email: user.email,
           phone: phone.isNotEmpty ? phone : null,
         );
-      } else if (_selectedRole == UserRole.buyer) {
+      } else if (targetRole == UserRole.buyer) {
         await BuyerProfileManager.instance.updateProfile(
           name: effectiveName,
           email: user.email,
           phone: phone.isNotEmpty ? phone : null,
         );
-      } else if (_selectedRole == UserRole.driver) {
+      } else if (targetRole == UserRole.driver) {
         await DriverProfileManager.instance.updateProfile(
           fullName: effectiveName,
           mobileNumber: phone.isNotEmpty ? phone : null,
@@ -157,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen>
       }
 
       if (mounted) {
-        context.go(AppRoutes.homeFor(_selectedRole));
+        context.go(AppRoutes.homeFor(targetRole));
       }
     } on AuthException catch (e) {
       final msg = e.message.toLowerCase();
@@ -169,7 +263,21 @@ class _LoginScreenState extends State<LoginScreen>
       }
       _showError(e.message);
     } catch (e) {
-      _showError('Something went wrong. Please try again.');
+      _showError('Authentication error: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isLoading = true);
+    HapticFeedback.lightImpact();
+    try {
+      await _authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      if (mounted) _showError('Google Sign-In: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -355,48 +463,6 @@ class _LoginScreenState extends State<LoginScreen>
 
                         const SizedBox(height: AppDimensions.spaceLG),
 
-                        // ── Account Type ───────────────────────────────
-                        _SectionLabel(context.tr.selectAccountType),
-                        const SizedBox(height: AppDimensions.spaceXS),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.buyer,
-                                sublabel: context.tr.householdRole,
-                                icon: Icons.shopping_basket_rounded,
-                                isSelected: _selectedRole == UserRole.buyer,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.buyer),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceXS),
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.farmer,
-                                sublabel: context.tr.producerRole,
-                                icon: Icons.agriculture_rounded,
-                                isSelected: _selectedRole == UserRole.farmer,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.farmer),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceXS),
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.driver,
-                                sublabel: context.tr.transitRole,
-                                icon: Icons.delivery_dining_rounded,
-                                isSelected: _selectedRole == UserRole.driver,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.driver),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: AppDimensions.spaceLG),
-
                         // ── Fields ────────────────────────────────────
                         _PremiumField(
                           label: context.tr.email,
@@ -428,114 +494,168 @@ class _LoginScreenState extends State<LoginScreen>
                           onPressed: _submit,
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceMD),
+                        const SizedBox(height: 20),
 
-                        // Register / Sign Up Navigation to NEW Forms
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                context.tr.dontHaveAccount,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () =>
-                                    context.push(AppRoutes.registerFor(_selectedRole)),
-                                child: Text(
-                                  switch (_selectedRole) {
-                                    UserRole.buyer => context.tr.registerAsBuyer,
-                                    UserRole.farmer => context.tr.registerAsFarmer,
-                                    UserRole.driver => context.tr.registerAsDriver,
-                                  },
-                                  style: const TextStyle(
-                                    color: AppColors.primaryGreen,
-                                    fontWeight: FontWeight.w700,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 13,
+                        // ── Divider: OR CONTINUE WITH ───────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.transparent, Color(0xFFE2E8F0)],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Mobile OTP Alternative
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () => context.go(AppRoutes.phoneAuth),
-                            icon: const Icon(Icons.phone_iphone_rounded, size: 16),
-                            label: Text(
-                              context.tr.mobileOtpInstead,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryGreen,
-                              ),
                             ),
-                          ),
-                        ),
-
-                        const SizedBox(height: AppDimensions.spaceMD),
-
-                        // ── Demo / Skip Mode ────────────────────────────
-                        Row(
-                          children: [
-                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
                               child: Text(
-                                context.tr.orDivider,
+                                context.tr.orDivider.toUpperCase(),
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textHint,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.1,
+                                  color: Color(0xFF94A3B8),
                                 ),
                               ),
                             ),
-                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFE2E8F0), Colors.transparent],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceMD),
+                        const SizedBox(height: 18),
 
+                        // ── Modern Vector Google Sign-In Button ─────────────
+                        GoogleBrandButton(
+                          onPressed: _isLoading ? null : _loginWithGoogle,
+                          label: 'Continue with Google',
+                          isLoading: _isLoading,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Mobile OTP Alternative Pill ─────────────────────
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: TextButton.icon(
+                            onPressed: () => context.go(AppRoutes.phoneAuth),
+                            icon: const Icon(
+                              Icons.phone_iphone_rounded,
+                              size: 18,
+                              color: Color(0xFF1E8342),
+                            ),
+                            label: Text(
+                              context.tr.mobileOtpInstead,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E8342),
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFFF1F8F5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // ── Register / Sign Up Prompt Card ──────────────────
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  context.tr.dontHaveAccount,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: () => context.push(
+                                    AppRoutes.registerFor(_selectedRole),
+                                  ),
+                                  child: Text(
+                                    switch (_selectedRole) {
+                                      UserRole.buyer => context.tr.registerAsBuyer,
+                                      UserRole.farmer => context.tr.registerAsFarmer,
+                                      UserRole.driver => context.tr.registerAsDriver,
+                                    },
+                                    style: const TextStyle(
+                                      color: Color(0xFF15803D),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        // ── Guest / Demo Explore Mode (ලියාපදිංචි නොවී App එක බලන්න) ──
                         SizedBox(
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton.icon(
-                            onPressed: () => context.go(
-                              AppRoutes.homeFor(_selectedRole),
-                            ),
+                            onPressed: () async {
+                              HapticFeedback.lightImpact();
+                              await context.read<AppSettings>().setRole(_selectedRole);
+                              if (context.mounted) {
+                                context.go(AppRoutes.homeFor(_selectedRole));
+                              }
+                            },
                             icon: const Icon(
-                              Icons.flash_on_rounded,
-                              size: 18,
-                              color: Color(0xFF235D3A),
+                              Icons.explore_outlined,
+                              size: 19,
+                              color: Color(0xFF1E8342),
                             ),
                             label: Text(
                               context.tr.skipDemoUser,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF235D3A),
+                                color: Color(0xFF1E8342),
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                color: Color(0xFF235D3A),
-                                width: 1.5,
+                                color: Color(0xFFA7F3D0),
+                                width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusSM,
-                                ),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              backgroundColor:
-                                  const Color(0xFF235D3A).withValues(alpha: 0.05),
+                              backgroundColor: const Color(0xFFF0FDF4),
                             ),
                           ),
                         ),
@@ -773,142 +893,6 @@ class _BottomWaveClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(_) => false;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Premium Account Type Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumAccountCard extends StatelessWidget {
-  const _PremiumAccountCard({
-    required this.label,
-    required this.sublabel,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String sublabel;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFFE8F8EF), Color(0xFFD0F0DF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryGreen
-                : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryGreen
-                        : AppColors.backgroundLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 16,
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                const Spacer(),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? AppColors.primaryGreen
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primaryGreen
-                          : AppColors.border,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 11,
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : AppColors.textDark,
-              ),
-            ),
-            Text(
-              sublabel,
-              style: TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1172,23 +1156,3 @@ class _PremiumCTAButtonState extends State<_PremiumCTAButton>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section label
-// ─────────────────────────────────────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary,
-        letterSpacing: 1.5,
-      ),
-    );
-  }
-}
