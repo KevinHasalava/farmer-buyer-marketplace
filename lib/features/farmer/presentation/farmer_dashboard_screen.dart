@@ -14,6 +14,7 @@ import '../../admin/presentation/admin_panel_screen.dart';
 import '../../auction/presentation/farmer/farmer_auction_list_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
 import '../../auction/services/auction_manager.dart';
+import '../../../core/services/order_lifecycle_manager.dart';
 
 /// Pixel-perfect Farmer Dashboard Screen matching reference design
 class FarmerDashboardScreen extends StatefulWidget {
@@ -32,32 +33,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   final FarmerProfileManager _profileManager = FarmerProfileManager.instance;
   FarmerData get _farmer => _profileManager.profile.toFarmerData();
 
-  static const _recentOrders = [
-    (
-      id: '#F2H1025',
-      customer: 'Nadeesha Fernando',
-      amount: 'Rs. 950',
-      status: 'Pending',
-      isPending: true,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    ),
-    (
-      id: '#F2H1024',
-      customer: 'Kasun Perera',
-      amount: 'Rs. 1,200',
-      status: 'Confirmed',
-      isPending: false,
-      avatarUrl:
-          'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
     _profileManager.addListener(_onProfileChanged);
     _profileManager.loadProfile();
+    OrderLifecycleManager.instance.addListener(_onProfileChanged);
 
     _fadeController = AnimationController(
       vsync: this,
@@ -69,6 +50,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   @override
   void dispose() {
     _profileManager.removeListener(_onProfileChanged);
+    OrderLifecycleManager.instance.removeListener(_onProfileChanged);
     _fadeController.dispose();
     super.dispose();
   }
@@ -120,7 +102,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               ),
             ),
             const SizedBox(height: 16),
-            ..._recentOrders.map(
+            ...OrderLifecycleManager.instance.farmerOrders.map(
               (ord) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _buildOrderCard(ord),
@@ -619,7 +601,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             const SizedBox(width: 14),
             Expanded(
               child: _buildStatCard(
-                value: '5',
+                value: '${OrderLifecycleManager.instance.pendingFarmerOrdersCount}',
                 label: context.tr.newOrders,
                 icon: Icons.assignment_outlined,
                 onTap: _showOrdersSheet,
@@ -632,7 +614,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           children: [
             Expanded(
               child: _buildStatCard(
-                value: '18',
+                value: '${16 + OrderLifecycleManager.instance.completedFarmerOrdersCount}',
                 label: context.tr.completedOrdersFarmer,
                 icon: Icons.check_circle_outline_rounded,
                 onTap: _showOrdersSheet,
@@ -641,7 +623,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             const SizedBox(width: 14),
             Expanded(
               child: _buildStatCard(
-                value: 'Rs. 8,500',
+                value: 'Rs. ${(8500 + OrderLifecycleManager.instance.totalFarmerEarnings).toStringAsFixed(0)}',
                 label: context.tr.thisWeekEarnings,
                 icon: Icons.monetization_on_outlined,
                 onTap: () {
@@ -1009,7 +991,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           ],
         ),
         const SizedBox(height: 12),
-        ..._recentOrders.map(
+        ...OrderLifecycleManager.instance.farmerOrders.take(3).map(
           (ord) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildOrderCard(ord),
@@ -1019,134 +1001,466 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
-  Widget _buildOrderCard((
-    {
-      String id,
-      String customer,
-      String amount,
-      String status,
-      bool isPending,
-      String avatarUrl,
-    }
-  ) ord) {
-    final isPending = ord.isPending;
-    final badgeBg = isPending
-        ? const Color(0xFFFFFBEB)
-        : const Color(0xFFECFDF5);
-    final badgeBorder = isPending
-        ? const Color(0xFFFDE68A)
-        : const Color(0xFFA7F3D0);
-    final badgeText = isPending
-        ? const Color(0xFFD97706)
-        : const Color(0xFF059669);
+  Widget _buildOrderCard(FarmerOrderItem ord) {
+    final isReady = ord.status == 'Packed & Ready' || ord.status == 'Ready for Pickup';
+    final isInTransit = ord.status == 'In Transit';
+    final isCompleted = ord.status == 'Completed';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Customer avatar photo
-          ClipOval(
-            child: Image.network(
-              ord.avatarUrl,
-              width: 44,
-              height: 44,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+    final badgeBg = isCompleted
+        ? const Color(0xFFECFDF5)
+        : isInTransit
+            ? const Color(0xFFEFF6FF)
+            : isReady
+                ? const Color(0xFFF0FDF4)
+                : const Color(0xFFFFFBEB);
+    final badgeBorder = isCompleted
+        ? const Color(0xFFA7F3D0)
+        : isInTransit
+            ? const Color(0xFFBFDBFE)
+            : isReady
+                ? const Color(0xFF86EFAC)
+                : const Color(0xFFFDE68A);
+    final badgeText = isCompleted
+        ? const Color(0xFF059669)
+        : isInTransit
+            ? const Color(0xFF2563EB)
+            : isReady
+                ? const Color(0xFF16A34A)
+                : const Color(0xFFD97706);
+
+    return InkWell(
+      onTap: () => _showOrderDetailDialog(ord),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Customer avatar photo
+            ClipOval(
+              child: Image.network(
+                ord.avatarUrl,
                 width: 44,
                 height: 44,
-                color: const Color(0xFFF3F4F6),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: Color(0xFF9CA3AF),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 44,
+                  height: 44,
+                  color: const Color(0xFFF3F4F6),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Color(0xFF9CA3AF),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          // Order details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      ord.id,
-                      style: AppTheme.fontStyle(
-                        context.currentLanguage,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                    Text(
-                      ' • ',
-                      style: AppTheme.fontStyle(
-                        context.currentLanguage,
-                        fontSize: 13,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        ord.customer,
-                        overflow: TextOverflow.ellipsis,
+            // Order details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        ord.id,
                         style: AppTheme.fontStyle(
                           context.currentLanguage,
                           fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF4B5563),
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      Text(
+                        ' • ',
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
+                          fontSize: 13,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          ord.customer,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF4B5563),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Text(
+                        ord.amount,
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Text(
+                          'PIN: ${ord.handoverPin}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Status Badge Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: badgeBorder),
+              ),
+              child: Text(
+                ord.status,
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: badgeText,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOrderDetailDialog(FarmerOrderItem ord) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final isPending = ord.status == 'Pending' || ord.isPending;
+          final isReady = ord.status == 'Packed & Ready' || ord.status == 'Ready for Pickup';
+          final isInTransit = ord.status == 'In Transit';
+          final isCompleted = ord.status == 'Completed';
+
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ord.id,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                        Text(
+                          ord.preferredTime,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? const Color(0xFFECFDF5)
+                            : isInTransit
+                                ? const Color(0xFFEFF6FF)
+                                : isReady
+                                    ? const Color(0xFFF0FDF4)
+                                    : const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isCompleted
+                              ? const Color(0xFFA7F3D0)
+                              : isInTransit
+                                  ? const Color(0xFFBFDBFE)
+                                  : isReady
+                                      ? const Color(0xFF86EFAC)
+                                      : const Color(0xFFFDE68A),
+                        ),
+                      ),
+                      child: Text(
+                        ord.status,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isCompleted
+                              ? const Color(0xFF059669)
+                              : isInTransit
+                                  ? const Color(0xFF2563EB)
+                                  : isReady
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFFD97706),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  ord.amount,
-                  style: AppTheme.fontStyle(
-                    context.currentLanguage,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                const SizedBox(height: 16),
+                // Driver Handover PIN Card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF166534),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.vpn_key_rounded, color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Driver Handover PIN',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: Color(0xFF166534),
+                              ),
+                            ),
+                            Text(
+                              'Provide to Rider upon crate collection',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF166534),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          ord.handoverPin,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                // Customer details card
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundImage: NetworkImage(ord.avatarUrl),
+                            onBackgroundImageError: (_, __) {},
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ord.customer,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  ord.customerPhone,
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            ord.amount,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF166534),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              ord.deliveryAddress,
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // Items List
+                const Text(
+                  'Order Items',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 8),
+                ...ord.items.map((item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Text(item.emoji, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          Text(
+                            '${item.quantity} ${item.unit} • Rs. ${item.totalPrice.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    )),
+                const SizedBox(height: 20),
+                // Actions
+                if (isPending)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF166534),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        OrderLifecycleManager.instance.onFarmerStatusUpdated(ord.id, 'Packed & Ready');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ Order ${ord.id} marked Packed & Ready for Driver pickup!'),
+                            backgroundColor: const Color(0xFF166534),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
+                      label: const Text(
+                        'Pack & Mark Ready for Driver',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        isReady
+                            ? 'Awaiting Driver Pickup (PIN: ${ord.handoverPin})'
+                            : isInTransit
+                                ? 'In Transit with Rider Ranjith'
+                                : 'Completed & Settled',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF475569),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-          ),
-
-          // Status Badge Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: badgeBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: badgeBorder),
-            ),
-            child: Text(
-              ord.isPending ? context.tr.statusPending : context.tr.statusConfirmed,
-              style: AppTheme.fontStyle(
-                context.currentLanguage,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: badgeText,
-              ),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

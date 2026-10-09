@@ -188,24 +188,10 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       if (mounted) {
         _showSuccessDialog();
       }
+    } on AuthException catch (e) {
+      _showSnackBar(e.message);
     } catch (e) {
-      // In demo mode or if Supabase gives rate limit/error, still save local profile and proceed
-      try {
-        await BuyerProfileManager.instance.saveRegistrationData(
-          name: _nameCtrl.text.trim(),
-          email: _emailCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim(),
-          address: _addressCtrl.text.trim(),
-          buyerType: _buyerType,
-          hub: _selectedHub ?? 'Colombo Regional Hub (Western Province)',
-          preferences: _producePreferences.toList(),
-        );
-      } catch (_) {}
-
-      if (mounted) {
-        await context.read<AppSettings>().setRole(UserRole.buyer);
-        if (mounted) _showSuccessDialog();
-      }
+      _showSnackBar('Registration error: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

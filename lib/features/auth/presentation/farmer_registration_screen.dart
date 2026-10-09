@@ -208,10 +208,15 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       if (mounted) {
         _showSuccessDialog();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        await context.read<AppSettings>().setRole(UserRole.farmer);
-        if (mounted) _showSuccessDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration error: ${e.toString()}'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

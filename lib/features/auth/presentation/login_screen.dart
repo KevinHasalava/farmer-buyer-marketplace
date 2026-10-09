@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
@@ -33,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordCtrl = TextEditingController();
 
   final _authService  = const AuthService();
+  StreamSubscription<AuthState>? _authSubscription;
 
   late final AnimationController _headerController;
   late final AnimationController _formController;
@@ -73,6 +77,57 @@ class _LoginScreenState extends State<LoginScreen>
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _formController.forward();
     });
+
+    if (SupabaseConfig.isInitialized) {
+      _authSubscription =
+          SupabaseConfig.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null && mounted) {
+          final sbUser = session.user;
+          final metadata = sbUser.userMetadata ?? {};
+          UserRole targetRole = _selectedRole;
+          final registeredRoleStr =
+              (metadata['role'] as String?)?.toLowerCase();
+          if (registeredRoleStr == 'farmer' ||
+              (metadata['is_farmer'] as bool? ?? false)) {
+            targetRole = UserRole.farmer;
+          } else if (registeredRoleStr == 'buyer') {
+            targetRole = UserRole.buyer;
+          } else if (registeredRoleStr == 'driver') {
+            targetRole = UserRole.driver;
+          }
+
+          await context.read<AppSettings>().setRole(targetRole);
+          final effectiveName = (metadata['full_name'] as String?) ??
+              sbUser.email?.split('@').first ??
+              'User';
+          final phone = sbUser.phone ?? (metadata['phone'] as String? ?? '');
+
+          if (targetRole == UserRole.farmer) {
+            await FarmerProfileManager.instance.updateProfile(
+              name: effectiveName,
+              email: sbUser.email,
+              phone: phone.isNotEmpty ? phone : null,
+            );
+          } else if (targetRole == UserRole.buyer) {
+            await BuyerProfileManager.instance.updateProfile(
+              name: effectiveName,
+              email: sbUser.email,
+              phone: phone.isNotEmpty ? phone : null,
+            );
+          } else if (targetRole == UserRole.driver) {
+            await DriverProfileManager.instance.updateProfile(
+              fullName: effectiveName,
+              mobileNumber: phone.isNotEmpty ? phone : null,
+            );
+          }
+
+          if (mounted) {
+            context.go(AppRoutes.homeFor(targetRole));
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -86,6 +141,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _headerController.dispose();
     _formController.dispose();
     _emailCtrl.dispose();
@@ -153,26 +209,40 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (!mounted) return;
-      await context.read<AppSettings>().setRole(_selectedRole);
 
-      final effectiveName = user.name.isNotEmpty && !user.name.startsWith('User ')
-          ? user.name
-          : _emailCtrl.text.trim().split('@').first;
+      // Auto-detect registered role from Supabase metadata
+      UserRole targetRole = _selectedRole;
+      final registeredRoleStr =
+          (user.userMetadata?['role'] as String?)?.toLowerCase();
+      if (registeredRoleStr == 'farmer' || user.isFarmer) {
+        targetRole = UserRole.farmer;
+      } else if (registeredRoleStr == 'buyer') {
+        targetRole = UserRole.buyer;
+      } else if (registeredRoleStr == 'driver') {
+        targetRole = UserRole.driver;
+      }
+
+      await context.read<AppSettings>().setRole(targetRole);
+
+      final effectiveName =
+          user.name.isNotEmpty && !user.name.startsWith('User ')
+              ? user.name
+              : _emailCtrl.text.trim().split('@').first;
       final phone = user.phone;
 
-      if (_selectedRole == UserRole.farmer) {
+      if (targetRole == UserRole.farmer) {
         await FarmerProfileManager.instance.updateProfile(
           name: effectiveName,
           email: user.email,
           phone: phone.isNotEmpty ? phone : null,
         );
-      } else if (_selectedRole == UserRole.buyer) {
+      } else if (targetRole == UserRole.buyer) {
         await BuyerProfileManager.instance.updateProfile(
           name: effectiveName,
           email: user.email,
           phone: phone.isNotEmpty ? phone : null,
         );
-      } else if (_selectedRole == UserRole.driver) {
+      } else if (targetRole == UserRole.driver) {
         await DriverProfileManager.instance.updateProfile(
           fullName: effectiveName,
           mobileNumber: phone.isNotEmpty ? phone : null,
@@ -180,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen>
       }
 
       if (mounted) {
-        context.go(AppRoutes.homeFor(_selectedRole));
+        context.go(AppRoutes.homeFor(targetRole));
       }
     } on AuthException catch (e) {
       final msg = e.message.toLowerCase();
@@ -192,7 +262,21 @@ class _LoginScreenState extends State<LoginScreen>
       }
       _showError(e.message);
     } catch (e) {
-      _showError('Something went wrong. Please try again.');
+      _showError('Authentication error: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isLoading = true);
+    HapticFeedback.lightImpact();
+    try {
+      await _authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) _showError(e.message);
+    } catch (e) {
+      if (mounted) _showError('Google Sign-In: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -461,10 +545,53 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
+                        const SizedBox(height: AppDimensions.spaceSM),
+
+                        // Continue with Google Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: _isLoading ? null : _loginWithGoogle,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusSM,
+                                ),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.network(
+                                  'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
+                                  height: 20,
+                                  width: 20,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.g_mobiledata_rounded,
+                                    color: Colors.red,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Text(
+                                  'Continue with Google',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
 
                         const SizedBox(height: AppDimensions.spaceMD),
 
-                        // ── Demo / Skip Mode ────────────────────────────
+                        // OR Divider
                         Row(
                           children: [
                             const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
@@ -485,30 +612,35 @@ class _LoginScreenState extends State<LoginScreen>
 
                         const SizedBox(height: AppDimensions.spaceMD),
 
+                        // ── Guest / Demo Explore Mode (ලියාපදිංචි නොවී App එක බලන්න) ──
                         SizedBox(
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton.icon(
-                            onPressed: () => context.go(
-                              AppRoutes.homeFor(_selectedRole),
-                            ),
+                            onPressed: () async {
+                              HapticFeedback.lightImpact();
+                              await context.read<AppSettings>().setRole(_selectedRole);
+                              if (context.mounted) {
+                                context.go(AppRoutes.homeFor(_selectedRole));
+                              }
+                            },
                             icon: const Icon(
-                              Icons.flash_on_rounded,
+                              Icons.visibility_rounded,
                               size: 18,
-                              color: Color(0xFF235D3A),
+                              color: Color(0xFF1E8342),
                             ),
                             label: Text(
                               context.tr.skipDemoUser,
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF235D3A),
+                                color: Color(0xFF1E8342),
                               ),
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                color: Color(0xFF235D3A),
-                                width: 1.5,
+                                color: Color(0xFF86EFAC),
+                                width: 1.4,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
@@ -516,7 +648,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                               backgroundColor:
-                                  const Color(0xFF235D3A).withValues(alpha: 0.05),
+                                  const Color(0xFF1E8342).withValues(alpha: 0.05),
                             ),
                           ),
                         ),

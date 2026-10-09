@@ -3,6 +3,7 @@ import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 
+import '../models/delivery_order_model.dart';
 import '../services/driver_firestore_service.dart';
 import 'driver_chat_screen.dart';
 import 'hakgala_map_data.dart';
@@ -20,15 +21,21 @@ class DeliveryDetailsScreen extends StatefulWidget {
 }
 
 class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
+  DeliveryOrderModel? get _realOrder {
+    if (widget.orderId == null) return null;
+    return DriverFirestoreService().getDeliveryById(widget.orderId!);
+  }
+
   bool get _isOrder2 =>
       widget.orderId != null && widget.orderId!.contains('8850');
 
-  String get _orderNumber => _isOrder2 ? '#FH-8850' : '#FH-8841';
+  String get _orderNumber => _realOrder?.orderNumber ?? (_isOrder2 ? '#FH-8850' : '#FH-8841');
 
   // Farmer Details
-  String get _farmerName => _isOrder2 ? 'Sunil Perera' : 'K. M. Bandara';
+  String get _farmerName => _realOrder?.farmerName ?? (_isOrder2 ? 'Sunil Perera' : 'K. M. Bandara');
   String get _farmerFarm =>
-      _isOrder2 ? 'Welimada Main Collection Depot' : 'Hakgala Valley Organic Farm';
+      _realOrder?.farmerAddress ??
+      (_isOrder2 ? 'Welimada Main Collection Depot' : 'Hakgala Valley Organic Farm');
   String get _farmerGate =>
       _isOrder2 ? 'Depot Platform Gate #1 / C' : 'Farm Gate North #2';
   String get _farmerRegion =>
@@ -44,14 +51,18 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
       : 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=400&auto=format&fit=crop&q=80';
 
   // Buyer Details
-  String get _buyerName => _isOrder2 ? 'Dilani Jayawardena' : 'Chaminda Perera';
+  String get _buyerName => _realOrder?.buyerName ?? (_isOrder2 ? 'Dilani Jayawardena' : 'Chaminda Perera');
   String get _buyerSubtitle =>
       _isOrder2 ? 'Dehiwala Urban Center' : 'Urban Wholesale Hub';
   String get _buyerAddress1 =>
-      _isOrder2 ? 'No. 15, Station Road' : 'No. 42, Havelock Road';
+      _realOrder?.buyerAddress ??
+      (_isOrder2 ? 'No. 15, Station Road' : 'No. 42, Havelock Road');
   String get _buyerAddress2 =>
       _isOrder2 ? 'Dehiwala, Western Province' : 'Colombo 05, Western Province';
-  String get _buyerCodAmount => _isOrder2 ? 'Rs. 2,450' : 'Rs. 1,760';
+  String get _buyerCodAmount =>
+      _realOrder != null
+          ? 'Rs. ${_realOrder!.driverFee.toInt()}'
+          : (_isOrder2 ? 'Rs. 2,450' : 'Rs. 1,760');
   String get _buyerPhone => _isOrder2 ? '+94 77 341 9082' : '+94 71 889 2314';
   String get _buyerAvatar => _isOrder2
       // Dilani Jayawardena - Authentic, beautiful Sri Lankan Sinhala woman portrait
@@ -61,9 +72,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen> {
 
   // Cargo Manifest
   String get _cargoCrateBadge =>
-      _isOrder2 ? '2 Crates • 12.0 kg' : '2 Crates • 5.0 kg';
+      _realOrder?.crateCount ?? (_isOrder2 ? '2 Crates • 12.0 kg' : '2 Crates • 5.0 kg');
   String get _item1Name =>
-      _isOrder2 ? 'Highland Fresh Tomatoes' : 'Mountain Carrots';
+      _realOrder?.produceDescription ?? (_isOrder2 ? 'Highland Fresh Tomatoes' : 'Mountain Carrots');
   String get _item1Subtitle =>
       _isOrder2 ? '7 kg • Crate #B1' : '3 kg • Crate #A1';
   String get _item1Image => _isOrder2

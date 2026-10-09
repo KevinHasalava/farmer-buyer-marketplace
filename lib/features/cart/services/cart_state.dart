@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/cart_item_model.dart';
-import '../../admin/models/admin_models.dart';
-import '../../admin/services/admin_marketplace_service.dart';
+
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../orders_chat/models/chat_model.dart';
 import '../../orders_chat/models/order_model.dart';
+import '../../../core/services/order_lifecycle_manager.dart';
 
 /// Central state manager for Cart, Checkout, and Orders/Chat
 class MarketplaceState extends ChangeNotifier {
@@ -470,38 +470,90 @@ class MarketplaceState extends ChangeNotifier {
       ],
     );
 
+    final farmName = _cartItems.isNotEmpty ? _cartItems.first.farmName : 'Sunil Perera Farm';
+
     _orders.insert(0, newOrder);
     _cartItems.clear();
 
-    // Two-way synchronization with Admin Panel and Supabase
+    // Central Multi-Party Synchronization (Driver, Farmer, Buyer, Admin)
     try {
       final buyerProfile = BuyerProfileManager.instance.profile;
-      final adminOrder = AdminOrderModel(
-        id: newOrder.id,
-        customerName: buyerProfile.name.isNotEmpty ? buyerProfile.name : 'Valued Buyer',
-        customerPhone: newOrder.contactNumber.isNotEmpty
+      OrderLifecycleManager.instance.onBuyerOrderPlaced(
+        order: newOrder,
+        buyerName: buyerProfile.name.isNotEmpty ? buyerProfile.name : 'Valued Buyer',
+        buyerPhone: newOrder.contactNumber.isNotEmpty
             ? newOrder.contactNumber
             : (buyerProfile.phone.isNotEmpty ? buyerProfile.phone : '+94771234567'),
-        farmName: 'Upcountry Green Farm',
-        itemsSummary: newOrder.items.isNotEmpty
-            ? newOrder.items.map((i) => '${i.name} (${i.quantity.toInt()} ${i.unit})').join(', ')
-            : 'Fresh Agricultural Harvest Basket',
-        totalAmount: newOrder.totalAmount,
-        status: 'Pending',
-        deliveryAddress: newOrder.deliveryAddress.isNotEmpty
-            ? newOrder.deliveryAddress
-            : buyerProfile.deliveryAddress,
-        assignedDriverName: 'Unassigned',
-        assignedDriverPhone: '',
-        orderDate: newOrder.orderDate,
+        farmName: farmName,
+        farmLocation: 'Perera Agro Holdings, Welimada',
       );
-      AdminMarketplaceService.instance.addOrder(adminOrder);
     } catch (e) {
-      debugPrint('[MarketplaceState] Admin marketplace order sync note: $e');
+      debugPrint('[MarketplaceState] Order lifecycle sync note: $e');
     }
 
     notifyListeners();
     return newOrder;
+  }
+
+  /// Updates an order's status and tracking steps in real time
+  void updateOrderStatus(String orderId, OrderStatus newStatus) {
+    final cleanId = orderId.replaceAll('#', '').trim();
+    final idx = _orders.indexWhere((o) => o.id.replaceAll('#', '').trim() == cleanId);
+    if (idx >= 0) {
+      final o = _orders[idx];
+      final isDone = newStatus == OrderStatus.delivered;
+      final isInTransit = newStatus == OrderStatus.inTransit;
+      final isProcessing = newStatus == OrderStatus.processing;
+
+      final updatedSteps = [
+        OrderTrackingStep(
+          title: 'Order Placed',
+          description: 'Order confirmed with ${o.paymentMethod}',
+          time: 'Confirmed',
+          isCompleted: true,
+          isCurrent: newStatus == OrderStatus.confirmed,
+        ),
+        OrderTrackingStep(
+          title: 'Harvesting & Packing',
+          description: 'Farmer is gathering your fresh farm produce',
+          time: isProcessing || isInTransit || isDone ? 'Completed' : 'Pending',
+          isCompleted: isProcessing || isInTransit || isDone,
+          isCurrent: isProcessing,
+        ),
+        OrderTrackingStep(
+          title: 'Out for Delivery',
+          description: 'Rider Ranjith on route with chilled compartment',
+          time: isInTransit || isDone ? 'En route' : 'Est. in 2 hours',
+          isCompleted: isInTransit || isDone,
+          isCurrent: isInTransit,
+        ),
+        OrderTrackingStep(
+          title: 'Delivered',
+          description: 'Package handed over to recipient successfully',
+          time: isDone ? 'Completed' : 'Est. 12:00 PM',
+          isCompleted: isDone,
+          isCurrent: isDone,
+        ),
+      ];
+
+      _orders[idx] = FarmOrder(
+        id: o.id,
+        orderDate: o.orderDate,
+        status: newStatus,
+        items: o.items,
+        subtotal: o.subtotal,
+        deliveryFee: o.deliveryFee,
+        discount: o.discount,
+        totalAmount: o.totalAmount,
+        deliveryAddress: o.deliveryAddress,
+        contactNumber: o.contactNumber,
+        deliveryMethod: o.deliveryMethod,
+        preferredDateTime: o.preferredDateTime,
+        paymentMethod: o.paymentMethod,
+        trackingSteps: updatedSteps,
+      );
+      notifyListeners();
+    }
   }
 
   // ── Chat Actions ───────────────────────────────────────────────────────────

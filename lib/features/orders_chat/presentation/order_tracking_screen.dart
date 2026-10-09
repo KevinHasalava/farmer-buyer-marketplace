@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/order_model.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../cart/services/cart_state.dart';
 
 /// Live Order Tracking screen showing farm-to-table progress
 class OrderTrackingScreen extends StatelessWidget {
@@ -19,6 +20,21 @@ class OrderTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: MarketplaceState.instance,
+      builder: (context, _) {
+        final liveOrder = MarketplaceState.instance.orders.firstWhere(
+          (o) => o.id.replaceAll('#', '').trim() == order.id.replaceAll('#', '').trim(),
+          orElse: () => order,
+        );
+
+        final double progressValue = switch (liveOrder.status) {
+          OrderStatus.pending || OrderStatus.confirmed => 0.25,
+          OrderStatus.processing => 0.50,
+          OrderStatus.inTransit => 0.75,
+          OrderStatus.delivered => 1.0,
+          OrderStatus.cancelled => 0.0,
+        };
     return Scaffold(
       backgroundColor: _bgSoft,
       appBar: AppBar(
@@ -101,7 +117,7 @@ class OrderTrackingScreen extends StatelessWidget {
                                 color: Colors.white, size: 14),
                             const SizedBox(width: 6),
                             Text(
-                              order.status.localizedLabel(context),
+                              liveOrder.status.localizedLabel(context),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -112,7 +128,7 @@ class OrderTrackingScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        order.preferredDateTime,
+                        liveOrder.preferredDateTime,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -143,11 +159,93 @@ class OrderTrackingScreen extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: 0.75,
+                      value: progressValue,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
                       valueColor:
                           const AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
                       minHeight: 6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // Assigned Rider & Cold Chain Fleet Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFEDF2EF)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                    ),
+                    child: const Icon(Icons.two_wheeler_rounded, color: _forestGreen, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ranjith Subha (NC-4982)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _textDark,
+                          ),
+                        ),
+                        Text(
+                          'Chilled Fleet • +94 77 123 4567',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: liveOrder.status == OrderStatus.delivered
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: liveOrder.status == OrderStatus.delivered
+                            ? const Color(0xFFA7F3D0)
+                            : const Color(0xFFBFDBFE),
+                      ),
+                    ),
+                    child: Text(
+                      liveOrder.status == OrderStatus.delivered
+                          ? 'Delivered'
+                          : liveOrder.status == OrderStatus.inTransit
+                              ? 'En Route'
+                              : 'Assigned',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: liveOrder.status == OrderStatus.delivered
+                            ? const Color(0xFF059669)
+                            : const Color(0xFF2563EB),
+                      ),
                     ),
                   ),
                 ],
@@ -185,9 +283,9 @@ class OrderTrackingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ...List.generate(order.trackingSteps.length, (index) {
-                    final step = order.trackingSteps[index];
-                    final isLast = index == order.trackingSteps.length - 1;
+                  ...List.generate(liveOrder.trackingSteps.length, (index) {
+                    final step = liveOrder.trackingSteps[index];
+                    final isLast = index == liveOrder.trackingSteps.length - 1;
 
                     return IntrinsicHeight(
                       child: Row(
@@ -306,7 +404,7 @@ class OrderTrackingScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          order.deliveryAddress,
+                          liveOrder.deliveryAddress,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -323,7 +421,7 @@ class OrderTrackingScreen extends StatelessWidget {
                           color: _forestGreen, size: 18),
                       const SizedBox(width: 10),
                       Text(
-                        order.contactNumber,
+                        liveOrder.contactNumber,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -338,6 +436,8 @@ class OrderTrackingScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+      },
     );
   }
 }
