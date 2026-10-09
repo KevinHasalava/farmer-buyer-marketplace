@@ -871,12 +871,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               ),
             ),
             const SizedBox(width: 12),
-            // Active Crops (Soft Blue: 0xFFEFF6FF)
+            // Active Orders / New Orders (Soft Blue: 0xFFEFF6FF)
             Expanded(
-              child: _buildStatCard(
+              child: _buildImage2MetricCard(
+                title: context.tr.newOrders,
                 value: '${OrderLifecycleManager.instance.pendingFarmerOrdersCount}',
-                label: context.tr.newOrders,
+                subtitle: 'Pending',
+                bgColor: const Color(0xFFEFF6FF),
+                borderColor: const Color(0xFFDBEAFE),
+                textColor: const Color(0xFF1E40AF),
+                subtextColor: const Color(0xFF2563EB),
                 icon: Icons.assignment_outlined,
+                iconColor: const Color(0xFF1D4ED8),
                 onTap: _showOrdersSheet,
               ),
             ),
@@ -885,22 +891,35 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         const SizedBox(height: 12),
         Row(
           children: [
-            // Pending Pickup (Warm Peach: 0xFFFFEDD5)
+            // Completed Orders (Warm Peach: 0xFFFFEDD5)
             Expanded(
-              child: _buildStatCard(
+              child: _buildImage2MetricCard(
+                title: context.tr.completedOrdersFarmer,
                 value: '${16 + OrderLifecycleManager.instance.completedFarmerOrdersCount}',
-                label: context.tr.completedOrdersFarmer,
+                subtitle: 'Delivered',
+                bgColor: const Color(0xFFFFEDD5),
+                borderColor: const Color(0xFFFED7AA),
+                textColor: const Color(0xFF9A3412),
+                subtextColor: const Color(0xFFC2410C),
                 icon: Icons.check_circle_outline_rounded,
+                iconColor: const Color(0xFFC2410C),
                 onTap: _showOrdersSheet,
               ),
             ),
             const SizedBox(width: 12),
-            // Today's Total (Ice Blue: 0xFFE0F2FE)
+            // Weekly Earnings (Ice Blue: 0xFFE0F2FE)
             Expanded(
-              child: _buildStatCard(
-                value: 'Rs. ${(8500 + OrderLifecycleManager.instance.totalFarmerEarnings).toStringAsFixed(0)}',
-                label: context.tr.thisWeekEarnings,
+              child: _buildImage2MetricCard(
+                title: context.tr.thisWeekEarnings,
+                value: (8500 + OrderLifecycleManager.instance.totalFarmerEarnings).toStringAsFixed(0),
+                prefix: 'Rs.',
+                subtitle: 'Net income',
+                bgColor: const Color(0xFFE0F2FE),
+                borderColor: const Color(0xFFBAE6FD),
+                textColor: const Color(0xFF0369A1),
+                subtextColor: const Color(0xFF0284C7),
                 icon: Icons.monetization_on_outlined,
+                iconColor: const Color(0xFF0284C7),
                 onTap: () {
                   Navigator.push(
                     context,

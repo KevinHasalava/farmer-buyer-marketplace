@@ -4,10 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
-
-import '../../../core/localization/app_settings.dart';
-import '../../../core/routes/app_router.dart';
-import '../../../services/auth_service.dart';
 import '../../farmer/presentation/add_edit_product_screen.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
@@ -459,71 +455,6 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
     );
   }
 
-  /// Handles farmer account logout and navigates to the Role Selection page
-  Future<void> _handleLogout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              context.tr.logout,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        content: Text(
-          context.tr.logoutConfirmBody,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF4B5563), height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              context.tr.cancel,
-              style: const TextStyle(color: Color(0xFF6B7280)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            ),
-            child: Text(
-              context.tr.logout,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      await const AuthService().signOut();
-    } catch (_) {}
-
-    if (!mounted) return;
-    await context.read<AppSettings>().clearRole();
-
-    if (mounted) {
-      context.go(AppRoutes.roleSelection);
-    }
-  }
 
   void _showEditProfileModal() {
     final nameCtrl = TextEditingController(text: _farmer.name);
