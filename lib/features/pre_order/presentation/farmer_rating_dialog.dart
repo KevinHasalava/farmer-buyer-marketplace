@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
@@ -24,7 +25,7 @@ class _FarmerRatingDialogState extends State<FarmerRatingDialog> {
   void _submit() {
     if (_selectedRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a star rating.'), backgroundColor: Colors.red),
+        SnackBar(content: Text(context.tr.pleaseSelectRating), backgroundColor: Colors.red),
       );
       return;
     }
@@ -114,7 +115,7 @@ class _FarmerRatingDialogState extends State<FarmerRatingDialog> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text(context.tr.cancel, style: const TextStyle(color: AppColors.textSecondary)),
             ),
           ],
         ),

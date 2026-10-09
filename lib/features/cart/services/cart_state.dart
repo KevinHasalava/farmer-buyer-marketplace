@@ -6,6 +6,7 @@ import '../../buyer/services/buyer_profile_manager.dart';
 import '../../orders_chat/models/chat_model.dart';
 import '../../orders_chat/models/order_model.dart';
 import '../../../core/services/order_lifecycle_manager.dart';
+import '../../../services/chat_service.dart';
 
 /// Central state manager for Cart, Checkout, and Orders/Chat
 class MarketplaceState extends ChangeNotifier {
@@ -51,9 +52,12 @@ class MarketplaceState extends ChangeNotifier {
   final List<FarmOrder> _orders = [];
   List<FarmOrder> get orders => List.unmodifiable(_orders);
 
-  // ── Chat State (matching Figma/Image 1) ────────────────────────────────────
+  // ── Chat State (Delegate to unified ChatService) ───────────────────────────
   final List<ChatConversation> _chats = [];
-  List<ChatConversation> get chats => List.unmodifiable(_chats);
+  List<ChatConversation> get chats =>
+      ChatService.instance.conversations.isNotEmpty
+          ? ChatService.instance.conversations
+          : List.unmodifiable(_chats);
 
   void _initDefaultState() {
     // 1. Initial cart items matching Rs. 950 checkout total (Image 2)
@@ -556,39 +560,14 @@ class MarketplaceState extends ChangeNotifier {
     }
   }
 
-  // ── Chat Actions ───────────────────────────────────────────────────────────
+  // ── Chat Actions (Unified Persistent ChatService) ─────────────────────────
   void sendMessage(String chatId, String text) {
-    final chat = _chats.firstWhere((c) => c.id == chatId,
-        orElse: () => _chats.first);
-    chat.messages.add(
-      ChatMessage(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        senderId: 'me',
-        text: text,
-        time: DateTime.now(),
-        isMe: true,
-      ),
-    );
+    ChatService.instance.sendMessage(conversationId: chatId, text: text);
     notifyListeners();
   }
 
   void markChatAsRead(String chatId) {
-    final index = _chats.indexWhere((c) => c.id == chatId);
-    if (index >= 0) {
-      final chat = _chats[index];
-      _chats[index] = ChatConversation(
-        id: chat.id,
-        name: chat.name,
-        avatarUrl: chat.avatarUrl,
-        lastMessage: chat.lastMessage,
-        time: chat.time,
-        unreadCount: 0,
-        isOnline: chat.isOnline,
-        role: chat.role,
-        productContext: chat.productContext,
-        messages: chat.messages,
-      );
-      notifyListeners();
-    }
+    ChatService.instance.markChatAsRead(chatId);
+    notifyListeners();
   }
 }

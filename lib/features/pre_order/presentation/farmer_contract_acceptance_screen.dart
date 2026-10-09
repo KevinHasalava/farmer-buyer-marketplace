@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/pre_order_manager.dart';
@@ -64,7 +65,7 @@ class _FarmerContractAcceptanceScreenState extends State<FarmerContractAcceptanc
     if (!_formKey.currentState!.validate()) return;
     if (_harvestDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an expected harvest date')),
+        SnackBar(content: Text(context.tr.pleaseSelectHarvestDate)),
       );
       return;
     }
@@ -85,7 +86,7 @@ class _FarmerContractAcceptanceScreenState extends State<FarmerContractAcceptanc
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contract accepted successfully!')),
+        SnackBar(content: Text(context.tr.contractAccepted)),
       );
       Navigator.pop(context, true); // Return true indicating success
     } catch (e) {
@@ -102,7 +103,7 @@ class _FarmerContractAcceptanceScreenState extends State<FarmerContractAcceptanc
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        title: const Text('Accept Contract', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
+        title: Text(context.tr.acceptContract, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textDark),
@@ -137,7 +138,7 @@ class _FarmerContractAcceptanceScreenState extends State<FarmerContractAcceptanc
               ),
               const SizedBox(height: 24),
 
-              const Text('Expected Harvest Date *', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+              Text(context.tr.expectedHarvestDate, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: _selectDate,

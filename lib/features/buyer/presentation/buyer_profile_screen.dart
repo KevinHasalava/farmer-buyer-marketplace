@@ -260,8 +260,8 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Delivery address & hub saved!'),
+                        SnackBar(
+                          content: Text(context.tr.addressSaved),
                           backgroundColor: _forestGreen,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -274,7 +274,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Update Delivery Hub', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: Text(context.tr.updateDeliveryHub, style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -290,12 +290,12 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to sign out of your Farm2Home buyer account?'),
+        title: Text(context.tr.logout, style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(context.tr.signOutConfirmBuyer),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: _textMuted)),
+            child: Text(context.tr.cancel, style: const TextStyle(color: _textMuted)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -278,12 +279,10 @@ class _AddProgressUpdateScreenState extends State<AddProgressUpdateScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5), style: BorderStyle.solid),
                             ),
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                                 Icon(Icons.camera_alt_outlined, color: AppColors.primaryGreen),
                                 SizedBox(height: 4),
-                                Text('Add', style: TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
+                                Text(context.tr.addLabel, style: const TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),

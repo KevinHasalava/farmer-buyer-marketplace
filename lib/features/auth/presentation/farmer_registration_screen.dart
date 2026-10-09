@@ -163,8 +163,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     final rawPhone = _phoneCtrl.text.trim();
     if (rawPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your mobile phone number first.'),
+        SnackBar(
+          content: Text(context.tr.enterPhoneFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1246,17 +1246,20 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
 
               // ── Already registered? Log In ─────────────────────────────────
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
                     Text(
                       context.tr.alreadyRegisteredFarmer,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
                       ),
                     ),
-                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
                       child: Text(

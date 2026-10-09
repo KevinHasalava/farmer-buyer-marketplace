@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
@@ -109,7 +110,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -118,7 +119,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Logout'),
+            child: Text(context.tr.logout),
           ),
         ],
       ),
@@ -255,29 +256,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
               child: Row(
                 children: [
-                  // Glowing Emerald Shield Emblem
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF059669), Color(0xFF047857)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.shield_rounded, color: Colors.white, size: 22),
-                    ),
-                  ),
+                  // Official App Logo (Matches Loading/Splash Screen)
+                  const AppBrandLogo(size: 38, hasGlow: true),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -285,15 +265,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       children: [
                         const Row(
                           children: [
-                            Text(
-                              'Farm2Home',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
+                            AppBrandWordmark(fontSize: 16, isLight: true),
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -703,8 +675,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             constraints: const BoxConstraints(),
             onPressed: () async {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Synchronizing with Supabase Cloud...'),
+                SnackBar(
+                  content: Text(context.tr.syncingCloud),
                   duration: Duration(milliseconds: 900),
                 ),
               );
@@ -779,8 +751,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           icon: const Icon(Icons.sync_rounded, color: Color(0xFF34D399), size: 20),
           onPressed: () async {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Synchronizing with Supabase Cloud...'),
+              SnackBar(
+                content: Text(context.tr.syncingCloud),
                 duration: Duration(milliseconds: 900),
               ),
             );
@@ -979,7 +951,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             const SizedBox(height: 14),
             ListTile(
               leading: const Icon(Icons.agriculture_rounded, color: Color(0xFF047857)),
-              title: const Text('Add Registered Farmer'),
+              title: Text(context.tr.addRegisteredFarmer),
               onTap: () {
                 Navigator.pop(ctx);
                 showFarmerEditDialog(context);

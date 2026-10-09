@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 
@@ -287,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Mark all as read'),
+                  child: Text(context.tr.markAllAsRead),
                 ),
               ],
             ),
@@ -374,8 +375,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     onShopSpecials: () {
                       setState(() => _selectedCategory = 0);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Showing Spring Harvest specials!'),
+                        SnackBar(
+                          content: Text(context.tr.springHarvestSpecials),
                           backgroundColor: _forestGreen,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -584,7 +585,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             },
             backgroundColor: const Color(0xFF1E5E3A),
             icon: const Icon(Icons.gavel_rounded, color: Colors.white, size: 18),
-            label: const Text('Auctions', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.tr.auctionsLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 8),
           FloatingActionButton.extended(
@@ -599,7 +600,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             },
             backgroundColor: const Color(0xFF047857),
             icon: const Icon(Icons.handshake_rounded, color: Colors.white, size: 18),
-            label: const Text('Contracts', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.tr.contractsLabel, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

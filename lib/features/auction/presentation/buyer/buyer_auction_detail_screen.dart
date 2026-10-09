@@ -1,10 +1,12 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/auction_model.dart';
 import '../../services/auction_manager.dart';
 import '../../../buyer/services/buyer_profile_manager.dart';
+import '../../../../core/localization/app_settings.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class BuyerAuctionDetailScreen extends StatefulWidget {
   final String auctionId;
@@ -130,14 +132,14 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'Bid Placed Successfully!',
+            Text(
+              'Bid Placed Successfully!'.trAuto(context),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
             ),
             const SizedBox(height: 8),
             Text(
-              'You are now the HIGHEST BIDDER with Rs. ${amount.toStringAsFixed(2)} per ${auction.unit} for ${auction.cropName}.',
+              'You are now the HIGHEST BIDDER with Rs. ${amount.toStringAsFixed(2)} per ${auction.unit} for ${auction.cropName}.'.trAuto(context),
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563), height: 1.4),
             ),
@@ -152,7 +154,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total Lot Estimate:', style: TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                  Text('Total Lot Estimate:'.trAuto(context), style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
                   Text(
                     'Rs. ${(amount * auction.quantity).toStringAsFixed(0)}',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _primaryGreen),
@@ -171,7 +173,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Awesome!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                child: Text('Awesome!'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               ),
             ),
           ],
@@ -190,21 +192,21 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.flash_on_rounded, color: Color(0xFFEA580C), size: 24),
-            SizedBox(width: 8),
-            Text('Instant Buyout (Buy-Now)?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.flash_on_rounded, color: Color(0xFFEA580C), size: 24),
+            const SizedBox(width: 8),
+            Text('Instant Buyout (Buy-Now)?'.trAuto(context), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          'Purchase this entire lot of ${auction.quantity.toStringAsFixed(0)} ${auction.unit} for the set Buy-Now price of Rs. ${auction.buyNowPrice!.toStringAsFixed(2)} / ${auction.unit} (Total: Rs. ${(auction.buyNowPrice! * auction.quantity).toStringAsFixed(0)})?\n\nThis will immediately finalize the auction and grant you the winning lot.',
+          'Purchase this entire lot of ${auction.quantity.toStringAsFixed(0)} ${auction.unit} for the set Buy-Now price of Rs. ${auction.buyNowPrice!.toStringAsFixed(2)} / ${auction.unit} (Total: Rs. ${(auction.buyNowPrice! * auction.quantity).toStringAsFixed(0)})?\n\nThis will immediately finalize the auction and grant you the winning lot.'.trAuto(context),
           style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563), height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+            child: Text('Cancel'.trAuto(context), style: const TextStyle(color: Color(0xFF6B7280))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -213,7 +215,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Confirm Purchase'),
+            child: Text('Confirm Purchase'.trAuto(context)),
           ),
         ],
       ),
@@ -246,8 +248,8 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
         final auction = AuctionManager.instance.getAuctionById(widget.auctionId);
         if (auction == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Auction')),
-            body: const Center(child: Text('Auction not found.')),
+            appBar: AppBar(title: Text(context.tr.auctionsLabel)),
+            body: Center(child: Text(context.tr.auctionNotFound)),
           );
         }
 
@@ -323,7 +325,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            isActive ? 'LIVE AUCTION' : 'CLOSED',
+                                            (isActive ? 'LIVE AUCTION' : 'CLOSED').trAuto(context),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 10.5,
@@ -347,7 +349,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                           const Icon(Icons.timer_outlined, size: 13, color: _orangeAccent),
                                           const SizedBox(width: 4),
                                           Text(
-                                            auction.remainingTimeString,
+                                            auction.remainingTimeString.trAuto(context),
                                             style: const TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w800,
@@ -361,7 +363,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  auction.cropName,
+                                  auction.cropName.trAuto(context),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 22,
@@ -375,12 +377,12 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                     const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF86EFAC)),
                                     const SizedBox(width: 3),
                                     Text(
-                                      auction.location,
+                                      auction.location.trAuto(context),
                                       style: const TextStyle(color: Color(0xFFD1FAE5), fontSize: 13, fontWeight: FontWeight.w500),
                                     ),
                                     const Text(' • ', style: TextStyle(color: Colors.white38)),
                                     Text(
-                                      '${auction.quantity.toStringAsFixed(0)} ${auction.unit} Lot',
+                                      '${auction.quantity.toStringAsFixed(0)} ${auction.unit} Lot'.trAuto(context),
                                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
                                     ),
                                   ],
@@ -427,7 +429,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          auction.totalBids > 0 ? 'CURRENT HIGHEST BID' : 'STARTING BID',
+                                          (auction.totalBids > 0 ? 'CURRENT HIGHEST BID' : 'STARTING BID').trAuto(context),
                                           style: const TextStyle(
                                             color: Color(0xFF86EFAC),
                                             fontSize: 11,
@@ -445,7 +447,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                           ),
                                         ),
                                         Text(
-                                          'per ${auction.unit} (Total: Rs. ${auction.totalLotValue.toStringAsFixed(0)})',
+                                          'per ${auction.unit} (Total: Rs. ${auction.totalLotValue.toStringAsFixed(0)})'.trAuto(context),
                                           style: const TextStyle(color: Color(0xFFD1FAE5), fontSize: 12),
                                         ),
                                       ],
@@ -476,8 +478,8 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                         const SizedBox(width: 4),
                                         Text(
                                           isHighestBidder
-                                              ? 'You are the leading bidder! 🎉'
-                                              : 'Leader: ${auction.highestBidderName ?? "Be the first bidder!"}',
+                                              ? 'You are the leading bidder! 🎉'.trAuto(context)
+                                              : '${'Leader'.trAuto(context)}: ${auction.highestBidderName ?? "Be the first bidder!".trAuto(context)}',
                                           style: TextStyle(
                                             color: isHighestBidder ? const Color(0xFF86EFAC) : Colors.white,
                                             fontSize: 12,
@@ -487,7 +489,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                       ],
                                     ),
                                     Text(
-                                      '${auction.totalBids} bids placed',
+                                      '${auction.totalBids} ${'bids placed'.trAuto(context)}',
                                       style: const TextStyle(color: Color(0xFFFEF08A), fontSize: 12, fontWeight: FontWeight.w700),
                                     ),
                                   ],
@@ -552,9 +554,9 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                           const SizedBox(height: 16),
 
                           // Crop Specifications Card
-                          const Text(
-                            'Harvest & Batch Specifications',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                          Text(
+                            'Harvest & Batch Specifications'.trAuto(context),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
                           ),
                           const SizedBox(height: 10),
                           Container(
@@ -593,12 +595,12 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Live Bid Activity',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                              Text(
+                                'Live Bid Activity'.trAuto(context),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
                               ),
                               Text(
-                                '${auction.bids.length} total bids',
+                                '${auction.bids.length} ${'total bids'.trAuto(context)}',
                                 style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -613,10 +615,10 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(color: const Color(0xFFE5E7EB)),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
-                                  'No bids placed yet. Be the first to place a bid!',
-                                  style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                                  'No bids placed yet. Be the first to place a bid!'.trAuto(context),
+                                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
                                 ),
                               ),
                             )
@@ -712,9 +714,9 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                           // Quick increment chips: +Rs. 5, +Rs. 10, +Rs. 25, +Rs. 50
                           Row(
                             children: [
-                              const Text(
-                                'Quick Bid:',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                              Text(
+                                'Quick Bid:'.trAuto(context),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
                               ),
                               const SizedBox(width: 8),
                               ...[
@@ -786,7 +788,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                     ),
                                     icon: const Icon(Icons.gavel_rounded, size: 18),
                                     label: Text(
-                                      'Place Bid (Rs. ${_selectedBidAmount?.toStringAsFixed(0) ?? auction.minNextBid.toStringAsFixed(0)})',
+                                      '${'Place Bid'.trAuto(context)} (Rs. ${_selectedBidAmount?.toStringAsFixed(0) ?? auction.minNextBid.toStringAsFixed(0)})',
                                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
                                     ),
                                   ),
@@ -810,7 +812,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
                                 ),
                                 icon: const Icon(Icons.flash_on_rounded, size: 16),
                                 label: Text(
-                                  '⚡ Buy Now Immediately: Rs. ${auction.buyNowPrice!.toStringAsFixed(2)} / ${auction.unit}',
+                                  '${'⚡ Buy Now Immediately'.trAuto(context)}: Rs. ${auction.buyNowPrice!.toStringAsFixed(2)} / ${auction.unit}',
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -835,13 +837,13 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
         SizedBox(
           width: 130,
           child: Text(
-            label,
+            label.trAuto(context),
             style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
           ),
         ),
         Expanded(
           child: Text(
-            value,
+            value.trAuto(context),
             textAlign: TextAlign.right,
             style: const TextStyle(fontSize: 12.5, color: Color(0xFF111827), fontWeight: FontWeight.w700),
           ),

@@ -51,7 +51,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
             backgroundColor: Colors.white,
             elevation: 0,
             title: Text(
-              'My Crop Auctions',
+              'My Crop Auctions'.trAuto(context),
               style: AppTheme.fontStyle(
                 context.currentLanguage,
                 fontSize: 18,
@@ -64,7 +64,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
             actions: [
               IconButton(
                 icon: const Icon(Icons.add_circle_outline_rounded, color: _primaryGreen, size: 26),
-                tooltip: 'Create New Auction',
+                tooltip: 'Create New Auction'.trAuto(context),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
@@ -84,9 +84,9 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                   unselectedLabelColor: const Color(0xFF6B7280),
                   labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                   tabs: [
-                    Tab(text: 'Live (${activeList.length})'),
-                    Tab(text: 'Completed (${completedList.length})'),
-                    Tab(text: 'All (${allAuctions.length})'),
+                    Tab(text: '${'Live'.trAuto(context)} (${activeList.length})'),
+                    Tab(text: '${'Completed'.trAuto(context)} (${completedList.length})'),
+                    Tab(text: '${'All'.trAuto(context)} (${allAuctions.length})'),
                   ],
                 ),
               ),
@@ -99,9 +99,9 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
             ),
             backgroundColor: _primaryGreen,
             icon: const Icon(Icons.gavel_rounded, color: Colors.white),
-            label: const Text(
-              'New Auction',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+            label: Text(
+              'New Auction'.trAuto(context),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
             ),
           ),
           body: Column(
@@ -168,7 +168,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
         ),
         const SizedBox(height: 2),
         Text(
-          label,
+          label.trAuto(context),
           style: const TextStyle(
             color: Color(0xFFD1FAE5),
             fontSize: 11,
@@ -198,7 +198,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                emptyMessage,
+                emptyMessage.trAuto(context),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -206,10 +206,10 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Create an auction for bulk harvest lots and let verified buyers bid for top market rates.',
+              Text(
+                'Create an auction for bulk harvest lots and let verified buyers bid for top market rates.'.trAuto(context),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280)),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -224,7 +224,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Crop Auction', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: Text('Add Crop Auction'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -310,7 +310,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                isSold ? 'SOLD' : (isActive ? 'LIVE' : 'CLOSED'),
+                                (isSold ? 'SOLD' : (isActive ? 'LIVE' : 'CLOSED')).trAuto(context),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -327,7 +327,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                                   const Icon(Icons.timer_outlined, size: 13, color: Color(0xFFEA580C)),
                                   const SizedBox(width: 3),
                                   Text(
-                                    auction.remainingTimeString,
+                                    auction.remainingTimeString.trAuto(context),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
@@ -340,7 +340,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          auction.cropName,
+                          auction.cropName.trAuto(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -351,7 +351,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.category}',
+                          '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.category.trAuto(context)}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -377,7 +377,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        auction.totalBids > 0 ? 'Top Bid' : 'Starting Price',
+                        (auction.totalBids > 0 ? 'Top Bid' : 'Starting Price').trAuto(context),
                         style: const TextStyle(fontSize: 10.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
                       ),
                       Text(
@@ -403,7 +403,7 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
                         const Icon(Icons.gavel_rounded, size: 12, color: _primaryGreen),
                         const SizedBox(width: 4),
                         Text(
-                          '${auction.totalBids} bids',
+                          '${auction.totalBids} ${'bids'.trAuto(context)}',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF374151)),
                         ),
                       ],

@@ -64,7 +64,11 @@ class AppSettings extends ChangeNotifier {
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
     await AppAutoTranslator.instance.init();
-    return AppSettings._(prefs);
+    final settings = AppSettings._(prefs);
+    AppAutoTranslator.instance.addListener(() {
+      settings.notifyListeners();
+    });
+    return settings;
   }
 
   /// The language chosen by the user, or `null` if not yet selected.

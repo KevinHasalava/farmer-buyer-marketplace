@@ -4,6 +4,8 @@ import '../models/order_model.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../cart/services/cart_state.dart';
+import 'chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 
 /// Live Order Tracking screen showing farm-to-table progress
 class OrderTrackingScreen extends StatelessWidget {
@@ -188,65 +190,174 @@ class OrderTrackingScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF86EFAC)),
-                    ),
-                    child: const Icon(Icons.two_wheeler_rounded, color: _forestGreen, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Ranjith Subha (NC-4982)',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: _textDark,
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Icon(Icons.two_wheeler_rounded, color: _forestGreen, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Ranjith Subha (NC-4982)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: _textDark,
+                              ),
+                            ),
+                            Text(
+                              'Chilled Fleet • +94 77 123 4567',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: liveOrder.status == OrderStatus.delivered
+                              ? const Color(0xFFECFDF5)
+                              : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: liveOrder.status == OrderStatus.delivered
+                                ? const Color(0xFFA7F3D0)
+                                : const Color(0xFFBFDBFE),
                           ),
                         ),
-                        Text(
-                          'Chilled Fleet • +94 77 123 4567',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        child: Text(
+                          liveOrder.status == OrderStatus.delivered
+                              ? 'Delivered'
+                              : liveOrder.status == OrderStatus.inTransit
+                                  ? 'En Route'
+                                  : 'Assigned',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: liveOrder.status == OrderStatus.delivered
+                                ? const Color(0xFF059669)
+                                : const Color(0xFF2563EB),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: liveOrder.status == OrderStatus.delivered
-                          ? const Color(0xFFECFDF5)
-                          : const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: liveOrder.status == OrderStatus.delivered
-                            ? const Color(0xFFA7F3D0)
-                            : const Color(0xFFBFDBFE),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 38,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _forestGreen,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                            label: const Text(
+                              'Chat with Driver',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            onPressed: () {
+                              final conv = ChatService.instance.getOrCreateConversation(
+                                peerId: 'conv_driver_ranjith',
+                                peerName: 'Ranjith Subha (Driver)',
+                                peerRole: 'Driver',
+                                phone: '+94 77 123 4567',
+                                subtitle: 'Chilled Transit Van NC-4982 • Order #${liveOrder.id}',
+                                orderId: liveOrder.id,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatDetailScreen(
+                                    conversation: conv,
+                                    currentRole: 'buyer',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      liveOrder.status == OrderStatus.delivered
-                          ? 'Delivered'
-                          : liveOrder.status == OrderStatus.inTransit
-                              ? 'En Route'
-                              : 'Assigned',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: liveOrder.status == OrderStatus.delivered
-                            ? const Color(0xFF059669)
-                            : const Color(0xFF2563EB),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 38,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _forestGreen,
+                            side: const BorderSide(color: _forestGreen, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                          ),
+                          icon: const Icon(Icons.phone_outlined, size: 15),
+                          label: const Text(
+                            'Call',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.phone_forwarded_rounded, color: _forestGreen),
+                                    SizedBox(width: 10),
+                                    Text('Call Driver', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text(
+                                  'Dialing Ranjith Subha (NC-4982)\n+94 77 123 4567',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _forestGreen,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Call Now'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

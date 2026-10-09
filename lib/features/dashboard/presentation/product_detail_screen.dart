@@ -7,6 +7,8 @@ import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../cart/presentation/my_cart_screen.dart';
 import '../../cart/presentation/checkout_delivery_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared product data model — used by dashboard + detail screens
@@ -944,6 +946,45 @@ class _FarmerCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+
+          // Chat with Farmer Button
+          GestureDetector(
+            onTap: () {
+              final conv = ChatService.instance.getOrCreateConversation(
+                peerId: 'conv_farmer_${farmer.name.toLowerCase().replaceAll(' ', '_')}',
+                peerName: farmer.name,
+                peerRole: 'Farmer',
+                avatarUrl: farmer.avatarUrl,
+                subtitle: '${farmer.role} • ${farmer.location}',
+                phone: farmer.phone ?? '+94 76 323 8225',
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatDetailScreen(
+                    conversation: conv,
+                    currentRole: 'buyer',
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 16,
+                color: AppColors.primaryGreen,
+              ),
             ),
           ),
 

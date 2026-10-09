@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/localization/app_settings.dart';
@@ -1164,11 +1164,9 @@ class _CheckoutDeliveryScreenState extends State<CheckoutDeliveryScreen> {
                                       color: const Color(0xFFE2E8F0),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.copy_rounded, size: 11, color: Color(0xFF475569)),
+                                    child: Row(children: [Icon(Icons.copy_rounded, size: 11, color: Color(0xFF475569)),
                                         SizedBox(width: 3),
-                                        Text('Copy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+                                        Text(context.tr.copyLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
                                       ],
                                     ),
                                   ),

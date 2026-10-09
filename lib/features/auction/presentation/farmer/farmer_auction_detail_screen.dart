@@ -1,10 +1,12 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/auction_model.dart';
 import '../../services/auction_manager.dart';
 import 'create_edit_auction_screen.dart';
+import '../../../../core/localization/app_settings.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class FarmerAuctionDetailScreen extends StatefulWidget {
   final String auctionId;
@@ -42,21 +44,21 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.handshake_rounded, color: Color(0xFF1E5E3A), size: 24),
-            SizedBox(width: 8),
-            Text('Accept Highest Bid?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.handshake_rounded, color: Color(0xFF1E5E3A), size: 24),
+            const SizedBox(width: 8),
+            Text('Accept Highest Bid?'.trAuto(context), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          'Are you sure you want to accept the leading bid of Rs. ${highestBid.toStringAsFixed(2)} / ${auction.unit} from $highestBidder?\n\nThis will immediately finalize the auction and mark the lot as SOLD.',
+          'Are you sure you want to accept the leading bid of Rs. ${highestBid.toStringAsFixed(2)} / ${auction.unit} from $highestBidder?\n\nThis will immediately finalize the auction and mark the lot as SOLD.'.trAuto(context),
           style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563), height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep Bidding Active', style: TextStyle(color: Color(0xFF6B7280))),
+            child: Text('Keep Bidding Active'.trAuto(context), style: const TextStyle(color: Color(0xFF6B7280))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -65,7 +67,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Accept & Finalize'),
+            child: Text('Accept & Finalize'.trAuto(context)),
           ),
         ],
       ),
@@ -92,11 +94,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 24),
+        title: Row(children: [Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 24),
             SizedBox(width: 8),
-            Text('Delete Auction?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(context.tr.deleteAuction, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const Text(
@@ -106,7 +106,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6B7280))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF6B7280))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -115,7 +115,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(context.tr.delete),
           ),
         ],
       ),
@@ -126,8 +126,8 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Auction removed successfully.'),
+          SnackBar(
+            content: Text(context.tr.auctionRemovedSuccess),
             backgroundColor: Color(0xFF111827),
             behavior: SnackBarBehavior.floating,
           ),
@@ -144,7 +144,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
         final auction = AuctionManager.instance.getAuctionById(widget.auctionId);
         if (auction == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Auction Details')),
+            appBar: AppBar(title: Text(context.tr.auctionDetails)),
             body: const Center(child: Text('Auction not found or deleted.')),
           );
         }
@@ -244,7 +244,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    isSold ? 'SOLD' : (isActive ? 'LIVE AUCTION' : 'CLOSED'),
+                                    (isSold ? 'SOLD' : (isActive ? 'LIVE AUCTION' : 'CLOSED')).trAuto(context),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -257,7 +257,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              auction.cropName,
+                              auction.cropName.trAuto(context),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -266,7 +266,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location}',
+                              '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location.trAuto(context)}',
                               style: const TextStyle(
                                 color: Color(0xFFD1FAE5),
                                 fontSize: 13,
@@ -309,9 +309,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Time Remaining',
-                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+                                Text(
+                                  'Time Remaining'.trAuto(context),
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 3),
                                 Row(
@@ -319,7 +319,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                     const Icon(Icons.timer_outlined, size: 16, color: Color(0xFFEA580C)),
                                     const SizedBox(width: 5),
                                     Text(
-                                      auction.remainingTimeString,
+                                      auction.remainingTimeString.trAuto(context),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
@@ -334,9 +334,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text(
-                                  'Total Bids Received',
-                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
+                                Text(
+                                  'Total Bids Received'.trAuto(context),
+                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 3),
                                 Row(
@@ -344,7 +344,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                     const Icon(Icons.people_outline_rounded, size: 16, color: primaryColor),
                                     const SizedBox(width: 5),
                                     Text(
-                                      '${auction.totalBids} Bids',
+                                      '${auction.totalBids} ${'bids'.trAuto(context)}',
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
@@ -386,9 +386,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'CURRENT HIGHEST BID',
-                                      style: TextStyle(
+                                    Text(
+                                      'CURRENT HIGHEST BID'.trAuto(context),
+                                      style: const TextStyle(
                                         color: Color(0xFF86EFAC),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
@@ -423,7 +423,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Top Bidder: ${auction.highestBidderName ?? "No bids yet"}',
+                                  '${'Top Bidder'.trAuto(context)}: ${auction.highestBidderName ?? "No bids yet".trAuto(context)}',
                                   style: const TextStyle(
                                     color: Color(0xFFD1FAE5),
                                     fontSize: 12.5,
@@ -431,7 +431,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Lot Value: Rs. ${auction.totalLotValue.toStringAsFixed(0)}',
+                                  '${'Lot Value'.trAuto(context)}: Rs. ${auction.totalLotValue.toStringAsFixed(0)}',
                                   style: const TextStyle(
                                     color: Color(0xFFFEF08A),
                                     fontSize: 12.5,
@@ -461,9 +461,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                 elevation: 0,
                               ),
                               icon: const Icon(Icons.check_circle_rounded),
-                              label: const Text(
-                                'Accept Leading Bid & Sell Now',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                              label: Text(
+                                'Accept Leading Bid & Sell Now'.trAuto(context),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                               ),
                             ),
                           ),
@@ -473,9 +473,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Live Bids History',
-                            style: TextStyle(
+                          Text(
+                            'Live Bids History'.trAuto(context),
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF111827),
@@ -488,7 +488,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              '${auction.bids.length} Entries',
+                              '${auction.bids.length} ${'Entries'.trAuto(context)}',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -508,20 +508,20 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0xFFE5E7EB)),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Column(
                               children: [
-                                Icon(Icons.history_toggle_off_rounded, size: 36, color: Color(0xFF9CA3AF)),
-                                SizedBox(height: 8),
+                                const Icon(Icons.history_toggle_off_rounded, size: 36, color: Color(0xFF9CA3AF)),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'No bids placed yet',
-                                  style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF374151)),
+                                  'No bids placed yet'.trAuto(context),
+                                  style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF374151)),
                                 ),
-                                SizedBox(height: 4),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'Your auction is published. Bids from interested buyers will appear here in real-time.',
+                                  'Your auction is published. Bids from interested buyers will appear here in real-time.'.trAuto(context),
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                                 ),
                               ],
                             ),
@@ -590,9 +590,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                                   color: const Color(0xFF16A34A),
                                                   borderRadius: BorderRadius.circular(6),
                                                 ),
-                                                child: const Text(
-                                                  'LEADING',
-                                                  style: TextStyle(
+                                                child: Text(
+                                                  'LEADING'.trAuto(context),
+                                                  style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 8.5,
                                                     fontWeight: FontWeight.bold,
@@ -622,7 +622,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                                         ),
                                       ),
                                       Text(
-                                        'per ${auction.unit}',
+                                        'per ${auction.unit}'.trAuto(context),
                                         style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF)),
                                       ),
                                     ],
@@ -636,9 +636,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
                       const SizedBox(height: 24),
 
                       // Auction Specifications Details Card
-                      const Text(
-                        'Harvest & Terms Details',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                      Text(
+                        'Harvest & Terms Details'.trAuto(context),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
                       ),
                       const SizedBox(height: 10),
                       Container(
@@ -691,13 +691,13 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
         SizedBox(
           width: 130,
           child: Text(
-            label,
+            label.trAuto(context),
             style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B7280), fontWeight: FontWeight.w500),
           ),
         ),
         Expanded(
           child: Text(
-            value,
+            value.trAuto(context),
             textAlign: TextAlign.right,
             style: const TextStyle(fontSize: 12.5, color: Color(0xFF111827), fontWeight: FontWeight.w700),
           ),

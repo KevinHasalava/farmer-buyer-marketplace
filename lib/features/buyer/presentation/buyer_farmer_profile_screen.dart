@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
-import '../../orders_chat/presentation/orders_chat_screen.dart';
-import '../../orders_chat/presentation/chat_list_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
@@ -328,10 +328,21 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           ),
                           onPressed: () {
+                            final conv = ChatService.instance.getOrCreateConversation(
+                              peerId: 'conv_farmer_${farmer.name.toLowerCase().replaceAll(' ', '_')}',
+                              peerName: farmer.name,
+                              peerRole: 'Farmer',
+                              phone: farmer.phone.isNotEmpty ? farmer.phone : '+94 77 123 4567',
+                              avatarUrl: farmer.avatarUrl,
+                              subtitle: '${farmer.farmName} • ${farmer.location}',
+                            );
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ChatListScreen(),
+                                builder: (_) => ChatDetailScreen(
+                                  conversation: conv,
+                                  currentRole: 'buyer',
+                                ),
                               ),
                             );
                           },

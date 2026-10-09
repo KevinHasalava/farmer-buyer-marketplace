@@ -1,4 +1,4 @@
-import 'app_settings.dart';
+﻿import 'app_settings.dart';
 
 /// All user-facing strings in Sinhala, Tamil and English.
 ///
@@ -13,6 +13,9 @@ class AppStrings {
         AppLanguage.sinhala => si,
         AppLanguage.tamil => ta,
       };
+
+  /// Automatically translates any dynamic string or text into the current language.
+  String auto(String text) => AppAutoTranslator.instance.translateSync(text, lang);
 
   // ── General & Common ─────────────────────────────────────────────────────
   String get appName => 'Farm2Home';
@@ -1576,4 +1579,73 @@ class AppStrings {
   String get minIncrement => _t('Min. Increment', 'අවම වැඩිවීම', 'குறைந்தபட்ச அதிகரிப்பு');
   String get liveAuction => _t('LIVE AUCTION', 'සජීවී වෙන්දේසිය', 'நேரலை ஏலம்');
 
+
+  // ── Auction Management ───────────────────────────────────────────────────
+  String get auctionDetails => _t('Auction Details', 'වෙන්දේසි විස්තර', 'ஏல விவரங்கள்');
+  String get deleteAuction => _t('Delete Auction?', 'වෙන්දේසිය මකන්නද?', 'ஏலத்தை நீக்கவும்?');
+  String get auctionRemovedSuccess => _t('Auction removed successfully.', 'වෙන්දේසිය සාර්ථකව ඉවත් කරන ලදී.', 'ஏலம் வெற்றிகரமாக நீக்கப்பட்டது.');
+  String get auctionNotFound => _t('Auction not found.', 'වෙන්දේසිය හමු නොවීය.', 'ஏலம் கண்டுபிடிக்கப்படவில்லை.');
+  String get minBidRequired => _t('Minimum bid required', 'අවම ලංසුව අවශ්‍යයි', 'குறைந்தபட்ச ஏலம் தேவை');
+
+  // ── Pre-Order & Contract ─────────────────────────────────────────────────
+  String get acceptContract => _t('Accept Contract', 'ගිවිසුම පිළිගන්න', 'ஒப்பந்தத்தை ஏற்கவும்');
+  String get contractAccepted => _t('Contract accepted successfully!', 'ගිවිසුම සාර්ථකව පිළිගන්නා ලදී!', 'ஒப்பந்தம் வெற்றிகரமாக ஏற்கப்பட்டது!');
+  String get expectedHarvestDate => _t('Expected Harvest Date *', 'අපේක්ෂිත අස්වැන්නු දිනය *', 'எதிர்பார்க்கப்படும் அறுவடை தேதி *');
+  String get premiumContractTerms => _t('Premium Contract Terms', 'ප්‍රිමියම් ගිවිසුම් කොන්දේසි', 'பிரீமியம் ஒப்பந்த விதிமுறைகள்');
+  String get farmersProposalDetails => _t("Farmer's Proposal Details", 'ගොවියාගේ යෝජනා විස්තර', 'விவசாயியின் திட்ட விவரங்கள்');
+  String get rateFarmer => _t('Rate Farmer', 'ගොවියාට ශ්‍රේණිය දෙන්න', 'விவசாயியை மதிப்பிடுக');
+  String get pleaseSelectRating => _t('Please select a star rating.', 'කරුණාකර තරු ශ්‍රේණිගත කිරීමක් තෝරන්න.', 'தயவுசெய்து நட்சத்திர மதிப்பீட்டைத் தேர்ந்தெடுக்கவும்.');
+  String get noPreOrdersFound => _t('No pre-orders found.', 'කිසිදු පූර්ව ඇණවුමක් හමු නොවීය.', 'முன் ஆர்டர்கள் எதுவும் இல்லை.');
+  String get newRequest => _t('New Request', 'නව ඉල්ලීම', 'புதிய கோரிக்கை');
+  String get pleaseSelectDeliveryDate => _t('Please select an expected delivery date', 'කරුණාකර අපේක්ෂිත බෙදාහැරීම් දිනය තෝරන්න', 'எதிர்பார்க்கப்படும் டெலிவரி தேதியை தேர்ந்தெடுக்கவும்');
+  String get pleaseSelectHarvestDate => _t('Please select an expected harvest date', 'කරුණාකර අපේක්ෂිත අස්වැන්නු දිනය තෝරන්න', 'எதிர்பார்க்கப்படும் அறுவடை தேதியை தேர்ந்தெடுக்கவும்');
+  String get openingChat => _t('Opening chat...', 'සංවාදය විවෘත කිරීම...', 'அரட்டையைத் திறக்கிறோம்...');
+  String get addLabel => _t('Add', 'එකතු කරන්න', 'சேர்');
+
+  // ── Driver Profile & Payments ────────────────────────────────────────────
+  String get saveAndVerify => _t('Save & Verify', 'සුරකින්න සහ තහවුරු කරන්න', 'சேமி மற்றும் சரிபார்');
+  String get confirmTransfer => _t('Confirm Transfer', 'මාරු කිරීම තහවුරු කරන්න', 'பரிமாற்றத்தை உறுதிசெய்');
+
+  // ── Dashboard & Navigation ───────────────────────────────────────────────
+  String get auctionsLabel => _t('Auctions', 'වෙන්දේසි', 'ஏலங்கள்');
+  String get contractsLabel => _t('Contracts', 'ගිවිසුම්', 'ஒப்பந்தங்கள்');
+  String get springHarvestSpecials => _t('Showing Spring Harvest specials!', 'වසන්ත අස්වැන්නු විශේෂ සැකසිලි!', 'வசந்த அறுவடை சிறப்புகள் காட்டுகிறோம்!');
+
+  // ── Buyer Actions ────────────────────────────────────────────────────────
+  String get addressSaved => _t('Delivery address & hub saved!', 'බෙදාහැරීමේ ලිපිනය සහ මධ්‍යස්ථානය සුරකින ලදී!', 'டெலிவரி முகவரி & ஹப் சேமிக்கப்பட்டது!');
+  String get signOutConfirmBuyer => _t('Are you sure you want to sign out of your Farm2Home buyer account?', 'ඔබගේ Farm2Home ගැනුම්කරු ගිණුමෙන් ඉවත් වීමට ඔබ සහතිකද?', 'உங்கள் Farm2Home வாங்குபவர் கணக்கிலிருந்து வெளியேற விரும்புகிறீர்களா?');
+  String get copyLabel => _t('Copy', 'පිටපත් කරන්න', 'நகலெடு');
+  String get promoApplied => _t('Promo code applied successfully!', 'ප්‍රවර්ධන කේතය සාර්ථකව යොදන ලදී!', 'ப்ரோமோ குறியீடு வெற்றிகரமாக பயன்படுத்தப்பட்டது!');
+
+  // ── Admin Panel ──────────────────────────────────────────────────────────
+  String get addRegisteredFarmer => _t('Add Registered Farmer', 'ලියාපදිංචි ගොවියා එකතු කරන්න', 'பதிவு செய்த விவசாயியை சேர்க்கவும்');
+  String get syncingCloud => _t('Synchronizing with Supabase Cloud...', 'Supabase Cloud සමඟ සමමුහූර්ත කිරීම...', 'Supabase Cloud உடன் ஒத்திசைக்கிறோம்...');
+
+  // ── Farmer Actions ───────────────────────────────────────────────────────
+  String get profilePhotoUpdated => _t('Profile photo updated successfully!', 'පැතිකඩ ඡායාරූපය සාර්ථකව යාවත්කාලීන කරන ලදී!', 'சுயவிவர புகைப்படம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது!');
+  String get profileUpdated => _t('Profile details updated successfully!', 'පැතිකඩ විස්තර සාර්ථකව යාවත්කාලීන කරන ලදී!', 'சுயவிவர விவரங்கள் வெற்றிகரமாக புதுப்பிக்கப்பட்டது!');
+  String get ordersSynced => _t('Orders synced with live marketplace', 'ඇණවුම් සජීවී වෙළෙඳ පොළ සමඟ සමමුහූර්ත කරන ලදී', 'ஆர்டர்கள் நேரடி சந்தையுடன் ஒத்திசைக்கப்பட்டது');
+  String get syncNotifications => _t('Orders sync notifications up to date', 'ඇණවුම් සමමුහූර්ත දැනුම්දීම් යාවත්කාලීනයි', 'ஆர்டர் ஒத்திசைவு அறிவிப்புகள் புதுப்பித்தல்');
+  String get openingFarmerChat => _t('Opening Farmer Chat...', 'ගොවි සංවාදය විවෘත කිරීම...', 'விவசாயி அரட்டையைத் திறக்கிறோம்...');
+  String get connectingDriverHub => _t('Connecting to Regional Driver Hub', 'කලාපීය රියදුරු මධ්‍යස්ථානයට සම්බන්ධ වෙමින්', 'பிராந்திய டிரைவர் ஹப்பில் இணைக்கிறோம்');
+  String get callAgronomist => _t('Calling Agronomist Support Desk', 'කෘෂිවිද්‍යාඥ සහාය ශ්‍රේණිය ඇමතීම', 'விவசாய ஆலோசகர் ஆதரவை அழைக்கிறோம்');
+
+  // ── Driver Screens ───────────────────────────────────────────────────────
+  String get dialingLabel => _t('Dialing', 'ඇමතීම', 'அழைக்கிறோம்');
+  String get failedSettle => _t('Failed to settle delivery', 'බෙදාහැරීම සමතලා කිරීමට අසමත් විය', 'டெலிவரியை தீர்க்க தவறிவிட்டது');
+  String get failedRemoveTrip => _t('Failed to remove trip', 'ගමන ඉවත් කිරීමට අසමත් විය', 'பயணத்தை நீக்க தவறிவிட்டது');
+  String get mobileVerifiedSuccess => _t('Mobile number verified successfully!', 'ජංගම දුරකථන අංකය සාර්ථකව තහවුරු කරන ලදී!', 'மொபைல் எண் வெற்றிகரமாக சரிபார்க்கப்பட்டது!');
+  String get enterPhoneFirst => _t('Please enter your mobile phone number first.', 'කරුණාකර පළමුව ඔබගේ ජංගම දුරකථන අංකය ඇතුළත් කරන්න.', 'முதலில் உங்கள் மொபைல் எண்ணை உள்ளிடவும்.');
+  String get invalidSriLankaPhone => _t('Please enter a valid Sri Lankan mobile number (e.g., 77 123 4567).', 'කරුණාකර වලංගු ශ්‍රී ලාංකික ජංගම දුරකථන අංකයක් ඇතුළත් කරන්න.', 'சரியான இலங்கை மொபைல் எண்ணை உள்ளிடவும் (எ.கா., 77 123 4567).');
+  String get verifyOtpFirst => _t('Please verify your mobile number with the SMS OTP code first.', 'කරුණාකර පළමුව SMS OTP කේතය සමඟ ඔබගේ ජංගම දුරකථන අංකය තහවුරු කරන්න.', 'முதலில் SMS OTP குறியீட்டுடன் உங்கள் மொபைல் எண்ணை சரிபார்க்கவும்.');
+  String get registrationError => _t('Registration error', 'ලියාපදිංචි දෝෂය', 'பதிவு பிழை');
+  String get failedSaveAuditLog => _t('Failed to save audit log', 'විගණන ලඝු-සටහන සුරැකීමට අසමත් විය', 'தணிக்கை பதிவை சேமிக்க தவறிவிட்டது');
+
+
+  // ── Register Role Picker ─────────────────────────────────────────────────
+  String get registerNow => _t('Register Now', 'දැන් ලියාපදිංචි වන්න', 'இப்போது பதிவு செய்க');
+  String get chooseRoleToRegister => _t('Choose your account type to register', 'ලියාපදිංචි වීමට ගිණුම් වර්ගය තෝරන්න', 'பதிவு செய்ய கணக்கு வகையை தேர்ந்தெடுக்கவும்');
+  String get registerAsBuyerSub => _t('Buy fresh produce directly from farmers', 'ගොවීන්ගෙන් සෘජුව නැවුම් භෝග මිලදී ගන්න', 'விவசாயிகளிடம் இருந்து நேரடியாக புதிய பொருட்களை வாங்கவும்');
+  String get registerAsFarmerSub => _t('Sell your harvest at fair prices', 'ඔබේ අස්වැන්න සාධාරණ මිලට විකුණන්න', 'நியாயமான விலையில் உங்கள் அறுவடையை விற்கவும்');
+  String get registerAsDriverSub => _t('Deliver farm orders and earn daily', 'ගොවිපොළ ඇණවුම් බෙදාහැරීමෙන් දිනපතා ඉපයන්න', 'பண்ணை ஆர்டர்களை டெலிவரி செய்து தினமும் சம்பாதிக்கவும்');
 }

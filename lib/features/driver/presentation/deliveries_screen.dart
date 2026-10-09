@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
-
+import '../../../widgets/premium/premium_widgets.dart';
 
 import '../models/delivery_order_model.dart';
 import '../services/driver_firestore_service.dart';
@@ -337,34 +337,12 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          // App Logo Icon Box
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFF006B44),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.home_filled,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
-          ),
+          // Unified App Logo (Matching Loading/Splash Screen)
+          const AppBrandLogo(size: 38, hasGlow: false),
           const SizedBox(width: 10),
 
-          // Brand Name
-          Text(
-            context.tr.appName,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-              letterSpacing: -0.3,
-            ),
-          ),
+          // Brand Wordmark
+          const AppBrandWordmark(fontSize: 18),
           const SizedBox(width: 8),
 
           // DRIVER Badge

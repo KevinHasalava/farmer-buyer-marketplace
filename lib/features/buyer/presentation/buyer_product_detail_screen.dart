@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
-import '../../orders_chat/presentation/orders_chat_screen.dart';
-import '../../orders_chat/presentation/chat_list_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 import '../models/buyer_models.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_farmer_profile_screen.dart';
@@ -439,6 +439,40 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 ],
                               ),
                             ),
+                            IconButton(
+                              tooltip: 'Chat with Farmer',
+                              icon: Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFDCFCE7),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 15,
+                                  color: _forestGreen,
+                                ),
+                              ),
+                              onPressed: () {
+                                final conv = ChatService.instance.getOrCreateConversation(
+                                  peerId: 'conv_farmer_${prod.farmerName.toLowerCase().replaceAll(' ', '_')}',
+                                  peerName: prod.farmerName,
+                                  peerRole: 'Farmer',
+                                  avatarUrl: prod.farmerAvatarUrl,
+                                  subtitle: '${prod.farmName} • ${prod.farmLocation}',
+                                  productContext: '${prod.name} (${prod.formattedPrice}/${prod.unit})',
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatDetailScreen(
+                                      conversation: conv,
+                                      currentRole: 'buyer',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                             const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _textMuted),
                           ],
                         ),
@@ -633,10 +667,21 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             onPressed: () {
+                              final conv = ChatService.instance.getOrCreateConversation(
+                                peerId: 'conv_farmer_${prod.farmerName.toLowerCase().replaceAll(' ', '_')}',
+                                peerName: prod.farmerName,
+                                peerRole: 'Farmer',
+                                avatarUrl: prod.farmerAvatarUrl,
+                                subtitle: '${prod.farmName} • ${prod.farmLocation}',
+                                productContext: '${prod.name} (${prod.formattedPrice}/${prod.unit})',
+                              );
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ChatListScreen(),
+                                  builder: (_) => ChatDetailScreen(
+                                    conversation: conv,
+                                    currentRole: 'buyer',
+                                  ),
                                 ),
                               );
                             },

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_settings.dart';
@@ -399,7 +399,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             foregroundColor: _forestGreen,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           ),
-                          child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.w700)),
+                          child: Text(context.tr.apply, style: const TextStyle(fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
@@ -75,152 +74,235 @@ class _SplashScreenState extends State<SplashScreen>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.backgroundLight,
-        body: SafeArea(
-          child: Padding(
-            padding: AppDimensions.screenPadding,
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-
-                // ── Brand Logo (matching WelcomeScreen) ───────────────────
-                ScaleTransition(
-                  scale: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
-                  ),
-                  child: const AppBrandLogo(size: 96),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceLG),
-
-                // ── Tagline Badge ─────────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.spaceMD,
-                      vertical: AppDimensions.spaceXXS + 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusFull),
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.verified_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 14,
-                        ),
-                        const SizedBox(width: AppDimensions.spaceXXS),
-                        Text(
-                          tr.ethicalAndDirect,
-                          style: AppTheme.fontStyle(
-                            context.currentLanguage,
-                            color: AppColors.primaryGreen,
-                            letterSpacing: AppTextStyles.trackingWidest,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceMD),
-
-                // ── Wordmark Headline ──────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
-                  ),
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: AppTheme.fontStyle(
-                        context.currentLanguage,
-                        fontSize: 34,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.5,
-                      ),
-                      children: const [
-                        TextSpan(
-                          text: 'Farm',
-                          style: TextStyle(fontWeight: FontWeight.w400),
-                        ),
-                        TextSpan(
-                          text: '2',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.accentOrange,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'Home',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceSM),
-
-                // ── Localized Tagline ───────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-                  ),
-                  child: Text(
-                    tr.tagline,
-                    textAlign: TextAlign.center,
-                    style: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-
-                const Spacer(flex: 3),
-
-                // ── Loader / Indicator ───────────────────────────────────────
-                SizedBox(
-                  width: 90,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      minHeight: 3,
-                      backgroundColor:
-                          AppColors.primaryGreen.withValues(alpha: 0.15),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryGreen,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spaceXL),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF021B10),
+                Color(0xFF052F1E),
+                Color(0xFF09462B),
               ],
             ),
+          ),
+          child: Stack(
+            children: [
+              // ── Ambient Glow Background Circles ───────────────────────────
+              Positioned(
+                top: -60,
+                right: -60,
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 80,
+                left: -80,
+                child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF059669).withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+
+              // ── Main Balanced Content ──────────────────────────────────────
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Center Brand Block (Perfect Optical Balance)
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Glowing Squircle Brand Emblem ───────────────
+                              ScaleTransition(
+                                scale: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+                                ),
+                                child: const AppBrandLogo(size: 104, hasGlow: true),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // ── Verified Ethical Badge (No text clipping) ───
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.25, 0.75, curve: Curves.easeOut),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.22),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.verified_rounded,
+                                        color: Color(0xFF34D399),
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Flexible(
+                                        child: Text(
+                                          tr.ethicalAndDirect,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.fontStyle(
+                                            context.currentLanguage,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11.5,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              // ── Wordmark Headline ────────────────────────────
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.35, 0.85, curve: Curves.easeOut),
+                                ),
+                                child: RichText(
+                                  textAlign: TextAlign.center,
+                                  text: TextSpan(
+                                    style: AppTheme.fontStyle(
+                                      context.currentLanguage,
+                                      fontSize: 36,
+                                      color: Colors.white,
+                                      letterSpacing: -0.6,
+                                    ),
+                                    children: const [
+                                      TextSpan(
+                                        text: 'Farm',
+                                        style: TextStyle(fontWeight: FontWeight.w700),
+                                      ),
+                                      TextSpan(
+                                        text: '2',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFFBBF24),
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: 'Home',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF34D399),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // ── Localized Tagline ─────────────────────────────
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.45, 0.95, curve: Curves.easeOut),
+                                ),
+                                child: Text(
+                                  tr.tagline,
+                                  textAlign: TextAlign.center,
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
+                                    color: const Color(0xFFD1FAE5).withValues(alpha: 0.85),
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ── Bottom Section (Grounded & Balanced) ─────────────────
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 36, left: 24, right: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Sleek Glowing Progress Bar
+                          SizedBox(
+                            width: 120,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: LinearProgressIndicator(
+                                minHeight: 4,
+                                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF34D399),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // Empowering Note
+                          Text(
+                            'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                            textAlign: TextAlign.center,
+                            style: AppTheme.fontStyle(
+                              context.currentLanguage,
+                              color: Colors.white.withValues(alpha: 0.55),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
