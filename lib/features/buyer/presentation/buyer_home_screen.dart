@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -448,157 +449,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
             ),
 
             // Hero Promo Banner matching User's Reference
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  height: 205,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D3820),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0D3820).withValues(alpha: 0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    children: [
-                      // Background Image: Freshly harvested carrots in wooden crate on field
-                      Positioned.fill(
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=1000&auto=format&fit=crop&q=80',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.centerRight,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: const Color(0xFF0D3820),
-                          ),
-                        ),
-                      ),
-                      // Smooth gradient overlay from dark green on left to translucent on right
-                      Positioned.fill(
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFF0D3820),
-                                Color(0xFF0D3820),
-                                Color(0xE60D3820),
-                                Color(0x800D3820),
-                                Color(0x260D3820),
-                              ],
-                              stops: [0.0, 0.40, 0.60, 0.82, 1.0],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Content
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Top Pill Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E5232).withValues(alpha: 0.95),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFF3B7A50),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    context.tr.springHarvestFest,
-                                    style: const TextStyle(
-                                      color: Color(0xFF86EFAC),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.6,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Headline & Subheading
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.tr.promoHeadline,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 21,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.15,
-                                    letterSpacing: -0.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  context.tr.promoSub,
-                                  style: const TextStyle(
-                                    color: Color(0xFFD1FAE5),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // CTA Button
-                            GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BuyerProductListScreen(
-                                    categoryTitle: context.tr.categoryVegetables,
-                                  ),
-                                ),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(22),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.12),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  context.tr.shopSeasonSpecials,
-                                  style: const TextStyle(
-                                    color: Color(0xFF0D3820),
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            const SliverToBoxAdapter(
+              child: _BuyerPromoCarousel(),
             ),
 
             // Categories Section
@@ -1062,12 +914,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
           children: [
             Stack(
               children: [
-                Image.network(
-                  product.imageUrl,
-                  height: 105,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                product.imageUrl.startsWith('assets')
+                    ? Image.asset(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                 Positioned(
                   top: 8,
                   left: 8,
@@ -1370,10 +1229,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  product.imageUrl.startsWith('assets')
+                      ? Image.asset(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        ),
                   if (product.badge != null)
                     Positioned(
                       top: 8,
@@ -1442,6 +1306,203 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BuyerPromoCarousel extends StatefulWidget {
+  const _BuyerPromoCarousel();
+
+  @override
+  State<_BuyerPromoCarousel> createState() => _BuyerPromoCarouselState();
+}
+
+class _BuyerPromoCarouselState extends State<_BuyerPromoCarousel> {
+  int _currentIndex = 0;
+  Timer? _timer;
+
+  final List<String> _images = [
+    'assets/images/promo_1.jpg',
+    'assets/images/promo_2.jpg',
+    'assets/images/promo_3.jpg',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentIndex = (_currentIndex + 1) % _images.length;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 205,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D3820),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0D3820).withValues(alpha: 0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Rotating Background Images
+            Positioned.fill(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 800),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: Image.asset(
+                  _images[_currentIndex],
+                  key: ValueKey<int>(_currentIndex),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerRight,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xFF0D3820),
+                  ),
+                ),
+              ),
+            ),
+            // Smooth gradient overlay from dark green on left to translucent on right
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0D3820),
+                      Color(0xFF0D3820),
+                      Color(0xE60D3820),
+                      Color(0x800D3820),
+                      Color(0x260D3820),
+                    ],
+                    stops: [0.0, 0.40, 0.60, 0.82, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Top Pill Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E5232).withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF3B7A50),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
+                        const SizedBox(width: 5),
+                        Text(
+                          context.tr.springHarvestFest,
+                          style: const TextStyle(
+                            color: Color(0xFF86EFAC),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Headline & Subheading
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr.promoHeadline,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        context.tr.promoSub,
+                        style: const TextStyle(
+                          color: Color(0xFFD1FAE5),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // CTA Button
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BuyerProductListScreen(
+                          categoryTitle: context.tr.categoryVegetables,
+                        ),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        context.tr.shopSeasonSpecials,
+                        style: const TextStyle(
+                          color: Color(0xFF0D3820),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 
 import '../../../core/constants/constants.dart';
 import '../../cart/models/cart_item_model.dart';
@@ -949,9 +950,41 @@ class _PremiumSearchBar extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Promo Banner with Real Photography matching Image 1
 // ─────────────────────────────────────────────────────────────────────────────
-class _PromoBanner extends StatelessWidget {
+class _PromoBanner extends StatefulWidget {
   const _PromoBanner({required this.onShopSpecials});
   final VoidCallback onShopSpecials;
+
+  @override
+  State<_PromoBanner> createState() => _PromoBannerState();
+}
+
+class _PromoBannerState extends State<_PromoBanner> {
+  int _currentIndex = 0;
+  Timer? _timer;
+
+  final List<String> _images = [
+    'assets/images/promo_1.jpg',
+    'assets/images/promo_2.jpg',
+    'assets/images/promo_3.jpg',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentIndex = (_currentIndex + 1) % _images.length;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -973,12 +1006,22 @@ class _PromoBanner extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Real photo background of field harvest matching Image 1
-            Image.network(
-              'https://images.unsplash.com/photo-1590682680695-43b964a3ae17?w=800&auto=format&fit=crop&q=80',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFF1B5E38),
+            // Image Carousel Background
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 800),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: Image.asset(
+                _images[_currentIndex],
+                key: ValueKey<int>(_currentIndex),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) => Container(
+                  key: ValueKey<String>('error_$_currentIndex'),
+                  color: const Color(0xFF1B5E38),
+                ),
               ),
             ),
 
@@ -1368,6 +1411,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('${p.name} added to cart!'),
+                                duration: const Duration(seconds: 1),
                                 action: SnackBarAction(
                                   label: 'View Cart',
                                   textColor: const Color(0xFF4ADE80),

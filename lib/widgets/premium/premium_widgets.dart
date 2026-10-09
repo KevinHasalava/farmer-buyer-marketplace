@@ -990,6 +990,12 @@ class AppLanguagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+  
+  /*
+  @override
+  Widget build(BuildContext context) {
     AppSettings? settings;
     try {
       settings = context.watch<AppSettings>();
@@ -1051,6 +1057,7 @@ class AppLanguagePill extends StatelessWidget {
       ),
     );
   }
+  */
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
