@@ -10,6 +10,7 @@ import '../../pre_order/presentation/pre_order_list_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
+import 'farmer_orders_screen.dart';
 import 'farmer_products_screen.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
@@ -268,7 +269,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Top Bar ───────────────────────────────────────────────
                 _buildTopBar(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
 
                 // ── Greeting Header ───────────────────────────────────────
                 _buildGreeting(),
@@ -278,11 +279,15 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Farmer Profile Card ───────────────────────────────────
                 _buildProfileCard(context),
-                const SizedBox(height: 22),
+                const SizedBox(height: 16),
 
-                // ── 2x2 Stats Grid ────────────────────────────────────────
+                // ── 2x2 Stats Grid (Image 2 Color Palette!) ───────────────
                 _buildStatsGrid(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
+
+                // ── Add New Harvest Listing Button ────────────────────────
+                _buildAddNewHarvestListingButton(),
+                const SizedBox(height: 20),
 
                 // ── Quick Actions ─────────────────────────────────────────
                 _buildQuickActions(context),
@@ -292,8 +297,16 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 _buildAuctionBanner(context),
                 const SizedBox(height: 24),
 
-                // ── Recent Orders ─────────────────────────────────────────
+                // ── Recent Harvest Orders ─────────────────────────────────
                 _buildRecentOrdersSection(),
+                const SizedBox(height: 24),
+
+                // ── Harvest Stock Overview (New from Image 2!) ────────────
+                _buildHarvestStockOverview(),
+                const SizedBox(height: 20),
+
+                // ── Agronomist Hotline Banner ─────────────────────────────
+                _buildAgronomistHotlineBanner(),
                 const SizedBox(height: 32),
               ],
             ),
@@ -304,77 +317,95 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
-  // ── Top App Bar ─────────────────────────────────────────────────────────────
+  // ── Top App Bar (Matching Reference Header) ───────────────────────────────────
   Widget _buildTopBar(BuildContext context) {
+    final avatarImg = (_farmer.avatarUrl != null && _farmer.avatarUrl!.isNotEmpty)
+        ? _farmer.avatarUrl!
+        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          context.tr.farmerDashboard,
-          style: AppTheme.fontStyle(
-            context.currentLanguage,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF111827),
-          ),
-        ),
+        // Brand logo & Farmer Name
         Row(
           children: [
-            // Quick Language Switcher Pill
-            const AppLanguagePill(),
-            const SizedBox(width: 8),
-
-            // Buyer View Switcher pill button
-            GestureDetector(
-              onTap: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.tr.alreadyAtFarmerRoot,
-                        style: AppTheme.fontStyle(context.currentLanguage),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFF166534),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF166534).withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.agriculture_rounded,
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      context.tr.buyerView,
-                      style: AppTheme.fontStyle(
-                        context.currentLanguage,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4B5563),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.swap_horiz_rounded,
-                      size: 14,
-                      color: Color(0xFF4B5563),
-                    ),
-                  ],
+                  size: 26,
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            // Bell Notification with green indicator dot
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Farm2Home',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF166534),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'FARMER',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF15803D),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  _farmer.name.isNotEmpty ? _farmer.name : 'Janka',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // Action controls: Language pill + Notification bell + Profile avatar
+        Row(
+          children: [
+            const AppLanguagePill(),
+            const SizedBox(width: 8),
+
+            // Notification Bell with red alert indicator
             GestureDetector(
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -383,7 +414,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       context.tr.pendingOrderAlert,
                       style: AppTheme.fontStyle(context.currentLanguage),
                     ),
-                    backgroundColor: const Color(0xFF235A43),
+                    backgroundColor: const Color(0xFF166534),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -398,21 +429,28 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       color: Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE5E7EB)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.notifications_none_rounded,
                       color: Color(0xFF111827),
-                      size: 22,
+                      size: 21,
                     ),
                   ),
                   Positioned(
-                    top: 1,
-                    right: 1,
+                    top: 2,
+                    right: 2,
                     child: Container(
-                      width: 10,
-                      height: 10,
+                      width: 9,
+                      height: 9,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981),
+                        color: const Color(0xFFEF4444),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
                       ),
@@ -507,30 +545,156 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   // ── Greeting Header ─────────────────────────────────────────────────────────
   Widget _buildGreeting() {
     final displayName = _farmer.name.split(' ').first;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          '${_getGreeting()}, $displayName 🌾',
-          style: AppTheme.fontStyle(
-            context.currentLanguage,
-            fontSize: 23,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF111827),
-            letterSpacing: -0.4,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_getGreeting()}, $displayName',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B),
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 3),
+              const Text(
+                'Hakgala Valley Organic Farm • Nuwara Eliya',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          context.tr.farmOverview,
-          style: AppTheme.fontStyle(
-            context.currentLanguage,
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: const Color(0xFF6B7280),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFDCFCE7),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFBBF7D0)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16A34A),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+              const Text(
+                'Gate Open',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF166534),
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  // ── Live Market Reception Banner ─────────────────────────────────────────────
+  Widget _buildLiveMarketReception() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F4FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE0E7FF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF86EFAC),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Color(0xFF14532D),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Live Market Reception',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Taking express logistics pickups',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.wb_sunny_outlined,
+                  color: Color(0xFF15803D),
+                  size: 14,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  '21°C Hakgala',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF15803D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -620,16 +784,38 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                     ),
                   ),
                   child: ClipOval(
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFDCFCE7),
-                        child: const Center(
-                          child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
-                        ),
-                      ),
-                    ),
+                    child: (_farmer.avatarUrl != null && _farmer.avatarUrl!.isNotEmpty)
+                        ? (_farmer.avatarUrl!.startsWith('assets/')
+                            ? Image.asset(
+                                _farmer.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFDCFCE7),
+                                  child: const Center(
+                                    child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                                  ),
+                                ),
+                              )
+                            : Image.network(
+                                _farmer.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFDCFCE7),
+                                  child: const Center(
+                                    child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                                  ),
+                                ),
+                              ))
+                        : Image.network(
+                            'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: const Color(0xFFDCFCE7),
+                              child: const Center(
+                                child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+                              ),
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(
@@ -658,26 +844,34 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
-  // ── 2x2 Stats Grid ──────────────────────────────────────────────────────────
+  // ── 2x2 Stats Grid (Image 2 Color Palette) ──────────────────────────────────
   Widget _buildStatsGrid(BuildContext context) {
     return Column(
       children: [
         Row(
           children: [
+            // Today's Orders (Mint Green: 0xFFDCFCE7)
             Expanded(
-              child: _buildStatCard(
-                value: '12',
-                label: context.tr.activeProducts,
-                icon: Icons.inventory_2_outlined,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const FarmerProductsScreen(),
-                  ),
-                ),
+              child: _buildImage2MetricCard(
+                title: "Today's Orders",
+                value: '14',
+                subtitle: '+4 peak',
+                bgColor: const Color(0xFFDCFCE7),
+                borderColor: const Color(0xFFBBF7D0),
+                textColor: const Color(0xFF14532D),
+                subtextColor: const Color(0xFF15803D),
+                icon: Icons.shopping_bag_rounded,
+                iconColor: const Color(0xFF166534),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+                  );
+                },
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
+            // Active Crops (Soft Blue: 0xFFEFF6FF)
             Expanded(
               child: _buildStatCard(
                 value: '${OrderLifecycleManager.instance.pendingFarmerOrdersCount}',
@@ -688,9 +882,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         Row(
           children: [
+            // Pending Pickup (Warm Peach: 0xFFFFEDD5)
             Expanded(
               child: _buildStatCard(
                 value: '${16 + OrderLifecycleManager.instance.completedFarmerOrdersCount}',
@@ -699,22 +894,17 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 onTap: _showOrdersSheet,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
+            // Today's Total (Ice Blue: 0xFFE0F2FE)
             Expanded(
               child: _buildStatCard(
                 value: 'Rs. ${(8500 + OrderLifecycleManager.instance.totalFarmerEarnings).toStringAsFixed(0)}',
                 label: context.tr.thisWeekEarnings,
                 icon: Icons.monetization_on_outlined,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.tr.weeklyEarningsSummary,
-                        style: AppTheme.fontStyle(context.currentLanguage),
-                      ),
-                      backgroundColor: const Color(0xFF235A43),
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
                   );
                 },
               ),
@@ -725,65 +915,133 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildImage2MetricCard({
+    required String title,
     required String value,
-    required String label,
+    String prefix = '',
+    required String subtitle,
+    required Color bgColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color subtextColor,
     required IconData icon,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: bgColor,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
-                    value,
-                    style: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      fontSize: value.startsWith('Rs') ? 17 : 22,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1E5E3A),
-                      letterSpacing: -0.5,
+                    title,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
                     ),
                   ),
                 ),
                 Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(10),
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 20, color: const Color(0xFF10B981)),
+                  child: Icon(icon, size: 17, color: iconColor),
                 ),
               ],
             ),
             const SizedBox(height: 10),
+            if (prefix.isNotEmpty)
+              Text(
+                prefix,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: prefix.isNotEmpty ? 20 : 25,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      subtitle,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: subtextColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Add New Harvest Listing Button ──────────────────────────────────────────
+  Widget _buildAddNewHarvestListingButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AddEditProductScreen(),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF0A5C36),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_circle_outline_rounded, size: 20),
+            SizedBox(width: 8),
             Text(
-              label,
-              style: AppTheme.fontStyle(
-                context.currentLanguage,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF6B7280),
+              '+ Add New Harvest Listing',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -833,7 +1091,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               icon: Icons.assignment_outlined,
               label: context.tr.navOrders,
               isPrimary: false,
-              onTap: _showOrdersSheet,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+                );
+              },
             ),
             _buildActionItem(
               icon: Icons.chat_bubble_outline_rounded,
@@ -1056,7 +1319,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               ),
             ),
             GestureDetector(
-              onTap: _showOrdersSheet,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+                );
+              },
               child: Text(
                 context.tr.seeAll,
                 style: AppTheme.fontStyle(
@@ -1544,6 +1812,337 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     );
   }
 
+  // ── Harvest Stock Overview (Matching Image 2 + Stock Summary Metrics) ───────
+  Widget _buildHarvestStockOverview() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Title & Manage All
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Harvest Stock Overview',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Hakgala Valley Terrace Beds',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FarmerProductsScreen()),
+                );
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(60, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Manage All',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF166534),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Inventory Quick Summary (Total Stock, Available, Low Stock, Out of Stock)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDCFCE7)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStockSummaryPill('Total Stock', '75 kg', const Color(0xFF166534)),
+              Container(width: 1, height: 24, color: const Color(0xFFBBF7D0)),
+              _buildStockSummaryPill('Available', '2 items', const Color(0xFF047857)),
+              Container(width: 1, height: 24, color: const Color(0xFFBBF7D0)),
+              _buildStockSummaryPill('Low Stock', '1 item', const Color(0xFFC2410C)),
+              Container(width: 1, height: 24, color: const Color(0xFFBBF7D0)),
+              _buildStockSummaryPill('Out of Stock', '0 items', const Color(0xFF64748B)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Product Cards from Reference Image
+        Row(
+          children: [
+            Expanded(
+              child: _buildStockItemCard(
+                imageUrl:
+                    'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
+                badge: 'Grade A',
+                title: 'Nuwara Eliya Carrots',
+                stock: '45 kg left',
+                price: 'Rs. 380/kg',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStockItemCard(
+                imageUrl:
+                    'https://images.unsplash.com/photo-1628771065518-0d82f1938462?w=500&auto=format&fit=crop&q=80',
+                badge: 'Fresh Cut',
+                title: 'Highland Leeks',
+                stock: '30 kg left',
+                price: 'Rs. 310/kg',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockSummaryPill(String label, String val, Color valColor) {
+    return Column(
+      children: [
+        Text(
+          val,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w800,
+            color: valColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockItemCard({
+    required String imageUrl,
+    required String badge,
+    required String title,
+    required String stock,
+    required String price,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                child: Image.network(
+                  imageUrl,
+                  height: 100,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 100,
+                    color: const Color(0xFFE2E8F0),
+                    child: const Center(
+                      child: Icon(Icons.eco_rounded, color: Color(0xFF166534)),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    badge,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      stock,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    Text(
+                      price,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Agronomist Hotline Banner (Matching Image 2) ────────────────────────────
+  Widget _buildAgronomistHotlineBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF064E3B),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF064E3B).withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFF047857),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Agronomist Hotline',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Nuwara Eliya Regional Support Desk',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFA7F3D0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Calling Agronomist Support Desk: +94 52 222 3456'),
+                  backgroundColor: Color(0xFF064E3B),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.phone_rounded,
+                color: Color(0xFF064E3B),
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Bottom Navigation Bar ───────────────────────────────────────────────────
   Widget _buildBottomNav(BuildContext context) {
     return Container(
@@ -1569,8 +2168,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             hasBadge: true,
             isSelected: _selectedNav == 1,
             onTap: () {
-              setState(() => _selectedNav == 1);
-              _showOrdersSheet();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+              );
             },
           ),
           _buildNavItem(

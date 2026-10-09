@@ -35,6 +35,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
   @override
   void initState() {
     super.initState();
+    FarmerProfileManager.instance.addListener(_onProfileChanged);
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -80,7 +81,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
         category: 'Vegetables',
         isActive: true,
         imageUrl:
-            'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=400&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
       ),
       ProductData(
         name: 'Cucumber',
@@ -105,8 +106,15 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     ];
   }
 
+  void _onProfileChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    FarmerProfileManager.instance.removeListener(_onProfileChanged);
     _fadeController.dispose();
     super.dispose();
   }
@@ -486,16 +494,34 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     ),
                   ),
                   child: ClipOval(
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFDCFCE7),
-                        child: const Center(
-                          child: Text('👨‍🌾', style: TextStyle(fontSize: 26)),
-                        ),
-                      ),
-                    ),
+                    child: (_farmer.avatarUrl != null && _farmer.avatarUrl!.isNotEmpty)
+                        ? (_farmer.avatarUrl!.startsWith('assets/')
+                            ? Image.asset(
+                                _farmer.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFDCFCE7),
+                                  child: const Center(
+                                    child: Text('👨‍🌾', style: TextStyle(fontSize: 26)),
+                                  ),
+                                ),
+                              )
+                            : Image.network(
+                                _farmer.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFDCFCE7),
+                                  child: const Center(
+                                    child: Text('👨‍🌾', style: TextStyle(fontSize: 26)),
+                                  ),
+                                ),
+                              ))
+                        : Container(
+                            color: const Color(0xFFDCFCE7),
+                            child: const Center(
+                              child: Text('👨‍🌾', style: TextStyle(fontSize: 26)),
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(

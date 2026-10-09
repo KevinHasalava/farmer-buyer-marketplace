@@ -5,6 +5,9 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 
+import '../../../core/localization/app_settings.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 import '../../farmer/presentation/add_edit_product_screen.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
@@ -125,6 +128,403 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
     }
   }
 
+  static const List<String> _presetAvatars = [
+    'assets/images/farmer_portrait_indian.jpg',
+    'assets/images/farmer_portrait_basket.jpg',
+    'assets/images/farmer_portrait_sunset.jpg',
+    'assets/images/farmer_portrait_female.jpg',
+    'assets/images/farmer_portrait_young.jpg',
+    'assets/images/farmer_portrait_2.jpg',
+  ];
+
+  static ImageProvider _getAvatarImageProvider(String url) {
+    if (url.startsWith('assets/')) {
+      return AssetImage(url);
+    }
+    return NetworkImage(url);
+  }
+
+  static Widget _buildAvatarImage(String url, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
+    if (url.startsWith('assets/')) {
+      return Image.asset(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFFDCFCE7),
+          child: const Center(
+            child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+          ),
+        ),
+      );
+    }
+    return Image.network(
+      url,
+      width: width,
+      height: height,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Container(
+        color: const Color(0xFFDCFCE7),
+        child: const Center(
+          child: Text('👨‍🌾', style: TextStyle(fontSize: 28)),
+        ),
+      ),
+    );
+  }
+
+  /// Opens the Profile Picture selector modal with 6 realistic farmer portraits
+  void _showChangePhotoModal() {
+    String selectedUrl = _farmer.avatarUrl ?? _presetAvatars.first;
+    final urlController = TextEditingController(text: selectedUrl);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (modalContext, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Edit Profile Picture',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: _textDark,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Preview Circle
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 86,
+                          height: 86,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _forestGreen, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _forestGreen.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: _buildAvatarImage(
+                              selectedUrl,
+                              width: 86,
+                              height: 86,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: _forestGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Preset Avatars Section: 6 Realistic Farmer Portraits
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Choose a Portrait',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _textDark.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: _presetAvatars.map((url) {
+                        final isSelected = selectedUrl == url;
+                        return GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setModalState(() {
+                              selectedUrl = url;
+                              urlController.text = url;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 62,
+                            height: 62,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? _forestGreen : Colors.grey.shade300,
+                                width: isSelected ? 3 : 1.5,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: _forestGreen.withValues(alpha: 0.25),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipOval(
+                                  child: _buildAvatarImage(url),
+                                ),
+                                if (isSelected)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _forestGreen.withValues(alpha: 0.35),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.check_circle_rounded,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Custom URL Field
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Or Enter Custom Image URL',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _textDark.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: urlController,
+                            style: const TextStyle(fontSize: 13),
+                            decoration: InputDecoration(
+                              hintText: 'https://images.unsplash.com/...',
+                              hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              filled: true,
+                              fillColor: const Color(0xFFF8FAFC),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: _forestGreen, width: 1.5),
+                              ),
+                            ),
+                            onChanged: (val) {
+                              if (val.trim().isNotEmpty) {
+                                setModalState(() => selectedUrl = val.trim());
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () {
+                            if (urlController.text.trim().isNotEmpty) {
+                              setModalState(() => selectedUrl = urlController.text.trim());
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: _forestGreen,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                          child: const Text('Apply', style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+
+                    // Save Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _forestGreen,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async {
+                          HapticFeedback.mediumImpact();
+                          final finalUrl = selectedUrl.trim();
+                          setState(() {
+                            _farmer = _farmer.copyWith(avatarUrl: finalUrl);
+                          });
+                          Navigator.pop(ctx);
+                          await _profileManager.updateProfile(avatarUrl: finalUrl);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profile photo updated successfully! ✓'),
+                                backgroundColor: _forestGreen,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Save Profile Photo',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Handles farmer account logout and navigates to the Role Selection page
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              context.tr.logout,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: Text(
+          context.tr.logoutConfirmBody,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF4B5563), height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              context.tr.cancel,
+              style: const TextStyle(color: Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            child: Text(
+              context.tr.logout,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await const AuthService().signOut();
+    } catch (_) {}
+
+    if (!mounted) return;
+    await context.read<AppSettings>().clearRole();
+
+    if (mounted) {
+      context.go(AppRoutes.roleSelection);
+    }
+  }
+
   void _showEditProfileModal() {
     final nameCtrl = TextEditingController(text: _farmer.name);
     final farmNameCtrl = TextEditingController(text: _profileManager.profile.farmName);
@@ -186,6 +586,46 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                   ],
                 ),
                 const SizedBox(height: 12),
+
+                // Avatar preview & Change Photo button
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _forestGreen, width: 2.5),
+                        ),
+                        child: ClipOval(
+                          child: _buildAvatarImage(
+                            _farmer.avatarUrl ?? _presetAvatars.first,
+                            width: 70,
+                            height: 70,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showChangePhotoModal();
+                        },
+                        icon: const Icon(Icons.camera_alt_outlined, size: 16, color: _forestGreen),
+                        label: const Text(
+                          'Change Photo',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _forestGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
 
                 // Name Field
                 _buildEditField(controller: nameCtrl, label: 'Full Name', hint: 'e.g. Sunil Perera'),
@@ -444,10 +884,10 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.edit_rounded, size: 14, color: _forestGreen),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             context.tr.edit,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: _forestGreen,
@@ -581,59 +1021,70 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                           ),
                         ),
                       ),
-                      // Centered overlapping Avatar with checkmark
+                      // Centered overlapping Avatar with camera edit button
                       Positioned(
                         bottom: 0,
                         left: 0,
                         right: 0,
                         child: Center(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                width: 92,
-                                height: 92,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3.5,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.15),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                  image: DecorationImage(
-                                    image: NetworkImage(avatarImg),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 2,
-                                bottom: 2,
-                                child: Container(
-                                  width: 26,
-                                  height: 26,
+                          child: GestureDetector(
+                            onTap: _showChangePhotoModal,
+                            behavior: HitTestBehavior.opaque,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 92,
+                                  height: 92,
                                   decoration: BoxDecoration(
-                                    color: _forestGreen,
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: Colors.white,
-                                      width: 2.5,
+                                      width: 3.5,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.15),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                    image: DecorationImage(
+                                      image: _getAvatarImageProvider(avatarImg),
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                  child: const Icon(
-                                    Icons.check_rounded,
-                                    size: 14,
-                                    color: Colors.white,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: _forestGreen,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 15,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -729,6 +1180,46 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                               ),
                             ],
                           ),
+
+                          // ── Contact Phone Pill ────────────────────────────
+                          if (f.phone != null && f.phone!.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFFA7F3D0)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.02),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.phone_in_talk_rounded,
+                                    size: 15,
+                                    color: _forestGreen,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    f.phone!,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _forestGreen,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
 
                           const SizedBox(height: 20),
 
