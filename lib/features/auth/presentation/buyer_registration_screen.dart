@@ -1130,11 +1130,15 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
 
               // ── Already have account? Log In ──────────────────────────────
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
                     const Text(
                       'Already have an account? ',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),

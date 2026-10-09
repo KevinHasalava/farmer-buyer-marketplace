@@ -410,6 +410,78 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  Widget _buildRoleSegmentedPicker() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          _buildRoleTab(UserRole.buyer, Icons.shopping_basket_rounded, context.tr.buyer),
+          _buildRoleTab(UserRole.farmer, Icons.agriculture_rounded, context.tr.farmer),
+          _buildRoleTab(UserRole.driver, Icons.local_shipping_rounded, context.tr.driver),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleTab(UserRole role, IconData icon, String title) {
+    final isSelected = _selectedRole == role;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedRole = role);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? const Color(0xFF15803D) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -422,6 +494,7 @@ class _LoginScreenState extends State<LoginScreen>
           _PremiumHeader(
             leafFade: _leafFade,
             screenHeight: size.height,
+            selectedRole: _selectedRole,
           ),
 
           // ── Scrollable Form ───────────────────────────────────────────
@@ -433,7 +506,7 @@ class _LoginScreenState extends State<LoginScreen>
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
                     AppDimensions.spaceLG,
-                    AppDimensions.spaceMD,
+                    AppDimensions.spaceSM,
                     AppDimensions.spaceLG,
                     AppDimensions.spaceXXL,
                   ),
@@ -442,12 +515,15 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // ── Interactive Segmented Role Switcher ─────────────
+                        _buildRoleSegmentedPicker(),
+
                         // Title
                         Text(
                           context.tr.signInToYourAccount,
                           style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
                             letterSpacing: -0.5,
                           ),
@@ -461,7 +537,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceLG),
+                        const SizedBox(height: AppDimensions.spaceMD),
 
                         // ── Fields ────────────────────────────────────
                         _PremiumField(
@@ -587,17 +663,20 @@ class _LoginScreenState extends State<LoginScreen>
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   context.tr.dontHaveAccount,
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF64748B),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
                                 GestureDetector(
                                   onTap: () => context.push(
                                     AppRoutes.registerFor(_selectedRole),
@@ -608,6 +687,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       UserRole.farmer => context.tr.registerAsFarmer,
                                       UserRole.driver => context.tr.registerAsDriver,
                                     },
+                                    textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF15803D),
                                       fontWeight: FontWeight.w700,
@@ -679,10 +759,12 @@ class _PremiumHeader extends StatelessWidget {
   const _PremiumHeader({
     required this.leafFade,
     required this.screenHeight,
+    required this.selectedRole,
   });
 
   final Animation<double> leafFade;
   final double screenHeight;
+  final UserRole selectedRole;
 
   @override
   Widget build(BuildContext context) {
@@ -691,13 +773,13 @@ class _PremiumHeader extends StatelessWidget {
         // Gradient background
         Container(
           width: double.infinity,
-          height: screenHeight * 0.26,
+          height: screenHeight * 0.28,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFF032B1C),
-                Color(0xFF063725),
-                Color(0xFF0D5C38),
+                Color(0xFF021E12),
+                Color(0xFF063924),
+                Color(0xFF0D5A3A),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -751,8 +833,8 @@ class _PremiumHeader extends StatelessWidget {
               children: [
                 // Logo circle
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 58,
+                  height: 58,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
@@ -762,7 +844,7 @@ class _PremiumHeader extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.5),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.45),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
@@ -771,10 +853,10 @@ class _PremiumHeader extends StatelessWidget {
                   child: const Icon(
                     Icons.eco_rounded,
                     color: Colors.white,
-                    size: 28,
+                    size: 30,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 const Text(
                   'Farm2Home',
                   style: TextStyle(
@@ -793,15 +875,56 @@ class _PremiumHeader extends StatelessWidget {
                     Text(
                       context.tr.freshDirectHonest,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.6),
-                        letterSpacing: 2,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 0.8,
                       ),
                     ),
                     const SizedBox(width: 6),
                     _dot(),
                   ],
+                ),
+                const SizedBox(height: 8),
+                // Dynamic Role Badge Chip
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.28),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        switch (selectedRole) {
+                          UserRole.buyer => Icons.shopping_basket_rounded,
+                          UserRole.farmer => Icons.agriculture_rounded,
+                          UserRole.driver => Icons.local_shipping_rounded,
+                        },
+                        size: 13,
+                        color: const Color(0xFFFBBF24),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        switch (selectedRole) {
+                          UserRole.buyer => '${context.tr.buyer} Portal',
+                          UserRole.farmer => '${context.tr.farmer} Portal',
+                          UserRole.driver => '${context.tr.driver} Portal',
+                        },
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -923,45 +1046,60 @@ class _PremiumField extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textDark,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+            letterSpacing: 0.1,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
         TextFormField(
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
           style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textDark,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF0F172A),
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(
               fontSize: 14,
-              color: AppColors.textHint,
+              color: Color(0xFF94A3B8),
             ),
-            prefixIcon: Icon(icon, size: 18, color: AppColors.textSecondary),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 19, color: const Color(0xFF15803D)),
+              ),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 56, minHeight: 48),
             filled: true,
-            fillColor: AppColors.surfaceWhite,
+            fillColor: const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: AppColors.primaryGreen,
+                color: Color(0xFF16A34A),
                 width: 2,
               ),
             ),
@@ -996,49 +1134,76 @@ class _PremiumPasswordField extends StatelessWidget {
         Text(
           context.tr.password,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textDark,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1E293B),
+            letterSpacing: 0.1,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
         TextFormField(
           controller: controller,
           obscureText: obscure,
           validator: validator,
-          style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+          style: const TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF0F172A),
+          ),
           decoration: InputDecoration(
             hintText: '••••••••••••',
-            hintStyle:
-                const TextStyle(fontSize: 14, color: AppColors.textHint),
-            prefixIcon: const Icon(Icons.lock_outline_rounded,
-                size: 18, color: AppColors.textSecondary),
-            suffixIcon: GestureDetector(
-              onTap: onToggle,
-              child: Icon(
+            hintStyle: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF94A3B8),
+            ),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  size: 19,
+                  color: Color(0xFF15803D),
+                ),
+              ),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 56, minHeight: 48),
+            suffixIcon: IconButton(
+              icon: Icon(
                 obscure
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
-                size: 18,
-                color: AppColors.textSecondary,
+                size: 20,
+                color: const Color(0xFF64748B),
               ),
+              onPressed: onToggle,
             ),
             filled: true,
-            fillColor: AppColors.surfaceWhite,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryGreen, width: 2),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: Color(0xFF16A34A),
+                width: 2,
+              ),
             ),
           ),
         ),
@@ -1106,16 +1271,16 @@ class _PremiumCTAButtonState extends State<_PremiumCTAButton>
           height: 54,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1E8342), Color(0xFF0D5C38)],
+              colors: [Color(0xFF16A34A), Color(0xFF15803D), Color(0xFF0F5132)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryGreen.withValues(alpha: 0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: const Color(0xFF16A34A).withValues(alpha: 0.38),
+                blurRadius: 18,
+                offset: const Offset(0, 7),
               ),
             ],
           ),
@@ -1136,17 +1301,17 @@ class _PremiumCTAButtonState extends State<_PremiumCTAButton>
                     Text(
                       widget.label,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 15.5,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.3,
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Icon(
                       Icons.arrow_forward_rounded,
                       color: Colors.white,
-                      size: 18,
+                      size: 19,
                     ),
                   ],
                 ),

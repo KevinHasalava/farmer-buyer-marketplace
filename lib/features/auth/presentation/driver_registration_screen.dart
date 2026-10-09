@@ -1182,17 +1182,20 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
               // ── Already registered? Log In ─────────────────────────────────
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
                     Text(
                       context.tr.alreadyRegisteredDriver,
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
                       ),
                     ),
-                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
                       child: Text(
