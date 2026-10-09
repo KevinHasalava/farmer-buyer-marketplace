@@ -378,13 +378,17 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                       children: const [
                         Icon(Icons.eco_rounded, size: 18, color: _forestGreen),
                         SizedBox(width: 6),
-                        Text(
-                          'Farm2Home',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: _textDark,
-                            letterSpacing: -0.3,
+                        Expanded(
+                          child: Text(
+                            'Farm2Home',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                              letterSpacing: -0.3,
+                            ),
                           ),
                         ),
                       ],

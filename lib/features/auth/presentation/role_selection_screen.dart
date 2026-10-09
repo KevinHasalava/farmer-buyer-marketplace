@@ -87,14 +87,19 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           ),
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        '🌾 Farm2Home Direct',
-                        style: AppTheme.fontStyle(
-                          context.currentLanguage,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '🌾 Farm2Home Direct',
+                          textAlign: TextAlign.right,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],

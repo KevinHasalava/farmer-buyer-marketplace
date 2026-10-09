@@ -82,20 +82,26 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.eco_rounded, color: _forestGreen, size: 24),
-                      SizedBox(width: 6),
-                      Text(
-                        'Farm2Home Direct',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _forestGreen,
-                          letterSpacing: -0.3,
+                  Expanded(
+                    child: Row(
+                      children: const [
+                        Icon(Icons.eco_rounded, color: _forestGreen, size: 24),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Farm2Home Direct',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _forestGreen,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   Row(
                     children: [
