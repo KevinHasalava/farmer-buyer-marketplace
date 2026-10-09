@@ -7,10 +7,12 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../../pre_order/presentation/pre_order_list_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
 import 'farmer_products_screen.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 import '../../auction/presentation/farmer/farmer_auction_list_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
 import '../../auction/services/auction_manager.dart';
@@ -419,10 +421,87 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+
+            // Quick Logout button
+            Tooltip(
+              message: context.tr.logout,
+              child: GestureDetector(
+                onTap: _handleLogout,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: Color(0xFFDC2626),
+                    size: 19,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ],
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+            const SizedBox(width: 8),
+            Text(
+              context.tr.logout,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: Text(context.tr.logoutConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              context.tr.cancel,
+              style: const TextStyle(color: Color(0xFF64748B)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(context.tr.logout),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await const AuthService().signOut();
+    } catch (_) {}
+
+    if (!mounted) return;
+    await context.settings.clearRole();
+
+    if (mounted) {
+      context.go(AppRoutes.roleSelection);
+    }
   }
 
   // ── Greeting Header ─────────────────────────────────────────────────────────

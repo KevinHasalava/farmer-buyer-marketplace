@@ -12,7 +12,9 @@ import 'delivery_history_screen.dart';
 import 'driver_chat_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 
 /// Pixel-perfect Driver Profile Screen matching the reference mockup.
 ///
@@ -3456,9 +3458,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             child: Text('Cancel'.trAuto(context), style: TextStyle()),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              try {
+                await const AuthService().signOut();
+              } catch (_) {}
+              if (!context.mounted) return;
+              await context.settings.clearRole();
+              if (context.mounted) {
+                context.go(AppRoutes.roleSelection);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),

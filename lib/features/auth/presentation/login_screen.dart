@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../../widgets/premium/google_brand_button.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
@@ -493,95 +494,125 @@ class _LoginScreenState extends State<LoginScreen>
                           onPressed: _submit,
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceMD),
+                        const SizedBox(height: 20),
 
-                        // Register / Sign Up Navigation to NEW Forms
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                context.tr.dontHaveAccount,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () =>
-                                    context.push(AppRoutes.registerFor(_selectedRole)),
-                                child: Text(
-                                  switch (_selectedRole) {
-                                    UserRole.buyer => context.tr.registerAsBuyer,
-                                    UserRole.farmer => context.tr.registerAsFarmer,
-                                    UserRole.driver => context.tr.registerAsDriver,
-                                  },
-                                  style: const TextStyle(
-                                    color: AppColors.primaryGreen,
-                                    fontWeight: FontWeight.w700,
-                                    decoration: TextDecoration.underline,
-                                    fontSize: 13,
+                        // ── Divider: OR CONTINUE WITH ───────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.transparent, Color(0xFFE2E8F0)],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Mobile OTP Alternative
-                        Center(
-                          child: TextButton.icon(
-                            onPressed: () => context.go(AppRoutes.phoneAuth),
-                            icon: const Icon(Icons.phone_iphone_rounded, size: 16),
-                            label: Text(
-                              context.tr.mobileOtpInstead,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primaryGreen,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              child: Text(
+                                context.tr.orDivider.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.1,
+                                  color: Color(0xFF94A3B8),
+                                ),
                               ),
                             ),
-                          ),
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFE2E8F0), Colors.transparent],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: AppDimensions.spaceSM),
 
-                        // Continue with Google Button
+                        const SizedBox(height: 18),
+
+                        // ── Modern Vector Google Sign-In Button ─────────────
+                        GoogleBrandButton(
+                          onPressed: _isLoading ? null : _loginWithGoogle,
+                          label: 'Continue with Google',
+                          isLoading: _isLoading,
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Mobile OTP Alternative Pill ─────────────────────
                         SizedBox(
                           width: double.infinity,
                           height: 48,
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : _loginWithGoogle,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFCBD5E1)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusSM,
-                                ),
+                          child: TextButton.icon(
+                            onPressed: () => context.go(AppRoutes.phoneAuth),
+                            icon: const Icon(
+                              Icons.phone_iphone_rounded,
+                              size: 18,
+                              color: Color(0xFF1E8342),
+                            ),
+                            label: Text(
+                              context.tr.mobileOtpInstead,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E8342),
                               ),
-                              backgroundColor: Colors.white,
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFFF1F8F5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // ── Register / Sign Up Prompt Card ──────────────────
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
                             ),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Image.network(
-                                  'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png',
-                                  height: 20,
-                                  width: 20,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                    Icons.g_mobiledata_rounded,
-                                    color: Colors.red,
-                                    size: 24,
+                                Text(
+                                  context.tr.dontHaveAccount,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF64748B),
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                const Text(
-                                  'Continue with Google',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1E293B),
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: () => context.push(
+                                    AppRoutes.registerFor(_selectedRole),
+                                  ),
+                                  child: Text(
+                                    switch (_selectedRole) {
+                                      UserRole.buyer => context.tr.registerAsBuyer,
+                                      UserRole.farmer => context.tr.registerAsFarmer,
+                                      UserRole.driver => context.tr.registerAsDriver,
+                                    },
+                                    style: const TextStyle(
+                                      color: Color(0xFF15803D),
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -589,28 +620,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceMD),
-
-                        // OR Divider
-                        Row(
-                          children: [
-                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                context.tr.orDivider,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textHint,
-                                ),
-                              ),
-                            ),
-                            const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-                          ],
-                        ),
-
-                        const SizedBox(height: AppDimensions.spaceMD),
+                        const SizedBox(height: 18),
 
                         // ── Guest / Demo Explore Mode (ලියාපදිංචි නොවී App එක බලන්න) ──
                         SizedBox(
@@ -625,8 +635,8 @@ class _LoginScreenState extends State<LoginScreen>
                               }
                             },
                             icon: const Icon(
-                              Icons.visibility_rounded,
-                              size: 18,
+                              Icons.explore_outlined,
+                              size: 19,
                               color: Color(0xFF1E8342),
                             ),
                             label: Text(
@@ -639,16 +649,13 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
-                                color: Color(0xFF86EFAC),
-                                width: 1.4,
+                                color: Color(0xFFA7F3D0),
+                                width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusSM,
-                                ),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              backgroundColor:
-                                  const Color(0xFF1E8342).withValues(alpha: 0.05),
+                              backgroundColor: const Color(0xFFF0FDF4),
                             ),
                           ),
                         ),

@@ -1,15 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/notify_sms_service.dart';
+import '../../../widgets/premium/google_brand_button.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import 'otp_verification_dialog.dart';
 
@@ -66,8 +69,37 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     'Heirloom Rice',
   ];
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (SupabaseConfig.isInitialized) {
+      _authSubscription =
+          SupabaseConfig.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null && mounted) {
+          final sbUser = session.user;
+          final metadata = sbUser.userMetadata ?? {};
+          await context.read<AppSettings>().setRole(UserRole.buyer);
+          final effectiveName = (metadata['full_name'] as String?) ??
+              sbUser.email?.split('@').first ??
+              'Buyer';
+          await BuyerProfileManager.instance.updateProfile(
+            name: effectiveName,
+            email: sbUser.email,
+          );
+          if (mounted) {
+            context.go(AppRoutes.dashboard);
+          }
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
@@ -75,6 +107,20 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    setState(() => _isLoading = true);
+    HapticFeedback.lightImpact();
+    try {
+      await _authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) _showSnackBar(e.message);
+    } catch (e) {
+      if (mounted) _showSnackBar('Google Sign-In: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -497,6 +543,52 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                 ),
               ),
 
+              // ── Fast Google Sign Up Button ─────────────────────────────────
+              const SizedBox(height: 18),
+              GoogleBrandButton(
+                onPressed: _isLoading ? null : _signUpWithGoogle,
+                label: 'Fast Sign up with Google',
+                isLoading: _isLoading,
+              ),
+
+              const SizedBox(height: 20),
+              // ── Elegant Divider ──────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.transparent, Color(0xFFE2E8F0)],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: Text(
+                      'OR COMPLETE FORM BELOW',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFE2E8F0), Colors.transparent],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
               // ── Select Buyer Type ──────────────────────────────────────────
