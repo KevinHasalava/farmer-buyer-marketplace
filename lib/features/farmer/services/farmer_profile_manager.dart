@@ -55,6 +55,7 @@ class FarmerProfileManager extends ChangeNotifier {
               agrarianCenter: metadata['agrarian_center'] as String? ?? _profile.agrarianCenter,
               scale: metadata['scale'] as String? ?? _profile.scale,
               farmingPractice: metadata['practice'] as String? ?? _profile.farmingPractice,
+              avatarUrl: metadata['avatar_url'] as String? ?? _profile.avatarUrl,
             );
           }
           await prefs.setString(_kFarmerProfileKey, jsonEncode(_profile.toJson()));
@@ -206,6 +207,7 @@ class FarmerProfileManager extends ChangeNotifier {
               'account_number': _profile.accountNumber,
               'practice': _profile.farmingPractice,
               'scale': _profile.scale,
+              'avatar_url': _profile.avatarUrl,
             },
           ),
         );
