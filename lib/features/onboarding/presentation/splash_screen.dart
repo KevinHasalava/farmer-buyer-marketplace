@@ -6,6 +6,7 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
 class SplashScreen extends StatefulWidget {
@@ -136,51 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   parent: _anim,
                                   curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
                                 ),
-                                child: Container(
-                                  width: 104,
-                                  height: 104,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF032215),
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(
-                                      color: const Color(0xFF34D399).withValues(alpha: 0.35),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                                        blurRadius: 36,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 10),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: const LinearGradient(
-                                          colors: [Color(0xFFF59E0B), Color(0xFF10B981)],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                            blurRadius: 14,
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.eco_rounded,
-                                        color: Colors.white,
-                                        size: 34,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                child: const AppBrandLogo(size: 104, hasGlow: true),
                               ),
 
                               const SizedBox(height: 24),

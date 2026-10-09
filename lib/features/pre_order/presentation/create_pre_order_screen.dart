@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/pre_order_manager.dart';
@@ -73,7 +74,7 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
     if (!_formKey.currentState!.validate() || _selectedDate == null) {
       if (_selectedDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select an expected delivery date')),
+          SnackBar(content: Text(context.tr.pleaseSelectDeliveryDate)),
         );
       }
       return;

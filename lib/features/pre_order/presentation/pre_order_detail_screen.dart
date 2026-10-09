@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -119,7 +120,7 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: Divider(color: AppColors.divider),
                             ),
-                            const Text('Premium Contract Terms', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                            Text(context.tr.premiumContractTerms, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                             const SizedBox(height: 12),
                             _buildDetailRow('Delivery Location', order.deliveryLocation.isNotEmpty ? order.deliveryLocation : 'To be discussed'),
                             _buildDetailRow('Payment Terms', order.paymentTerms),
@@ -155,7 +156,7 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Farmer\'s Proposal Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                              Text(context.tr.farmersProposalDetails, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                               const SizedBox(height: 12),
                               _buildDetailRow(
                                 'Estimated Harvest', 
@@ -245,7 +246,7 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                       OutlinedButton.icon(
                         onPressed: () {
                            ScaffoldMessenger.of(context).showSnackBar(
-                             const SnackBar(content: Text('Opening chat...')),
+                             SnackBar(content: Text(context.tr.openingChat)),
                            );
                         },
                         icon: const Icon(Icons.chat_bubble_outline_rounded),
@@ -276,7 +277,7 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                         ElevatedButton.icon(
                           onPressed: () => _rateFarmer(order.cropName, order.farmerName!),
                           icon: const Icon(Icons.star_rounded),
-                          label: const Text('Rate Farmer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          label: Text(context.tr.rateFarmer, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber,
                             foregroundColor: Colors.white,

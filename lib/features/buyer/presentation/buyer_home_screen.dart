@@ -798,48 +798,57 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(8),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.gavel_rounded, color: _forestGreen, size: 16),
                           ),
-                          child: const Icon(Icons.gavel_rounded, color: _forestGreen, size: 16),
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'Live Crop Auctions & Bidding 🌾',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: _textDark,
-                                letterSpacing: -0.3,
-                              ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Live Crop Auctions & Bidding 🌾'.trAuto(context),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textDark,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                Text(
+                                  'Bid on bulk harvest lots direct from farmers'.trAuto(context),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Bid on bulk harvest lots direct from farmers',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const BuyerAuctionListScreen()),
                       ),
-                      child: const Text(
-                        'See All',
-                        style: TextStyle(
+                      child: Text(
+                        'See All'.trAuto(context),
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: _forestGreen,
@@ -886,27 +895,34 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.tr.popularRightNow,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: _textDark,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr.popularRightNow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          context.tr.verifiedFreshPartner,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: _textMuted,
+                          const SizedBox(height: 2),
+                          Text(
+                            context.tr.verifiedFreshPartner,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: _textMuted,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
@@ -920,6 +936,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.tune_rounded, size: 12, color: _textDark),
                             const SizedBox(width: 4),
@@ -1102,44 +1119,45 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.formattedPrice,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: _forestGreen,
-                            ),
-                          ),
-                          if (product.originalPrice != null)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              product.formattedOriginalPrice,
+                              product.formattedPrice,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 10,
-                                decoration: TextDecoration.lineThrough,
-                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _forestGreen,
                               ),
                             ),
-                        ],
+                            if (product.originalPrice != null)
+                              Text(
+                                product.formattedOriginalPrice,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 4),
                       GestureDetector(
                         onTap: onAdd,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(
                             color: _forestGreen,
-                            borderRadius: BorderRadius.circular(14),
+                            shape: BoxShape.circle,
                           ),
-                          child: Text(
-                            context.tr.addProduct,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          child: const Icon(Icons.add, size: 16, color: Colors.white),
                         ),
                       ),
                     ],
@@ -1214,13 +1232,13 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                       color: const Color(0xFF10B981),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.bolt_rounded, size: 11, color: Colors.white),
-                        SizedBox(width: 2),
+                        const Icon(Icons.bolt_rounded, size: 11, color: Colors.white),
+                        const SizedBox(width: 2),
                         Text(
-                          'LIVE BID',
-                          style: TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                          'LIVE BID'.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
@@ -1240,7 +1258,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         const Icon(Icons.timer_outlined, size: 10, color: Color(0xFFFDBA74)),
                         const SizedBox(width: 3),
                         Text(
-                          auction.remainingTimeString,
+                          auction.remainingTimeString.trAuto(context),
                           style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                         ),
                       ],
@@ -1252,7 +1270,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   left: 8,
                   right: 8,
                   child: Text(
-                    '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location}',
+                    '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location}'.trAuto(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
@@ -1268,14 +1286,14 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    auction.cropName,
+                    auction.cropName.trAuto(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Farmer: ${auction.farmerName}',
+                    'Farmer: ${auction.farmerName}'.trAuto(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 10.5, color: _textMuted),
@@ -1284,28 +1302,33 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            auction.totalBids > 0 ? 'Top Bid' : 'Starting Bid',
-                            style: const TextStyle(fontSize: 9.5, color: _textMuted, fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            'Rs. ${auction.effectivePrice.toStringAsFixed(0)}/${auction.unit}',
-                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _forestGreen),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (auction.totalBids > 0 ? 'Top Bid' : 'Starting Bid').trAuto(context),
+                              style: const TextStyle(fontSize: 9.5, color: _textMuted, fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'Rs. ${auction.effectivePrice.toStringAsFixed(0)}/${auction.unit}'.trAuto(context),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _forestGreen),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: _forestGreen,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Bid Now',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                        child: Text(
+                          'Bid Now'.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],
@@ -1393,14 +1416,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        product.formattedPrice,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: _forestGreen,
+                      Expanded(
+                        child: Text(
+                          product.formattedPrice,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: _forestGreen,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 4),
                       GestureDetector(
                         onTap: onAdd,
                         child: Container(

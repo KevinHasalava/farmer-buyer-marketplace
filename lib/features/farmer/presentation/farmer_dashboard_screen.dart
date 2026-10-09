@@ -319,91 +319,66 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
   // ── Top App Bar (Matching Reference Header) ───────────────────────────────────
   Widget _buildTopBar(BuildContext context) {
-    final avatarImg = (_farmer.avatarUrl != null && _farmer.avatarUrl!.isNotEmpty)
-        ? _farmer.avatarUrl!
-        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80';
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Brand logo & Farmer Name
-        Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF166534),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF166534).withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.agriculture_rounded,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+        Expanded(
+          child: Row(
+            children: [
+              const AppBrandLogo(size: 40, hasGlow: false),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Farm2Home',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF166534),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'FARMER',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF15803D),
-                          letterSpacing: 0.5,
+                    Row(
+                      children: [
+                        const AppBrandWordmark(fontSize: 16, isLight: false),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text(
+                            'FARMER',
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF15803D),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                    Text(
+                      _farmer.name.isNotEmpty ? _farmer.name : 'Janka',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4B5563),
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  _farmer.name.isNotEmpty ? _farmer.name : 'Janka',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF4B5563),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 6),
 
-        // Action controls: Language pill + Notification bell + Profile avatar
+        // Action controls: Language pill + Notification bell
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const AppLanguagePill(),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
 
             // Notification Bell with red alert indicator
             GestureDetector(
@@ -596,9 +571,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
               const SizedBox(width: 5),
-              const Text(
-                'Gate Open',
-                style: TextStyle(
+              Text(
+                'Gate Open'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF166534),
@@ -636,22 +611,22 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Live Market Reception',
-                  style: TextStyle(
+                  'Live Market Reception'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Taking express logistics pickups',
-                  style: TextStyle(
+                  'Taking express logistics pickups'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF64748B),
@@ -673,18 +648,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.wb_sunny_outlined,
                   color: Color(0xFF15803D),
                   size: 14,
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
-                  '21°C Hakgala',
-                  style: TextStyle(
+                  '21°C Hakgala'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF15803D),
@@ -853,9 +828,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             // Today's Orders (Mint Green: 0xFFDCFCE7)
             Expanded(
               child: _buildImage2MetricCard(
-                title: "Today's Orders",
+                title: "Today's Orders".trAuto(context),
                 value: '14',
-                subtitle: '+4 peak',
+                subtitle: '+4 peak'.trAuto(context),
                 bgColor: const Color(0xFFDCFCE7),
                 borderColor: const Color(0xFFBBF7D0),
                 textColor: const Color(0xFF14532D),
@@ -876,7 +851,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               child: _buildImage2MetricCard(
                 title: context.tr.newOrders,
                 value: '${OrderLifecycleManager.instance.pendingFarmerOrdersCount}',
-                subtitle: 'Pending',
+                subtitle: 'Pending'.trAuto(context),
                 bgColor: const Color(0xFFEFF6FF),
                 borderColor: const Color(0xFFDBEAFE),
                 textColor: const Color(0xFF1E40AF),
@@ -896,7 +871,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               child: _buildImage2MetricCard(
                 title: context.tr.completedOrdersFarmer,
                 value: '${16 + OrderLifecycleManager.instance.completedFarmerOrdersCount}',
-                subtitle: 'Delivered',
+                subtitle: 'Delivered'.trAuto(context),
                 bgColor: const Color(0xFFFFEDD5),
                 borderColor: const Color(0xFFFED7AA),
                 textColor: const Color(0xFF9A3412),
@@ -912,8 +887,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               child: _buildImage2MetricCard(
                 title: context.tr.thisWeekEarnings,
                 value: (8500 + OrderLifecycleManager.instance.totalFarmerEarnings).toStringAsFixed(0),
-                prefix: 'Rs.',
-                subtitle: 'Net income',
+                prefix: 'Rs.'.trAuto(context),
+                subtitle: 'Net income'.trAuto(context),
                 bgColor: const Color(0xFFE0F2FE),
                 borderColor: const Color(0xFFBAE6FD),
                 textColor: const Color(0xFF0369A1),
@@ -1051,14 +1026,14 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             borderRadius: BorderRadius.circular(24),
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_circle_outline_rounded, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.add_circle_outline_rounded, size: 20),
+            const SizedBox(width: 8),
             Text(
-              '+ Add New Harvest Listing',
-              style: TextStyle(
+              '+ Add New Harvest Listing'.trAuto(context),
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -1086,48 +1061,57 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
         ),
         const SizedBox(height: 14),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildActionItem(
-              icon: Icons.add_rounded,
-              label: context.tr.addProduct,
-              isPrimary: true,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
-              ),
-            ),
-            _buildActionItem(
-              icon: Icons.inventory_2_outlined,
-              label: context.tr.myProducts,
-              isPrimary: false,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FarmerProductsScreen()),
-              ),
-            ),
-            _buildActionItem(
-              icon: Icons.assignment_outlined,
-              label: context.tr.navOrders,
-              isPrimary: false,
-              onTap: () {
-                Navigator.push(
+            Expanded(
+              child: _buildActionItem(
+                icon: Icons.add_rounded,
+                label: context.tr.addProduct,
+                isPrimary: true,
+                onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
-                );
-              },
+                  MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
+                ),
+              ),
             ),
-            _buildActionItem(
-              icon: Icons.chat_bubble_outline_rounded,
-              label: context.tr.messages,
-              isPrimary: false,
-              onTap: _showMessagesSheet,
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildActionItem(
+                icon: Icons.inventory_2_outlined,
+                label: context.tr.myProducts,
+                isPrimary: false,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FarmerProductsScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildActionItem(
+                icon: Icons.assignment_outlined,
+                label: context.tr.navOrders,
+                isPrimary: false,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildActionItem(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: context.tr.messages,
+                isPrimary: false,
+                onTap: _showMessagesSheet,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 14),
-
-
       ],
     );
   }
@@ -1141,13 +1125,14 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     return GestureDetector(
       onTap: onTap,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: isPrimary ? const Color(0xFF235A43) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               border: isPrimary
                   ? null
                   : Border.all(color: const Color(0xFFE5E7EB)),
@@ -1163,17 +1148,20 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             ),
             child: Icon(
               icon,
-              size: isPrimary ? 28 : 24,
+              size: isPrimary ? 26 : 22,
               color: isPrimary ? Colors.white : const Color(0xFF235A43),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTheme.fontStyle(
               context.currentLanguage,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF374151),
             ),
           ),
@@ -1224,7 +1212,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                         const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFF4ADE80)),
                         const SizedBox(width: 4),
                         Text(
-                          '$activeCount LIVE LOTS OPEN',
+                          '$activeCount LIVE LOTS OPEN'.trAuto(context),
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -1246,9 +1234,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ],
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Crop Bidding / Auction System 🌾',
-                style: TextStyle(
+              Text(
+                'Crop Bidding / Auction System 🌾'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -1256,9 +1244,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Auction bulk harvests directly to buyers. Receive competitive bids for top market value.',
-                style: TextStyle(
+              Text(
+                'Auction bulk harvests directly to buyers. Receive competitive bids for top market value.'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFFD1FAE5),
                   height: 1.35,
@@ -1281,9 +1269,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                         padding: const EdgeInsets.symmetric(vertical: 11),
                       ),
                       icon: const Icon(Icons.dashboard_customize_rounded, size: 16),
-                      label: const Text(
-                        'Manage Auctions',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                      label: Text(
+                        'Manage Auctions'.trAuto(context),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
@@ -1300,13 +1288,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.add_rounded, size: 16),
-                        SizedBox(width: 4),
+                        const Icon(Icons.add_rounded, size: 16),
+                        const SizedBox(width: 4),
                         Text(
-                          'New Lot',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                          'New Lot'.trAuto(context),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
@@ -1645,16 +1633,16 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Driver Handover PIN',
-                              style: TextStyle(
+                            Text(
+                              'Driver Handover PIN'.trAuto(context),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13,
                                 color: Color(0xFF166534),
                               ),
                             ),
                             Text(
-                              'Provide to Rider upon crate collection',
+                              'Provide to Rider upon crate collection'.trAuto(context),
                               style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                             ),
                           ],
@@ -1747,9 +1735,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
                 const SizedBox(height: 14),
                 // Items List
-                const Text(
-                  'Order Items',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                Text(
+                  'Order Items'.trAuto(context),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                 ),
                 const SizedBox(height: 8),
                 ...ord.items.map((item) => Padding(
@@ -1760,7 +1748,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              item.name,
+                              item.name.trAuto(context),
                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                             ),
                           ),
@@ -2137,7 +2125,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Calling Agronomist Support Desk: +94 52 222 3456'),
+                  content: Text('\: +94 52 222 3456'),
                   backgroundColor: Color(0xFF064E3B),
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -2173,48 +2161,55 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(
-            icon: Icons.home_rounded,
-            label: context.tr.navHome,
-            isSelected: _selectedNav == 0,
-            onTap: () => setState(() => _selectedNav == 0),
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.home_rounded,
+              label: context.tr.navHome,
+              isSelected: _selectedNav == 0,
+              onTap: () => setState(() => _selectedNav == 0),
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.assignment_outlined,
-            label: context.tr.navOrders,
-            hasBadge: true,
-            isSelected: _selectedNav == 1,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
-              );
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.assignment_outlined,
+              label: context.tr.navOrders,
+              hasBadge: true,
+              isSelected: _selectedNav == 1,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FarmerOrdersScreen()),
+                );
+              },
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: context.tr.navChat,
-            isSelected: _selectedNav == 2,
-            onTap: () {
-              setState(() => _selectedNav == 2);
-              _showMessagesSheet();
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: context.tr.navChat,
+              isSelected: _selectedNav == 2,
+              onTap: () {
+                setState(() => _selectedNav == 2);
+                _showMessagesSheet();
+              },
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.person_outline_rounded,
-            label: context.tr.navProfile,
-            isSelected: _selectedNav == 3,
-            onTap: () {
-              setState(() => _selectedNav == 3);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FarmerProfileScreen(farmer: _farmer),
-                ),
-              );
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.person_outline_rounded,
+              label: context.tr.navProfile,
+              isSelected: _selectedNav == 3,
+              onTap: () {
+                setState(() => _selectedNav == 3);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FarmerProfileScreen(farmer: _farmer),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -2263,6 +2258,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           const SizedBox(height: 4),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTheme.fontStyle(
               context.currentLanguage,
               fontSize: 11,

@@ -62,7 +62,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
             backgroundColor: Colors.white,
             elevation: 0,
             title: Text(
-              'Crop Auctions & Bidding',
+              'Crop Auctions & Bidding'.trAuto(context),
               style: AppTheme.fontStyle(
                 context.currentLanguage,
                 fontSize: 18,
@@ -104,9 +104,9 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                       Expanded(
                         child: TextField(
                           controller: _searchCtrl,
-                          decoration: const InputDecoration(
-                            hintText: 'Search bulk crops (Rice, Onions, Chillies)...',
-                            hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Search bulk crops (Rice, Onions, Chillies)...'.trAuto(context),
+                            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
                             border: InputBorder.none,
                           ),
                           onChanged: (_) => setState(() {}),
@@ -130,11 +130,11 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   children: [
-                    _buildPillTab('All Active', 'All', Icons.grid_view_rounded),
+                    _buildPillTab('All Active'.trAuto(context), 'All', Icons.grid_view_rounded),
                     const SizedBox(width: 8),
-                    _buildPillTab('🔥 Ending Soon', 'Ending Soon', Icons.timer_outlined),
+                    _buildPillTab('🔥 Ending Soon'.trAuto(context), 'Ending Soon', Icons.timer_outlined),
                     const SizedBox(width: 8),
-                    _buildPillTab('🏆 High Demand', 'Most Bids', Icons.trending_up_rounded),
+                    _buildPillTab('🏆 High Demand'.trAuto(context), 'Most Bids', Icons.trending_up_rounded),
                   ],
                 ),
               ),
@@ -162,7 +162,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                           ),
                         ),
                         child: Text(
-                          cat,
+                          cat.trAuto(context),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
@@ -195,15 +195,15 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                                 child: const Icon(Icons.gavel_rounded, size: 32, color: _primaryGreen),
                               ),
                               const SizedBox(height: 14),
-                              const Text(
-                                'No matching crop auctions found',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF374151)),
+                              Text(
+                                'No matching crop auctions found'.trAuto(context),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF374151)),
                               ),
                               const SizedBox(height: 6),
-                              const Text(
-                                'Check back soon or adjust your search filter for fresh harvest auctions.',
+                              Text(
+                                'Check back soon or adjust your search filter for fresh harvest auctions.'.trAuto(context),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                               ),
                             ],
                           ),
@@ -317,13 +317,13 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                       color: _emerald,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.bolt_rounded, color: Colors.white, size: 12),
-                        SizedBox(width: 3),
+                        const Icon(Icons.bolt_rounded, color: Colors.white, size: 12),
+                        const SizedBox(width: 3),
                         Text(
-                          'LIVE BID',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                          'LIVE BID'.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                         ),
                       ],
                     ),
@@ -343,7 +343,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                         const Icon(Icons.timer_outlined, color: Color(0xFFFDBA74), size: 12),
                         const SizedBox(width: 4),
                         Text(
-                          auction.remainingTimeString,
+                          auction.remainingTimeString.trAuto(context),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -362,7 +362,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${auction.quantity.toStringAsFixed(0)} ${auction.unit} Lot',
+                        '${auction.quantity.toStringAsFixed(0)} ${auction.unit} Lot'.trAuto(context),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 13,
@@ -370,7 +370,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                         ),
                       ),
                       Text(
-                        auction.location,
+                        auction.location.trAuto(context),
                         style: const TextStyle(
                           color: Color(0xFFD1FAE5),
                           fontSize: 12,
@@ -394,7 +394,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          auction.cropName,
+                          auction.cropName.trAuto(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -411,7 +411,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          '${auction.totalBids} bids',
+                          '${auction.totalBids} ${'bids'.trAuto(context)}',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _primaryGreen),
                         ),
                       ),
@@ -419,7 +419,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Farmer: ${auction.farmerName}',
+                    '${'Farmer'.trAuto(context)}: ${auction.farmerName}',
                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 12),
@@ -433,11 +433,11 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            auction.totalBids > 0 ? 'Current Highest Bid' : 'Starting Bid',
+                            (auction.totalBids > 0 ? 'Current Highest Bid' : 'Starting Bid').trAuto(context),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                           ),
                           Text(
-                            'Rs. ${auction.effectivePrice.toStringAsFixed(2)} / ${auction.unit}',
+                            'Rs. ${auction.effectivePrice.toStringAsFixed(2)} / ${auction.unit}'.trAuto(context),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
@@ -462,7 +462,7 @@ class _BuyerAuctionListScreenState extends State<BuyerAuctionListScreen> {
                           elevation: 0,
                         ),
                         icon: const Icon(Icons.gavel_rounded, size: 15),
-                        label: const Text('Bid Now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        label: Text('Bid Now'.trAuto(context), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

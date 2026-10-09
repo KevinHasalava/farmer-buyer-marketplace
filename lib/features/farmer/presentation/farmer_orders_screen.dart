@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../services/farmer_profile_manager.dart';
 import 'farmer_products_screen.dart';
 
@@ -169,75 +171,62 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF166534),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.agriculture_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          Expanded(
+            child: Row(
+              children: [
+                const AppBrandLogo(size: 36, hasGlow: false),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Farm2Home',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF166534),
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'FARMER',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF15803D),
-                            letterSpacing: 0.5,
+                      Row(
+                        children: [
+                          const AppBrandWordmark(fontSize: 16, isLight: false),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'FARMER',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF15803D),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+                      Text(
+                        _farmer.name.isNotEmpty ? _farmer.name : 'Farmer Bandara',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4B5563),
                         ),
                       ),
                     ],
                   ),
-                  Text(
-                    _farmer.name.isNotEmpty ? _farmer.name : 'Farmer Bandara',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4B5563),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           Row(
             children: [
               // Notification bell with red alert dot
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Orders sync notifications up to date'),
+                    SnackBar(
+                      content: Text(context.tr.syncNotifications),
                       behavior: SnackBarBehavior.floating,
                       backgroundColor: Color(0xFF166534),
                     ),
@@ -960,7 +949,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Connecting to Regional Driver Hub: 011-2345678'),
+                  content: Text(': 011-2345678'),
                   backgroundColor: Color(0xFF166534),
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -1113,7 +1102,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Close'),
+                child: Text(context.tr.close),
               ),
             ),
           ],
@@ -1133,61 +1122,70 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(
-            icon: Icons.dashboard_outlined,
-            label: 'Dashboard',
-            isSelected: _selectedNav == 0,
-            onTap: () {
-              Navigator.pop(context);
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.dashboard_outlined,
+              label: 'Dashboard',
+              isSelected: _selectedNav == 0,
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.spa_outlined,
-            label: 'Products',
-            isSelected: _selectedNav == 1,
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const FarmerProductsScreen(),
-                ),
-              );
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.spa_outlined,
+              label: 'Products',
+              isSelected: _selectedNav == 1,
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const FarmerProductsScreen(),
+                  ),
+                );
+              },
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.assignment_outlined,
-            label: 'Orders',
-            hasBadge: true,
-            isSelected: _selectedNav == 2,
-            onTap: () {},
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.assignment_outlined,
+              label: 'Orders',
+              hasBadge: true,
+              isSelected: _selectedNav == 2,
+              onTap: () {},
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: 'Chat',
-            isSelected: _selectedNav == 3,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Opening Farmer Chat...'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'Chat',
+              isSelected: _selectedNav == 3,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(context.tr.openingFarmerChat),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
           ),
-          _buildNavItem(
-            icon: Icons.person_outline_rounded,
-            label: 'Profile',
-            isSelected: _selectedNav == 4,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FarmerProfileScreen(farmer: _farmer),
-                ),
-              );
-            },
+          Expanded(
+            child: _buildNavItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Profile',
+              isSelected: _selectedNav == 4,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FarmerProfileScreen(farmer: _farmer),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -1236,6 +1234,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           const SizedBox(height: 4),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,

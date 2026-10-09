@@ -118,8 +118,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     final rawPhone = _phoneCtrl.text.trim();
     if (rawPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your mobile phone number first.'),
+        SnackBar(
+          content: Text(context.tr.enterPhoneFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -129,8 +129,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
     if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid Sri Lankan mobile number (e.g., 77 123 4567).'),
+        SnackBar(
+          content: Text(context.tr.invalidSriLankaPhone),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -178,8 +178,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     if (!_otpVerified) {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please verify your mobile number with the SMS OTP code first.'),
+        SnackBar(
+          content: Text(context.tr.verifyOtpFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),

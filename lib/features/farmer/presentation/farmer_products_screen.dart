@@ -552,12 +552,16 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                 children: [
                   Row(
                     children: [
-                      Text(
-                        _farmer.name,
-                        style: AppTheme.fontStyle(context.currentLanguage, 
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111827),
+                      Flexible(
+                        child: Text(
+                          _farmer.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTheme.fontStyle(context.currentLanguage, 
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -718,6 +722,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                   children: [
                     Text(
                       p.localizedName(context),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTheme.fontStyle(context.currentLanguage, 
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -727,16 +733,22 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Text(
-                          p.localizedPrice(context),
-                          style: AppTheme.fontStyle(context.currentLanguage, 
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
+                        Flexible(
+                          child: Text(
+                            p.localizedPrice(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTheme.fontStyle(context.currentLanguage, 
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
+                            ),
                           ),
                         ),
                         Text(
                           ' ${p.localizedUnit(context)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTheme.fontStyle(context.currentLanguage, 
                             fontSize: 13,
                             fontWeight: FontWeight.w400,

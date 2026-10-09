@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../buyer/presentation/buyer_cart_screen.dart';
 import '../../buyer/presentation/buyer_categories_screen.dart';
@@ -631,7 +631,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               },
               backgroundColor: const Color(0xFF047857),
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('New Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: Text(context.tr.newRequest, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             )
           : null,
 

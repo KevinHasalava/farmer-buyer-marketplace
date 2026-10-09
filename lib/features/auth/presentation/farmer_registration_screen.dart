@@ -163,8 +163,8 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     final rawPhone = _phoneCtrl.text.trim();
     if (rawPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your mobile phone number first.'),
+        SnackBar(
+          content: Text(context.tr.enterPhoneFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),

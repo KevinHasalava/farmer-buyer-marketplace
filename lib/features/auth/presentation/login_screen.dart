@@ -396,6 +396,22 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  // ── Registration & Guest Navigation with pre-selected role ─────────
+  void _onRegisterTap(BuildContext ctx) {
+    HapticFeedback.lightImpact();
+    final role = ctx.read<AppSettings>().role ?? _selectedRole;
+    ctx.push(AppRoutes.registerFor(role));
+  }
+
+  Future<void> _continueAsGuest(BuildContext ctx) async {
+    HapticFeedback.lightImpact();
+    final role = ctx.read<AppSettings>().role ?? _selectedRole;
+    await ctx.read<AppSettings>().setRole(role);
+    if (ctx.mounted) {
+      ctx.go(AppRoutes.homeFor(role));
+    }
+  }
+
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -410,81 +426,10 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildRoleSegmentedPicker() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          _buildRoleTab(UserRole.buyer, Icons.shopping_basket_rounded, context.tr.buyer),
-          _buildRoleTab(UserRole.farmer, Icons.agriculture_rounded, context.tr.farmer),
-          _buildRoleTab(UserRole.driver, Icons.local_shipping_rounded, context.tr.driver),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoleTab(UserRole role, IconData icon, String title) {
-    final isSelected = _selectedRole == role;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() => _selectedRole = role);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? const Color(0xFF15803D) : const Color(0xFF64748B),
-              ),
-              const SizedBox(width: 5),
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final currentRole = context.watch<AppSettings>().role ?? _selectedRole;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
@@ -494,7 +439,14 @@ class _LoginScreenState extends State<LoginScreen>
           _PremiumHeader(
             leafFade: _leafFade,
             screenHeight: size.height,
-            selectedRole: _selectedRole,
+            currentRole: currentRole,
+            onBack: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go(AppRoutes.roleSelection);
+              }
+            },
           ),
 
           // ── Scrollable Form ───────────────────────────────────────────
@@ -515,8 +467,6 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Interactive Segmented Role Switcher ─────────────
-                        _buildRoleSegmentedPicker(),
 
                         // Title
                         Text(
@@ -678,15 +628,9 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: () => context.push(
-                                    AppRoutes.registerFor(_selectedRole),
-                                  ),
+                                  onTap: () => _onRegisterTap(context),
                                   child: Text(
-                                    switch (_selectedRole) {
-                                      UserRole.buyer => context.tr.registerAsBuyer,
-                                      UserRole.farmer => context.tr.registerAsFarmer,
-                                      UserRole.driver => context.tr.registerAsDriver,
-                                    },
+                                    context.tr.registerNow,
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Color(0xFF15803D),
@@ -707,13 +651,7 @@ class _LoginScreenState extends State<LoginScreen>
                           width: double.infinity,
                           height: 48,
                           child: OutlinedButton.icon(
-                            onPressed: () async {
-                              HapticFeedback.lightImpact();
-                              await context.read<AppSettings>().setRole(_selectedRole);
-                              if (context.mounted) {
-                                context.go(AppRoutes.homeFor(_selectedRole));
-                              }
-                            },
+                            onPressed: () => _continueAsGuest(context),
                             icon: const Icon(
                               Icons.explore_outlined,
                               size: 19,
@@ -753,18 +691,29 @@ class _LoginScreenState extends State<LoginScreen>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Premium curved header with animated leaf motif
+// Premium curved header with animated leaf motif & dynamic role badge
 // ─────────────────────────────────────────────────────────────────────────────
 class _PremiumHeader extends StatelessWidget {
   const _PremiumHeader({
     required this.leafFade,
     required this.screenHeight,
-    required this.selectedRole,
+    required this.currentRole,
+    this.onBack,
   });
 
   final Animation<double> leafFade;
   final double screenHeight;
-  final UserRole selectedRole;
+  final UserRole currentRole;
+  final VoidCallback? onBack;
+
+  String _roleBadgeText(BuildContext context, UserRole role) {
+    final tr = context.tr;
+    return switch (role) {
+      UserRole.farmer => tr.roleFarmerTitle,
+      UserRole.buyer => tr.roleBuyerTitle,
+      UserRole.driver => tr.roleDriverTitle,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -824,6 +773,41 @@ class _PremiumHeader extends StatelessWidget {
           ),
         ),
 
+        // Back Navigation Button
+        Positioned(
+          top: 12,
+          left: 16,
+          child: SafeArea(
+            child: GestureDetector(
+              onTap: onBack ??
+                  () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      context.go(AppRoutes.roleSelection);
+                    }
+                  },
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ),
+
         // Content
         Positioned.fill(
           child: SafeArea(
@@ -831,41 +815,10 @@ class _PremiumHeader extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo circle
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2ECC71), Color(0xFF1E8342)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.45),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                ),
+                // Unified Loading Screen Emblem & Wordmark
+                const AppBrandLogo(size: 60, hasGlow: true),
                 const SizedBox(height: 8),
-                const Text(
-                  'Farm2Home',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                const AppBrandWordmark(fontSize: 26, isLight: true),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -888,9 +841,9 @@ class _PremiumHeader extends StatelessWidget {
                 const SizedBox(height: 8),
                 // Dynamic Role Badge Chip
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: Colors.white.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.28),
@@ -901,21 +854,17 @@ class _PremiumHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        switch (selectedRole) {
-                          UserRole.buyer => Icons.shopping_basket_rounded,
-                          UserRole.farmer => Icons.agriculture_rounded,
-                          UserRole.driver => Icons.local_shipping_rounded,
-                        },
+                        currentRole == UserRole.farmer
+                            ? Icons.agriculture_rounded
+                            : currentRole == UserRole.driver
+                                ? Icons.local_shipping_rounded
+                                : Icons.shopping_basket_rounded,
                         size: 13,
                         color: const Color(0xFFFBBF24),
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        switch (selectedRole) {
-                          UserRole.buyer => '${context.tr.buyer} Portal',
-                          UserRole.farmer => '${context.tr.farmer} Portal',
-                          UserRole.driver => '${context.tr.driver} Portal',
-                        },
+                        _roleBadgeText(context, currentRole),
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

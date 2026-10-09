@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/auto_translator.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 
 /// Ultra-Premium Restricted Administrator Login Screen
@@ -168,57 +169,25 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Shield Emblem & Top Badge
-                        Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 84,
-                                height: 84,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF059669), Color(0xFF047857)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF061E17),
-                                ),
-                                child: const Icon(
-                                  Icons.admin_panel_settings_rounded,
-                                  color: Color(0xFF34D399),
-                                  size: 38,
-                                ),
-                              ),
-                            ],
-                          ),
+                        // Brand Emblem matching Splash Loading Screen
+                        const Center(
+                          child: AppBrandLogo(size: 80, hasGlow: true),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
                         // Title & Subtitle
+                        const Center(
+                          child: AppBrandWordmark(fontSize: 24, isLight: true),
+                        ),
+                        const SizedBox(height: 4),
                         const Text(
-                          'Farm2Home Master Console',
+                          'Master Console',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF34D399),
+                            letterSpacing: 1.2,
                           ),
                         ),
                         const SizedBox(height: 6),

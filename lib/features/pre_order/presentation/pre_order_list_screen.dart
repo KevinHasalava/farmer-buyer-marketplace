@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -39,7 +40,7 @@ class _PreOrderListScreenState extends State<PreOrderListScreen> {
 
         if (orders.isEmpty) {
           return Center(
-            child: Text('No pre-orders found.', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(context.tr.noPreOrdersFound, style: const TextStyle(color: AppColors.textSecondary)),
           );
         }
 
@@ -99,7 +100,7 @@ class _PreOrderListScreenState extends State<PreOrderListScreen> {
               },
               backgroundColor: AppColors.primaryGreen,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('New Request', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              label: Text(context.tr.newRequest, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             )
           : null,
     );
