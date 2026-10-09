@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../services/chat_service.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
+import '../../driver/services/driver_profile_manager.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 import '../models/chat_model.dart';
 
 /// Ultra-Premium Unified Chat Detail Screen for real communications
@@ -88,6 +91,21 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     });
   }
 
+  String _resolveCurrentSenderName() {
+    switch (widget.currentRole.toLowerCase()) {
+      case 'farmer':
+        final name = FarmerProfileManager.instance.profile.name.trim();
+        return name.isNotEmpty ? name : 'Farmer';
+      case 'driver':
+        final name = DriverProfileManager.instance.driver.fullName.trim();
+        return name.isNotEmpty ? name : 'Driver';
+      case 'buyer':
+      default:
+        final name = BuyerProfileManager.instance.profile.name.trim();
+        return name.isNotEmpty ? name : 'Buyer';
+    }
+  }
+
   Future<void> _sendMessage([String? quickText]) async {
     final text = quickText ?? _textController.text.trim();
     if (text.isEmpty) return;
@@ -100,6 +118,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         conversationId: _chat.id,
         text: text,
         senderRole: widget.currentRole,
+        senderName: _resolveCurrentSenderName(),
       );
       _scrollToBottom();
     } catch (e) {
@@ -122,6 +141,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         attachmentType: type,
         attachmentData: data,
         senderRole: widget.currentRole,
+        senderName: _resolveCurrentSenderName(),
       );
       _scrollToBottom();
     } catch (e) {
@@ -546,15 +566,57 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
           // ── Message Bubbles List ───────────────────────────────────────────
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-              itemCount: _chat.messages.length,
-              itemBuilder: (ctx, index) {
-                final msg = _chat.messages[index];
-                return _buildMessageBubble(msg);
-              },
-            ),
+            child: _chat.messages.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _forestGreen.withValues(alpha: 0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 42,
+                              color: _forestGreen,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          const Text(
+                            'Direct Real-Time Chat',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: _textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Connected directly with ${_chat.name} (${_chat.role}). Send a message to start communicating.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: _textMuted,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                    itemCount: _chat.messages.length,
+                    itemBuilder: (ctx, index) {
+                      final msg = _chat.messages[index];
+                      return _buildMessageBubble(msg);
+                    },
+                  ),
           ),
 
           // ── Quick Replies Bar ──────────────────────────────────────────────
