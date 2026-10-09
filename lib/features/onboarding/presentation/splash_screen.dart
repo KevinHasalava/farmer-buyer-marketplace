@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 
@@ -29,9 +30,24 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(milliseconds: 2200), _routeNext);
   }
 
-  void _routeNext() {
+  Future<void> _routeNext() async {
     if (!mounted) return;
     final s = context.settings;
+
+    // Check if user is authenticated via Supabase (e.g., returned from Google OAuth)
+    if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
+      final sbUser = SupabaseConfig.auth.currentUser!;
+      final metadata = sbUser.userMetadata ?? {};
+      final roleStr = (metadata['role'] as String?)?.toLowerCase();
+      final isFarmer = (metadata['is_farmer'] as bool? ?? false) || roleStr == 'farmer';
+      final role = isFarmer
+          ? UserRole.farmer
+          : (roleStr == 'driver' ? UserRole.driver : (s.role ?? UserRole.buyer));
+      await s.setRole(role);
+      if (!mounted) return;
+      context.go(AppRoutes.homeFor(role));
+      return;
+    }
 
     if (!s.hasLanguage) {
       context.go(AppRoutes.language);

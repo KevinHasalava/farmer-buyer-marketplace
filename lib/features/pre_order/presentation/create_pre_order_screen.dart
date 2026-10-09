@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import '../../../core/constants/constants.dart';
-import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/pre_order_manager.dart';
 

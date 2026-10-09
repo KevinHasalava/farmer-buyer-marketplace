@@ -1,14 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/notify_sms_service.dart';
+import '../../../widgets/premium/google_brand_button.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import 'otp_verification_dialog.dart';
 
@@ -85,8 +88,37 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     'In-Conversion',
   ];
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (SupabaseConfig.isInitialized) {
+      _authSubscription =
+          SupabaseConfig.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null && mounted) {
+          final sbUser = session.user;
+          final metadata = sbUser.userMetadata ?? {};
+          await context.read<AppSettings>().setRole(UserRole.farmer);
+          final effectiveName = (metadata['full_name'] as String?) ??
+              sbUser.email?.split('@').first ??
+              'Farmer';
+          await FarmerProfileManager.instance.updateProfile(
+            name: effectiveName,
+            email: sbUser.email,
+          );
+          if (mounted) {
+            context.go(AppRoutes.farmerDashboard);
+          }
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _nameCtrl.dispose();
     _nicCtrl.dispose();
     _phoneCtrl.dispose();
@@ -95,6 +127,36 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     _bankCtrl.dispose();
     _accountNumberCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    setState(() => _isLoading = true);
+    HapticFeedback.lightImpact();
+    try {
+      await _authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In: ${e.toString()}'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -208,10 +270,15 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       if (mounted) {
         _showSuccessDialog();
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        await context.read<AppSettings>().setRole(UserRole.farmer);
-        if (mounted) _showSuccessDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Registration error: ${e.toString()}'),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -507,6 +574,52 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 ),
               ),
 
+              // ── Fast Google Sign Up Button ─────────────────────────────────
+              const SizedBox(height: 18),
+              GoogleBrandButton(
+                onPressed: _isLoading ? null : _signUpWithGoogle,
+                label: 'Fast Sign up with Google',
+                isLoading: _isLoading,
+              ),
+
+              const SizedBox(height: 20),
+              // ── Elegant Divider ──────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.transparent, Color(0xFFE2E8F0)],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: Text(
+                      'OR COMPLETE FARM DETAILS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFE2E8F0), Colors.transparent],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
               // ── Section 1: Producer Details ────────────────────────────────

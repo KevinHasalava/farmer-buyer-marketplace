@@ -5,6 +5,7 @@ import '../../../core/supabase/supabase_config.dart';
 import '../models/delivery_order_model.dart';
 import '../models/driver_model.dart';
 import '../models/pickup_verification_model.dart';
+import '../../../core/services/order_lifecycle_manager.dart';
 
 /// Service handling all driver operations using Supabase as the single database backend,
 /// with instant local fallback for ultra-smooth UI performance.
@@ -28,6 +29,7 @@ class DriverFirestoreService {
   // ── In-Memory Datastores (for instant UI & fallback) ──────────────────────
   static final Map<String, DriverModel> _drivers = {};
   static final Map<String, DeliveryOrderModel> _deliveries = {};
+  static final Map<String, String> _deliveryPins = {};
   static final Map<String, PickupVerificationModel> _verifications = {};
   static final List<Map<String, dynamic>> _history = [];
   static final List<Map<String, dynamic>> _chatMessages = [];
@@ -324,6 +326,24 @@ class DriverFirestoreService {
     _deliveriesStreamController.add(_deliveries.values.toList());
   }
 
+  /// Add a newly created delivery from Buyer Checkout
+  void addDeliveryOrder(DeliveryOrderModel order, {String? handoverPin}) {
+    final cleanId = order.id.replaceAll('#', '').trim();
+    _deliveries[cleanId] = order;
+    if (handoverPin != null) {
+      _deliveryPins[cleanId] = handoverPin;
+    } else {
+      _deliveryPins[cleanId] = '4921';
+    }
+    _broadcastDeliveries();
+  }
+
+  /// Lookup a delivery by its ID or order number
+  DeliveryOrderModel? getDeliveryById(String orderId) {
+    final cleanId = orderId.replaceAll('#', '').trim();
+    return _deliveries[cleanId];
+  }
+
   Future<void> updateDeliveryStatus(String orderId, String newStatus) async {
     final cleanId = orderId.replaceAll('#', '').trim();
     final order = _deliveries[cleanId];
@@ -331,6 +351,11 @@ class DriverFirestoreService {
       _deliveries[cleanId] = order.copyWith(status: newStatus, updatedAt: DateTime.now());
       _broadcastDeliveries();
     }
+
+    // Sync across Buyer, Farmer, and Admin in real time
+    try {
+      OrderLifecycleManager.instance.onDriverStatusUpdated(cleanId, newStatus);
+    } catch (_) {}
 
     try {
       final client = _sb;
@@ -377,6 +402,22 @@ class DriverFirestoreService {
 
   Future<Map<String, dynamic>> getPickupManifestDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      final pin = _deliveryPins[cleanId] ?? '4921';
+      return {
+        'orderId': '#$cleanId',
+        'farmerName': d.farmerName,
+        'farmLocation': d.farmerAddress,
+        'gateInfo': 'Depot Platform Gate #1 / A',
+        'crateId': '#CR-$cleanId',
+        'handoverPin': pin,
+        'ambientTemp': '16°C',
+        'vanTemp': '4.0°C',
+        'produceDescription': d.produceDescription,
+      };
+    }
+
     final is8850 = cleanId.contains('8850');
     if (is8850) {
       return {
@@ -408,6 +449,27 @@ class DriverFirestoreService {
 
   Future<Map<String, dynamic>> getDeliveryTrackingDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      return {
+        'orderId': '#$cleanId',
+        'buyerName': d.buyerName,
+        'buyerAddress': d.buyerAddress,
+        'gateCode': '#2819',
+        'dropoffNotes': 'Leave with security counter or front porch.',
+        'codAmount': 'Rs. ${d.driverFee.toInt()}',
+        'cratesCount': d.crateCount,
+        'remainingDistance': '22 km',
+        'estimatedTime': '30 min',
+        'targetEta': 'In 35 mins',
+        'cargoCoolTemp': '18°C',
+        'vanChillerTemp': 4.0,
+        'latitude': 6.8344,
+        'longitude': 79.8654,
+        'transitStatus': d.status == 'In Transit' ? 'IN_TRANSIT' : d.status,
+      };
+    }
+
     if (cleanId.contains('8850')) {
       return {
         'orderId': '#FH-8850',
@@ -460,6 +522,25 @@ class DriverFirestoreService {
 
   Future<Map<String, dynamic>> getCompletedDeliveryDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      return {
+        'orderId': '#$cleanId',
+        'buyerName': d.buyerName,
+        'buyerAddress': d.buyerAddress,
+        'totalEarned': 'Rs. ${d.driverFee.toInt()}',
+        'baseTransit': 'Rs. ${(d.driverFee * 0.8).toInt()}',
+        'terrainBonus': '+Rs. ${(d.driverFee * 0.2).toInt()}',
+        'directTip': '+Rs. 150',
+        'dailyWalletTotal': 'Rs. 9,300',
+        'deliveryTime': 'Today, Just now',
+        'earlyBadge': 'On schedule ⚡',
+        'handoverType': 'Cash on Delivery',
+        'collectedAmount': 'Rs. ${d.driverFee.toInt()} Collected & Pocketed',
+        'ratingStars': 5.0,
+      };
+    }
+
     if (cleanId.contains('8850')) {
       return {
         'orderId': '#FH-8850',

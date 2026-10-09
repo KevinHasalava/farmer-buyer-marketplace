@@ -524,7 +524,7 @@ class AppStrings {
   String get registerAsFarmer => _t('Register as Farmer', 'ගොවි මහතෙකු ලෙස ලියාපදිංචි වන්න', 'விவசாயியாக பதிவு செய்க');
   String get registerAsDriver => _t('Register as Driver', 'රියදුරෙකු ලෙස ලියාපදිංචි වන්න', 'ஓட்டுநராக பதிவு செய்க');
   String get mobileOtpInstead => _t('Sign in with Mobile OTP instead', 'ජංගම OTP මඟින් ඇතුල් වන්න', 'மொபைல் OTP மூலம் உள்நுழைக');
-  String get skipDemoUser => _t('Skip & Explore as Demo User', 'පරීක්ෂණ ආකාරයෙන් ඉදිරියට යන්න', 'டெமோ பயனராக தொடர்க');
+  String get skipDemoUser => _t('Explore as Guest (No Registration Needed)', 'ලියාපදිංචි නොවී App එක බලන්න (Guest Demo)', 'பதிவு செய்யாமல் டெமோ பார்க்க (Guest Mode)');
   String get orDivider => _t('OR', 'හෝ', 'அல்லது');
   String get alreadyHaveAccount => _t('Already have an account? ', 'දැනටමත් ගිණුමක් තිබේද? ', 'ஏற்கனவே கணக்கு உள்ளதா? ');
   String get categoryDairy => _t('Dairy & Farm Fresh', 'කිරි සහ නැවුම් නිෂ්පාදන', 'பால் & பண்ணை புதியவை');
