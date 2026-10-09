@@ -222,12 +222,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: () => _onNextTap(slides.length),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                      // Google Sign Up Card
-                      _buildGoogleSignUpCard(),
-
-                      const SizedBox(height: 14),
 
                       // Home indicator line
                       Center(
@@ -447,121 +443,5 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── Google Sign Up Card ──────────────────────────────────────────────────
-  Widget _buildGoogleSignUpCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Fast 1-Click
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF), // light blue
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.bolt, color: Color(0xFF2563EB), size: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'FAST 1-CLICK REGISTRATION',
-                    style: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      color: const Color(0xFF2563EB),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-              // Recommended Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7), // light green
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'RECOMMENDED',
-                  style: AppTheme.fontStyle(
-                    context.currentLanguage,
-                    color: const Color(0xFF166534), // dark green
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Google Button
-          InkWell(
-            onTap: _finish,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE2E8F0)), // slate 200
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.network(
-                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/48px-Google_%22G%22_logo.svg.png',
-                    height: 20,
-                    width: 20,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Sign up with Google',
-                    style: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      color: const Color(0xFF0F172A),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Footer Text
-          Text(
-            'Instant verification • No password needed',
-            style: AppTheme.fontStyle(
-              context.currentLanguage,
-              color: const Color(0xFF64748B),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

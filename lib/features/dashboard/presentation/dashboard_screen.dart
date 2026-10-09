@@ -1097,7 +1097,7 @@ class _PromoBannerState extends State<_PromoBanner> {
                   const SizedBox(height: 10),
 
                   GestureDetector(
-                    onTap: onShopSpecials,
+                    onTap: widget.onShopSpecials,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
