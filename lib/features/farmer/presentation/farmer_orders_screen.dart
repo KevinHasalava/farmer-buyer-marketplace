@@ -7,6 +7,9 @@ import '../../dashboard/presentation/product_detail_screen.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/farmer_profile_manager.dart';
 import 'farmer_products_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
+import '../../../services/chat_service.dart';
 
 /// Pixel-perfect Farmer Orders Screen matching Image 1
 class FarmerOrdersScreen extends StatefulWidget {
@@ -750,6 +753,49 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                       ],
                     ),
                   ),
+                  GestureDetector(
+                    onTap: () {
+                      final conv = ChatService.instance.getOrCreateConversation(
+                        peerId: 'conv_driver_${ord['driverName'].toString().toLowerCase().replaceAll(' ', '_')}',
+                        peerName: ord['driverName'],
+                        peerRole: 'Driver',
+                        orderId: ord['id'],
+                        subtitle: 'Pickup for ${ord['id']} • ${ord['driverEta']}',
+                        phone: '+94 77 345 6789',
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatDetailScreen(
+                            conversation: conv,
+                            currentRole: 'farmer',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF6EE7B7)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF047857)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Chat',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF047857),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1163,10 +1209,10 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               label: 'Chat',
               isSelected: _selectedNav == 3,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr.openingFarmerChat),
-                    behavior: SnackBarBehavior.floating,
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChatListScreen(currentRole: 'farmer'),
                   ),
                 );
               },

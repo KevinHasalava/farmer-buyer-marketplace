@@ -18,6 +18,9 @@ import '../../auction/presentation/farmer/farmer_auction_list_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
 import '../../auction/services/auction_manager.dart';
 import '../../../core/services/order_lifecycle_manager.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 
 /// Pixel-perfect Farmer Dashboard Screen matching reference design
 class FarmerDashboardScreen extends StatefulWidget {
@@ -1705,13 +1708,62 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                               ],
                             ),
                           ),
-                          Text(
-                            ord.amount,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF166534),
-                            ),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  final conv = ChatService.instance.getOrCreateConversation(
+                                    peerId: 'conv_buyer_${ord.customer.toLowerCase().replaceAll(' ', '_')}',
+                                    peerName: ord.customer,
+                                    peerRole: 'Buyer',
+                                    phone: ord.customerPhone,
+                                    orderId: ord.id,
+                                    subtitle: '${ord.deliveryAddress} • Order #${ord.id}',
+                                  );
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatDetailScreen(
+                                        conversation: conv,
+                                        currentRole: 'farmer',
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF86EFAC)),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.chat_bubble_outline_rounded, size: 14, color: Color(0xFF166534)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Chat',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF166534),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                ord.amount,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF166534),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -2190,8 +2242,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
               label: context.tr.navChat,
               isSelected: _selectedNav == 2,
               onTap: () {
-                setState(() => _selectedNav == 2);
-                _showMessagesSheet();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChatListScreen(currentRole: 'farmer'),
+                  ),
+                );
               },
             ),
           ),

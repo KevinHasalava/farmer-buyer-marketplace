@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../buyer/presentation/buyer_cart_screen.dart';
 import '../../buyer/presentation/buyer_categories_screen.dart';
@@ -12,6 +12,7 @@ import '../models/order_model.dart';
 import 'chat_detail_screen.dart';
 import 'chat_list_screen.dart';
 import 'order_tracking_screen.dart';
+import '../../../services/chat_service.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../pre_order/presentation/pre_order_list_screen.dart';
@@ -300,7 +301,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
 
             Row(
               children: [
-                if (isInTransit)
+                if (isInTransit) ...[
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -330,8 +331,49 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         );
                       },
                     ),
-                  )
-                else
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _forestGreen,
+                        side: const BorderSide(color: _forestGreen, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+                      label: Text(
+                        context.tr.chat,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final conv = ChatService.instance.getOrCreateConversation(
+                          peerId: 'conv_driver_ranjith',
+                          peerName: 'Ranjith Subha (Driver)',
+                          peerRole: 'Driver',
+                          phone: '+94 77 123 4567',
+                          subtitle: 'Chilled Transit Van NC-4982 • Order #${order.id}',
+                          orderId: order.id,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatDetailScreen(
+                              conversation: conv,
+                              currentRole: 'buyer',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ] else ...[
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -357,6 +399,48 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                       },
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _forestGreen,
+                        side: const BorderSide(color: _forestGreen, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+                      label: Text(
+                        context.tr.chat,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final conv = ChatService.instance.getOrCreateConversation(
+                          peerId: 'conv_sunil',
+                          peerName: 'Sunil Perera (Farmer)',
+                          peerRole: 'Farmer',
+                          phone: '+94 77 123 4567',
+                          subtitle: 'Hakgala Organic Farm • Order #${order.id}',
+                          orderId: order.id,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatDetailScreen(
+                              conversation: conv,
+                              currentRole: 'buyer',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -1326,11 +1410,10 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 ),
               ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr.showingAllChats),
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 2),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChatListScreen(currentRole: 'buyer'),
                   ),
                 );
               },

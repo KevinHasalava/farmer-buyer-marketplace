@@ -3482,12 +3482,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Driver Support & Dispatch Chat'.trAuto(context),
+              'Direct Chat Messages'.trAuto(context),
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Instant chat channel with Agri-Dispatch and Corridor Support team.'.trAuto(context),
+              'Chat directly with Farmers and Buyers regarding active deliveries.'.trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
             ),
@@ -3509,7 +3509,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         accountNumber: widget.accountNumber,
                         cargoCapacity: widget.cargoCapacity,
                         licenseNumber: widget.licenseNumber,
-                        initialThreadId: 'dispatch',
                       ),
                     ),
                   );
@@ -3518,7 +3517,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
                 ),
-                child: Text('Start Chat with Support'.trAuto(context)),
+                child: Text('Open Messages'.trAuto(context)),
               ),
             ),
           ],
