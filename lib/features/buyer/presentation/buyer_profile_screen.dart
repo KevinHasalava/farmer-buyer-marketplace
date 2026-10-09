@@ -7,6 +7,7 @@ import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
@@ -1145,30 +1146,15 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         title: context.tr.officerHubSupport,
                         subtitle: context.tr.officerHubSub,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const OrdersChatScreen(initialTab: 1),
-                            ),
-                          );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChatListScreen(),
+                                ),
+                              );
                         },
                       ),
-                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
-                      _buildMenuItem(
-                        icon: Icons.admin_panel_settings_rounded,
-                        iconBg: const Color(0xFFDCFCE7),
-                        iconColor: const Color(0xFF047857),
-                        title: 'Marketplace Admin Console',
-                        subtitle: 'Multi-role Management & CRUD System',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AdminPanelScreen(),
-                            ),
-                          );
-                        },
-                      ),
+
                     ],
                   ),
                 ),

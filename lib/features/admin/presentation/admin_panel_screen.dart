@@ -7,6 +7,11 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
+import '../../pre_order/services/pre_order_manager.dart';
+import '../../pre_order/presentation/pre_order_detail_screen.dart';
+import '../../auction/services/auction_manager.dart';
+import '../../auction/presentation/farmer/farmer_auction_detail_screen.dart';
+import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
 
 /// Ultra-Premium Farm2Home Enterprise Master Admin Console
 /// Features: Side Navigation Rail/Sidebar, High-end Executive UI, Full Role CRUD & Dispatch
@@ -42,7 +47,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -53,12 +58,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     });
     _service.addListener(_onServiceChanged);
     _auth.addListener(_onServiceChanged);
+    AuctionManager.instance.addListener(_onServiceChanged);
   }
 
   @override
   void dispose() {
     _service.removeListener(_onServiceChanged);
     _auth.removeListener(_onServiceChanged);
+    AuctionManager.instance.removeListener(_onServiceChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -178,6 +185,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildDriversTab(),
                         _buildProductsTab(),
                         _buildOrdersTab(),
+                        _buildContractsTab(),
+                        _buildAuctionsTab(),
                       ],
                     ),
                   ),
@@ -211,6 +220,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildDriversTab(),
                   _buildProductsTab(),
                   _buildOrdersTab(),
+                  _buildContractsTab(),
+                  _buildAuctionsTab(),
                 ],
               ),
             ),
@@ -379,6 +390,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.receipt_long_rounded,
                     label: 'Orders & Dispatch',
                     badgeCount: '${_service.totalOrders}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 6,
+                    icon: Icons.handshake_rounded,
+                    label: 'Pre-Orders (Contracts)',
+                    badgeCount: null,
+                  ),
+                  _buildSidebarNavItem(
+                    index: 7,
+                    icon: Icons.gavel_rounded,
+                    label: 'Crop Auctions & Bids',
+                    badgeCount: '${AuctionManager.instance.activeAuctionsCount}',
                   ),
                 ],
               ),
@@ -790,6 +813,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Drivers (${_service.totalDrivers})',
       'Products (${_service.totalProducts})',
       'Orders (${_service.totalOrders})',
+      'Pre-Orders',
+      'Auctions (${AuctionManager.instance.activeAuctionsCount})',
     ];
 
     return Container(
@@ -888,6 +913,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       3 => 'Transit & Fleet',
       4 => 'Produce Catalog',
       5 => 'Orders & Dispatch',
+      6 => 'Pre-Orders (Contracts)',
+      7 => 'Crop Auctions & Bids',
       _ => 'Executive Overview',
     };
   }
@@ -899,6 +926,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       3 => 'Add Driver',
       4 => 'Add Product',
       5 => 'Create Order',
+      7 => 'Add Auction',
       _ => 'New Entry',
     };
   }
@@ -920,6 +948,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         break;
       case 5:
         showOrderEditDialog(context);
+        break;
+      case 7:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
+        );
         break;
       default:
         _showQuickCreateMenu();
@@ -2318,7 +2352,553 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🛠️ 9. HELPERS & BADGES
+  // 🤝 9. TAB 6: PRE-ORDERS (CONTRACTS) CRUD VIEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildContractsTab() {
+    return ListenableBuilder(
+      listenable: PreOrderManager.instance,
+      builder: (context, _) {
+        var list = PreOrderManager.instance.preOrders;
+        if (_searchQuery.isNotEmpty) {
+          list = list
+              .where((o) =>
+                  o.id.toLowerCase().contains(_searchQuery) ||
+                  o.buyerName.toLowerCase().contains(_searchQuery) ||
+                  o.cropName.toLowerCase().contains(_searchQuery))
+              .toList();
+        }
+
+        if (list.isEmpty) {
+          return _buildEmptyState(
+            title: 'No Contracts Found',
+            message: 'No pre-orders match your search.',
+            onAction: () {}, // Quick create not needed for contracts directly in admin unless requested
+            actionLabel: 'Refresh',
+          );
+        }
+
+        return ListView.separated(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (ctx, i) {
+            final o = list[i];
+            final statusColor = o.status == 'Pending' ? const Color(0xFFD97706) : (o.status == 'In Progress' ? const Color(0xFF2563EB) : const Color(0xFF047857));
+
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          o.id,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          o.status,
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${o.cropName} (${o.requiredQuantityKg} Kg @ Rs. ${o.offeredPricePerKg}/Kg)',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textDark),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text('Buyer: ${o.buyerName}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.agriculture_rounded, size: 14, color: Color(0xFF047857)),
+                      const SizedBox(width: 4),
+                      Text('Farmer: ${o.farmerName ?? 'Unassigned'}', style: const TextStyle(fontSize: 12, color: Color(0xFF047857), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+
+                  // Show Farmer's Proposal Details if available
+                  if (o.farmerExpectedHarvestDate != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _borderLight),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Farmer\'s Proposal:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              _buildMetaPill(Icons.calendar_today_rounded, 'Harvest: ${o.farmerExpectedHarvestDate!.day}/${o.farmerExpectedHarvestDate!.month}'),
+                              if (o.farmerEstimatedYieldKg != null)
+                                _buildMetaPill(Icons.monitor_weight_rounded, 'Yield: ${o.farmerEstimatedYieldKg} Kg'),
+                              if (o.farmerLocation.isNotEmpty)
+                                _buildMetaPill(Icons.location_city_rounded, o.farmerLocation),
+                            ],
+                          ),
+                          if (o.farmerNotes.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text('Notes: ${o.farmerNotes}', style: const TextStyle(fontSize: 11, color: _textMuted)),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Allow admin to view the full detail screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PreOrderDetailScreen(
+                                preOrderId: o.id,
+                                isFarmerMode: false, // Treat as observer
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility_rounded, size: 16),
+                        label: const Text('View Full Timeline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0EA5E9),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Contract',
+                            message: 'Are you sure you want to remove Contract #${o.id}?',
+                            onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔨 10. TAB 7: CROP AUCTIONS & BIDDING MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildAuctionsTab() {
+    return ListenableBuilder(
+      listenable: AuctionManager.instance,
+      builder: (context, _) {
+        var list = AuctionManager.instance.auctions;
+        if (_searchQuery.isNotEmpty) {
+          list = list
+              .where((a) =>
+                  a.id.toLowerCase().contains(_searchQuery) ||
+                  a.cropName.toLowerCase().contains(_searchQuery) ||
+                  a.farmerName.toLowerCase().contains(_searchQuery) ||
+                  a.location.toLowerCase().contains(_searchQuery))
+              .toList();
+        }
+
+        final activeCount = AuctionManager.instance.activeAuctionsCount;
+        final totalBids = AuctionManager.instance.totalBidsCount;
+        final totalVolume = AuctionManager.instance.totalAuctionVolumeRs;
+
+        return CustomScrollView(
+          slivers: [
+            // Top Executive KPI Stats Grid
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Active Auctions',
+                            value: '$activeCount',
+                            badge: 'Open Now',
+                            subText: 'Live lots open for bidding',
+                            icon: Icons.gavel_rounded,
+                            accentColor: const Color(0xFF059669),
+                            gradientStart: const Color(0xFFECFDF5),
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Total Bids Placed',
+                            value: '$totalBids',
+                            badge: 'Market Bids',
+                            subText: 'Market buyer activity',
+                            icon: Icons.how_to_vote_rounded,
+                            accentColor: const Color(0xFF2563EB),
+                            gradientStart: const Color(0xFFEFF6FF),
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Total Lot Volume',
+                            value: 'Rs. ${(totalVolume / 1000).toStringAsFixed(0)}k',
+                            badge: 'Auction Value',
+                            subText: 'Combined auction lot value',
+                            icon: Icons.monetization_on_rounded,
+                            accentColor: const Color(0xFFD97706),
+                            gradientStart: const Color(0xFFFFFBEB),
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Total Registered Lots',
+                            value: '${list.length}',
+                            badge: 'Total Lots',
+                            subText: 'Harvest lots in system',
+                            icon: Icons.inventory_2_rounded,
+                            accentColor: const Color(0xFF7E22CE),
+                            gradientStart: const Color(0xFFFAF5FF),
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (list.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: _buildEmptyState(
+                  title: 'No Auctions Found',
+                  message: _searchQuery.isNotEmpty
+                      ? 'No auctions match "$_searchQuery".'
+                      : 'No harvest auctions registered in the system.',
+                  onAction: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
+                  ),
+                  actionLabel: 'Create First Auction',
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, idx) {
+                      final a = list[idx];
+                      final isActive = a.isActive;
+                      final isSold = a.isSold;
+                      final statusColor = isSold
+                          ? const Color(0xFF0284C7)
+                          : (isActive ? const Color(0xFF059669) : const Color(0xFF6B7280));
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isActive ? const Color(0xFFA7F3D0) : _borderLight,
+                            width: isActive ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Top Row: ID, Badges, Timer
+                            Row(
+                              children: [
+                                Text(
+                                  '#${a.id.toUpperCase()}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textMuted,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    a.category,
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (isActive) ...[
+                                  const Icon(Icons.timer_outlined, size: 13, color: Color(0xFFEA580C)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    a.remainingTimeString,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFEA580C)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Text(
+                                    isSold ? 'SOLD' : (isActive ? 'ACTIVE' : 'ENDED'),
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: statusColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Main Content Row with Crop Photo
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.network(
+                                    a.imageUrl,
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: const Color(0xFFDCFCE7),
+                                      child: const Icon(Icons.grass_rounded, color: Color(0xFF047857)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a.cropName,
+                                        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: _textDark),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'Quantity: ${a.quantity.toStringAsFixed(0)} ${a.unit} • ${a.location}',
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.agriculture_rounded, size: 13, color: Color(0xFF047857)),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Farmer: ${a.farmerName}',
+                                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF047857)),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Bidding Financials Bar
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: _borderLight),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a.totalBids > 0 ? 'Leading Bid (${a.totalBids} bids)' : 'Starting Bid',
+                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                      ),
+                                      Text(
+                                        'Rs. ${a.effectivePrice.toStringAsFixed(2)} / ${a.unit}',
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: a.totalBids > 0 ? const Color(0xFF059669) : _textDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      const Text(
+                                        'Total Lot Value',
+                                        style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                                      ),
+                                      Text(
+                                        'Rs. ${a.totalLotValue.toStringAsFixed(0)}',
+                                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Action Buttons Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FarmerAuctionDetailScreen(auctionId: a.id),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.visibility_rounded, size: 15),
+                                  label: const Text('View Bids Tracker', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0EA5E9),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CreateEditAuctionScreen(existingAuction: a),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.edit_note_rounded, size: 15),
+                                  label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF475569),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                IconButton(
+                                  tooltip: 'Delete Auction',
+                                  onPressed: () {
+                                    showDeleteConfirmDialog(
+                                      context,
+                                      title: 'Delete Crop Auction',
+                                      message: 'Are you sure you want to permanently remove auction #${a.id} for "${a.cropName}"?',
+                                      onConfirmed: () => AuctionManager.instance.deleteAuction(a.id),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    childCount: list.length,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🛠️ 11. HELPERS & BADGES
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildMetaPill(IconData icon, String label) {
     return Container(

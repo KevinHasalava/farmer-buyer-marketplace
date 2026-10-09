@@ -6,7 +6,10 @@ import '../../cart/models/cart_item_model.dart';
 import '../../cart/presentation/my_cart_screen.dart';
 import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
+import '../../pre_order/presentation/pre_order_list_screen.dart';
 import '../../search/presentation/search_filter_screen.dart';
+import '../../auction/presentation/buyer/buyer_auction_list_screen.dart';
 import 'farmer_profile_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -361,6 +364,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
                 const SizedBox(height: 18),
 
+
+
                 // ── Promo Banner matching Image 1 ───────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -554,6 +559,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ),
                 ),
 
+
+
                 const SizedBox(height: 110),
               ],
             ),
@@ -561,6 +568,40 @@ class _DashboardScreenState extends State<DashboardScreen>
         ],
       ),
 
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'fab_auction_buyer',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BuyerAuctionListScreen(),
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFF1E5E3A),
+            icon: const Icon(Icons.gavel_rounded, color: Colors.white, size: 18),
+            label: const Text('Auctions', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton.extended(
+            heroTag: 'fab_contract_buyer',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PreOrderListScreen(isFarmerMode: false),
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFF047857),
+            icon: const Icon(Icons.handshake_rounded, color: Colors.white, size: 18),
+            label: const Text('Contracts', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
       // ── Premium Bottom Navigation matching Image 1 ─────────────────────────
       bottomNavigationBar: _PremiumBottomNav(
         selectedIndex: _selectedNav,
@@ -576,7 +617,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const OrdersChatScreen(initialTab: 1),
+                builder: (_) => const ChatListScreen(),
               ),
             );
           } else if (i == 3) {
@@ -1546,6 +1587,83 @@ class _PremiumBottomNav extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contract Farming / Pre-Order Banner
+// ─────────────────────────────────────────────────────────────────────────────
+class _PreOrderFeatureCard extends StatelessWidget {
+  const _PreOrderFeatureCard({this.onTap});
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFF22C55E).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Text('📝', style: TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Contract Farming',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF166534),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Pre-order crops directly from farmers before the harvest.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF15803D),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16A34A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Request Crop →',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

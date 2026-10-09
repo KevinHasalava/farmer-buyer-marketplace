@@ -18,7 +18,7 @@ import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
 import 'role_meta.dart';
 
-enum _AuthStep { phone, otp, name }
+enum _AuthStep { phone, otp }
 
 /// Step 5: Phone OTP Authentication Screen — matching original Login Screen style.
 class PhoneAuthScreen extends StatefulWidget {
@@ -34,7 +34,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
   final _authService = const AuthService();
   final _phoneCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
   final _otpFocus = FocusNode();
 
   _AuthStep _step = _AuthStep.phone;
@@ -49,7 +48,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     _timer?.cancel();
     _phoneCtrl.dispose();
     _otpCtrl.dispose();
-    _nameCtrl.dispose();
     _otpFocus.dispose();
     super.dispose();
   }
@@ -153,7 +151,8 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         }
         if (mounted) _goHome();
       } else {
-        _goStep(_AuthStep.name);
+        final currentRole = context.settings.role ?? UserRole.buyer;
+        context.push(AppRoutes.registerFor(currentRole));
       }
     } catch (_) {
       HapticFeedback.heavyImpact();
@@ -166,66 +165,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     }
   }
 
-  Future<void> _finish() async {
-    final tr = context.settings.strings;
-    final name = _nameCtrl.text.trim();
-    if (name.length < 2) {
-      setState(() => _error = tr.nameRequired);
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final currentRole = context.settings.role ?? UserRole.buyer;
-      await _authService.updateProfile(
-        fullName: name,
-        role: currentRole.name,
-      );
 
-      final phone = _e164 ?? '';
-      if (currentRole == UserRole.farmer) {
-        await FarmerProfileManager.instance.saveRegistrationData(
-          name: name,
-          phone: phone,
-          farmName: '$name\'s Farm',
-          district: 'Colombo',
-          agrarianCenter: 'Regional Agrarian Center',
-          scale: '1 - 3 Acres',
-          practice: 'Certified Organic (SL-GAP)',
-          crops: const ['Carrots & Root Veg', 'Tomatoes'],
-        );
-      } else if (currentRole == UserRole.buyer) {
-        await BuyerProfileManager.instance.saveRegistrationData(
-          name: name,
-          email: phone.isNotEmpty ? '$phone@farm2home.lk' : '',
-          phone: phone,
-          address: 'Colombo, Western Province',
-          buyerType: 'Family',
-          hub: 'Colombo Regional Hub (Western Province)',
-          preferences: const ['100% Organic'],
-        );
-      } else if (currentRole == UserRole.driver) {
-        await DriverProfileManager.instance.saveRegistrationData(
-          name: name,
-          phone: phone,
-          licenseNumber: 'B-Pending',
-          plateNumber: 'WP-Pending',
-          vehicleType: 'Chilled / Refrigerated Van',
-          capacity: '500 kg',
-          bankName: 'Commercial Bank',
-          accountNumber: '',
-        );
-      }
-
-      if (mounted) _goHome();
-    } catch (_) {
-      if (mounted) setState(() => _error = tr.somethingWrong);
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
 
   void _back() {
     switch (_step) {
@@ -237,8 +177,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
         }
       case _AuthStep.otp:
         _goStep(_AuthStep.phone);
-      case _AuthStep.name:
-        _goStep(_AuthStep.otp);
     }
   }
 
@@ -256,16 +194,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
           tr.enterOtp.replaceAll('\n', ' '),
           '${tr.otpSentTo} $_prettyPhone',
         ),
-      _AuthStep.name => (
-          tr.yourName.replaceAll('\n', ' '),
-          tr.yourNameSub,
-        ),
     };
 
     final (String cta, VoidCallback? onCta) = switch (_step) {
       _AuthStep.phone => (tr.sendOtp, _sendOtp),
       _AuthStep.otp => (tr.verify, _otpCtrl.text.length == 6 ? _verify : null),
-      _AuthStep.name => (tr.finish, _finish),
     };
 
     return PopScope(
@@ -302,7 +235,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   children: [
                     if (_step == _AuthStep.phone) _buildPhoneSection(tr),
                     if (_step == _AuthStep.otp) _buildOtpSection(tr),
-                    if (_step == _AuthStep.name) _buildNameSection(tr),
 
                     // Error Message
                     if (_error != null) ...[
@@ -413,9 +345,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                   label: cta,
                   isLoading: _loading,
                   onPressed: onCta,
-                  icon: _step == _AuthStep.name
-                      ? Icons.check_rounded
-                      : Icons.arrow_forward_rounded,
+                  icon: Icons.arrow_forward_rounded,
                 ),
               ),
             ),
@@ -709,75 +639,5 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     );
   }
 
-  // ── Name Field (matching _PremiumField in login_screen.dart) ───────────────
-  Widget _buildNameSection(AppStrings tr) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          tr.fullNameLabel,
-          style: AppTheme.fontStyle(
-            context.currentLanguage,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: AppDimensions.spaceSM),
-        Container(
-          height: 54,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceWhite,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-            border: Border.all(color: AppColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.person_outline_rounded,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _nameCtrl,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  style: AppTheme.fontStyle(
-                    context.currentLanguage,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                  onSubmitted: (_) => _finish(),
-                  decoration: InputDecoration(
-                    hintText: tr.fullName,
-                    hintStyle: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      fontSize: 14,
-                      color: AppColors.textHint,
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+
 }

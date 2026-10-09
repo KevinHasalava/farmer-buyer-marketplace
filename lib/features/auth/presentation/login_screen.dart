@@ -12,8 +12,6 @@ import '../../../services/auth_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
-import '../../admin/services/admin_auth_service.dart';
-
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -101,26 +99,7 @@ class _LoginScreenState extends State<LoginScreen>
     final inputEmail = _emailCtrl.text.trim();
     final inputPassword = _passwordCtrl.text;
 
-    // ── Master Administrator Credentials Intercept ───────────────────
-    if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
-      setState(() => _isLoading = true);
-      HapticFeedback.mediumImpact();
-      final success = await AdminAuthService.instance.login(
-        email: inputEmail,
-        password: inputPassword,
-      );
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Master Administrator Access Granted. Opening Console...'),
-            backgroundColor: Color(0xFF047857),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        context.go(AppRoutes.adminPanel);
-        return;
-      }
-    }
+
 
     setState(() => _isLoading = true);
     try {
@@ -351,48 +330,6 @@ class _LoginScreenState extends State<LoginScreen>
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
-                        ),
-
-                        const SizedBox(height: AppDimensions.spaceLG),
-
-                        // ── Account Type ───────────────────────────────
-                        _SectionLabel(context.tr.selectAccountType),
-                        const SizedBox(height: AppDimensions.spaceXS),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.buyer,
-                                sublabel: context.tr.householdRole,
-                                icon: Icons.shopping_basket_rounded,
-                                isSelected: _selectedRole == UserRole.buyer,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.buyer),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceXS),
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.farmer,
-                                sublabel: context.tr.producerRole,
-                                icon: Icons.agriculture_rounded,
-                                isSelected: _selectedRole == UserRole.farmer,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.farmer),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceXS),
-                            Expanded(
-                              child: _PremiumAccountCard(
-                                label: context.tr.driver,
-                                sublabel: context.tr.transitRole,
-                                icon: Icons.delivery_dining_rounded,
-                                isSelected: _selectedRole == UserRole.driver,
-                                onTap: () =>
-                                    setState(() => _selectedRole = UserRole.driver),
-                              ),
-                            ),
-                          ],
                         ),
 
                         const SizedBox(height: AppDimensions.spaceLG),
@@ -776,142 +713,6 @@ class _BottomWaveClipper extends CustomClipper<Path> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Premium Account Type Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _PremiumAccountCard extends StatelessWidget {
-  const _PremiumAccountCard({
-    required this.label,
-    required this.sublabel,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String sublabel;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
-        ),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [Color(0xFFE8F8EF), Color(0xFFD0F0DF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : AppColors.surfaceWhite,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryGreen
-                : AppColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryGreen
-                        : AppColors.backgroundLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 16,
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.textSecondary,
-                  ),
-                ),
-                const Spacer(),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? AppColors.primaryGreen
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primaryGreen
-                          : AppColors.border,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 11,
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? AppColors.primaryGreen
-                    : AppColors.textDark,
-              ),
-            ),
-            Text(
-              sublabel,
-              style: TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Premium Text Field
 // ─────────────────────────────────────────────────────────────────────────────
 class _PremiumField extends StatelessWidget {
@@ -1172,23 +973,3 @@ class _PremiumCTAButtonState extends State<_PremiumCTAButton>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Section label
-// ─────────────────────────────────────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textSecondary,
-        letterSpacing: 1.5,
-      ),
-    );
-  }
-}
