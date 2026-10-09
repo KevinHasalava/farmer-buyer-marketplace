@@ -107,7 +107,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
         content: Text('${order.items.length} items from #${order.id} added to cart!'),
         backgroundColor: _forestGreen,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 1),
         action: SnackBarAction(
           label: context.tr.viewCart,
           textColor: Colors.white,

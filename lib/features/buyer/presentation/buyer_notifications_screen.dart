@@ -273,7 +273,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
       SnackBar(
         content: const Text('Added Fresh Mountain Strawberries (Rs. 950) to cart!'),
         backgroundColor: _forestGreen,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
@@ -310,7 +310,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
       SnackBar(
         content: const Text('Added Grade-A Cooking Tomatoes (Rs. 260/kg) to cart!'),
         backgroundColor: _forestGreen,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(

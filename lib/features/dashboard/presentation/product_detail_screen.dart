@@ -659,6 +659,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('${widget.product.name} added to cart!'),
+                            duration: const Duration(seconds: 1),
                             action: SnackBarAction(
                               label: 'View Cart',
                               textColor: const Color(0xFF4ADE80),

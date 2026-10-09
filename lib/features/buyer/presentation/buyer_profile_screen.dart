@@ -969,59 +969,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
               ),
             ),
 
-            // Buyer Freshness Promise Active (Banner)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFDCFCE7)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFDCFCE7),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.verified_user_rounded, color: _forestGreen, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.tr.buyerFreshnessPromise,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF14532D),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              context.tr.freshnessPromiseBody,
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Color(0xFF166534),
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
             // Quick Action Menu List
             SliverToBoxAdapter(
               child: Padding(
