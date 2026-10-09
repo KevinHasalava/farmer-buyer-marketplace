@@ -1045,12 +1045,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
           children: [
             Stack(
               children: [
-                Image.network(
-                  product.imageUrl,
-                  height: 105,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                product.imageUrl.startsWith('assets')
+                    ? Image.asset(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                 Positioned(
                   top: 8,
                   left: 8,
@@ -1347,10 +1354,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  product.imageUrl.startsWith('assets')
+                      ? Image.asset(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        ),
                   if (product.badge != null)
                     Positioned(
                       top: 8,
