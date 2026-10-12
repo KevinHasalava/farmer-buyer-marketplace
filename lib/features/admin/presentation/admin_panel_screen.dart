@@ -981,7 +981,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB)),
+              leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF047857)),
               title: Text('Register Buyer Account'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -989,7 +989,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706)),
+              leading: const Icon(Icons.local_shipping_rounded, color: Color(0xFF047857)),
               title: Text('Enroll Transit Driver & Van'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -997,7 +997,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF059669)),
+              leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF047857)),
               title: Text('List Marketplace Product'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1005,7 +1005,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF7E22CE)),
+              leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF047857)),
               title: Text('Create Manual Order & Dispatch'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1089,9 +1089,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Text(
-                            'All 5 operational portals nominal • Real-time SMS Gateway active',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA7F3D0)),
+                          const Expanded(
+                            child: Text(
+                              'All 5 operational portals nominal • Real-time SMS Gateway active',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFFA7F3D0)),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -1581,7 +1584,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1607,32 +1614,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showFarmerEditDialog(context, farmer: f),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF047857),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Farmer Record',
-                        message: 'Are you sure you want to delete ${f.name} (${f.farmName}) from the marketplace database?',
-                        onConfirmed: () => _service.deleteFarmer(f.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showFarmerEditDialog(context, farmer: f),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Farmer Record',
+                            message: 'Are you sure you want to delete ${f.name} (${f.farmName}) from the marketplace database?',
+                            onConfirmed: () => _service.deleteFarmer(f.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1697,12 +1710,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: const Color(0xFFDCFCE7),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
                     ),
                     child: const Center(
-                      child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 22),
+                      child: Icon(Icons.person_rounded, color: Color(0xFF047857), size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1756,7 +1769,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1782,32 +1799,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showBuyerEditDialog(context, buyer: b),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Buyer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Buyer Account',
-                        message: 'Are you sure you want to delete ${b.name} (${b.email})?',
-                        onConfirmed: () => _service.deleteBuyer(b.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showBuyerEditDialog(context, buyer: b),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Buyer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Buyer Account',
+                            message: 'Are you sure you want to delete ${b.name} (${b.email})?',
+                            onConfirmed: () => _service.deleteBuyer(b.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1872,12 +1895,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: const Color(0xFFDCFCE7),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
                     ),
                     child: const Center(
-                      child: Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706), size: 22),
+                      child: Icon(Icons.local_shipping_rounded, color: Color(0xFF047857), size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1945,7 +1968,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1962,32 +1989,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showDriverEditDialog(context, driver: d),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Driver', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD97706),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Fleet Driver',
-                        message: 'Are you sure you want to remove ${d.name} (${d.plateNumber}) from transit fleet?',
-                        onConfirmed: () => _service.deleteDriver(d.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showDriverEditDialog(context, driver: d),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Driver', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Fleet Driver',
+                            message: 'Are you sure you want to remove ${d.name} (${d.plateNumber}) from transit fleet?',
+                            onConfirmed: () => _service.deleteDriver(d.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2275,7 +2308,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
               const SizedBox(height: 10),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   PopupMenuButton<String>(
                     tooltip: 'Change Status',
@@ -2301,41 +2338,48 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         border: Border.all(color: _borderLight),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
+                          Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
                         ],
                       ),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showOrderEditDialog(context, order: o),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Manage Dispatch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7E22CE),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Order Record',
-                        message: 'Are you sure you want to remove Order #${o.id}?',
-                        onConfirmed: () => _service.deleteOrder(o.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showOrderEditDialog(context, order: o),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Manage Dispatch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Order Record',
+                            message: 'Are you sure you want to remove Order #${o.id}?',
+                            onConfirmed: () => _service.deleteOrder(o.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2487,7 +2531,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 10),
 
-                  Row(
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
                       PopupMenuButton<String>(
                         tooltip: 'Change Contract Status',
@@ -2507,12 +2555,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                                 ))
                             .toList(),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           decoration: BoxDecoration(
                             border: Border.all(color: _borderLight),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
                               SizedBox(width: 4),
@@ -2521,41 +2570,47 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                           ),
                         ),
                       ),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          // Allow admin to view the full detail screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PreOrderDetailScreen(
-                                preOrderId: o.id,
-                                isFarmerMode: false, // Treat as observer
-                              ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PreOrderDetailScreen(
+                                    preOrderId: o.id,
+                                    isFarmerMode: false,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.visibility_rounded, size: 15),
+                            label: const Text('Timeline', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF047857),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.visibility_rounded, size: 16),
-                        label: const Text('View Full Timeline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0EA5E9),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          showDeleteConfirmDialog(
-                            context,
-                            title: 'Delete Contract',
-                            message: 'Are you sure you want to remove Contract #${o.id}?',
-                            onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
-                          );
-                        },
-                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(6),
+                            onPressed: () {
+                              showDeleteConfirmDialog(
+                                context,
+                                title: 'Delete Contract',
+                                message: 'Are you sure you want to remove Contract #${o.id}?',
+                                onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
+                              );
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -2858,8 +2913,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                             const SizedBox(height: 10),
 
-                            // Action Buttons Row
-                            Row(
+                            // Action Buttons Row (Responsive Wrap)
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 6,
                               children: [
                                 PopupMenuButton<String>(
                                   tooltip: 'Change Auction Status',
@@ -2884,6 +2943,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text('Status', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
                                         SizedBox(width: 3),
@@ -2892,48 +2952,53 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                                     ),
                                   ),
                                 ),
-                                const Spacer(),
-                                ElevatedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => FarmerAuctionDetailScreen(auctionId: a.id),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => FarmerAuctionDetailScreen(auctionId: a.id),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.visibility_rounded, size: 15),
+                                      label: const Text('Bids Tracker', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF047857),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
                                     ),
-                                  ),
-                                  icon: const Icon(Icons.visibility_rounded, size: 15),
-                                  label: const Text('View Bids Tracker', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0EA5E9),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                OutlinedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CreateEditAuctionScreen(existingAuction: a),
+                                    const SizedBox(width: 4),
+                                    OutlinedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => CreateEditAuctionScreen(existingAuction: a),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.edit_note_rounded, size: 15),
+                                      label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF475569),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
                                     ),
-                                  ),
-                                  icon: const Icon(Icons.edit_note_rounded, size: 15),
-                                  label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF475569),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                IconButton(
-                                  tooltip: 'Delete Auction',
-                                  onPressed: () {
-                                    showDeleteConfirmDialog(
-                                      context,
-                                      title: 'Delete Crop Auction',
-                                      message: 'Are you sure you want to permanently remove auction #${a.id} for "${a.cropName}"?',
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      tooltip: 'Delete Auction',
+                                      visualDensity: VisualDensity.compact,
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.all(6),
+                                      onPressed: () {
+                                        showDeleteConfirmDialog(
+                                          context,
+                                          title: 'Delete Crop Auction',
+                                          message: 'Are you sure you want to permanently remove auction #${a.id} for "${a.cropName}"?',
                                       onConfirmed: () => AuctionManager.instance.deleteAuction(a.id),
                                     );
                                   },
@@ -2943,8 +3008,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ],
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                  );
+                },
                     childCount: list.length,
                   ),
                 ),

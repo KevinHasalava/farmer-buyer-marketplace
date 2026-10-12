@@ -323,9 +323,14 @@ class AdminMarketplaceService extends ChangeNotifier {
       debugPrint('[AdminMarketplaceService] orders remote sync note: $e');
     }
 
-    // 5. Sync Farmers from remote Supabase (if table exists)
+    // 5. Sync Farmers from remote Supabase (farmer_details or farmers)
     try {
-      final res = await db.from('farmers').select().order('created_at', ascending: false);
+      List<dynamic> res = [];
+      try {
+        res = await db.from('farmer_details').select().order('created_at', ascending: false);
+      } catch (_) {
+        res = await db.from('farmers').select().order('created_at', ascending: false);
+      }
       if (res.isNotEmpty) {
         final remoteFarmers = res
             .map((e) => AdminFarmerModel.fromMap(Map<String, dynamic>.from(e as Map)))
@@ -344,9 +349,14 @@ class AdminMarketplaceService extends ChangeNotifier {
       debugPrint('[AdminMarketplaceService] farmers remote sync note: $e');
     }
 
-    // 6. Sync Buyers from remote Supabase (if table exists)
+    // 6. Sync Buyers from remote Supabase (buyer_details or buyers)
     try {
-      final res = await db.from('buyers').select().order('created_at', ascending: false);
+      List<dynamic> res = [];
+      try {
+        res = await db.from('buyer_details').select().order('created_at', ascending: false);
+      } catch (_) {
+        res = await db.from('buyers').select().order('created_at', ascending: false);
+      }
       if (res.isNotEmpty) {
         final remoteBuyers = res
             .map((e) => AdminBuyerModel.fromMap(Map<String, dynamic>.from(e as Map)))
@@ -1071,12 +1081,12 @@ class AdminMarketplaceService extends ChangeNotifier {
     return [
       AdminDriverModel(
         id: 'DRV-5304',
-        name: 'Madushi Perera',
-        phone: '+94784521693',
+        name: 'Madushi',
+        phone: '784521693',
         licenseNumber: 'G-7890',
         vehicleType: 'Covered Light Truck / Lorry',
         plateNumber: 'FK-1234',
-        cargoCapacity: '1.5 Tons',
+        cargoCapacity: '100g',
         bankName: 'Seylan Bank',
         accountNumber: '789653214',
         isOnDuty: true,
@@ -1086,50 +1096,50 @@ class AdminMarketplaceService extends ChangeNotifier {
         registeredAt: now.subtract(const Duration(days: 55)),
       ),
       AdminDriverModel(
-        id: 'DRV-5305',
-        name: 'Kamal Gunawardena',
-        phone: '+94772345678',
-        licenseNumber: 'B-58291',
-        vehicleType: 'Reefer Cold Chain Truck',
-        plateNumber: 'WP-ND-8921',
-        cargoCapacity: '3.5 Tons',
-        bankName: 'Commercial Bank',
-        accountNumber: '8001239841',
+        id: 'DRV-8927',
+        name: 'Gayani',
+        phone: '764215967',
+        licenseNumber: 'V-5678',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'BE-1234',
+        cargoCapacity: '900g',
+        bankName: 'Nations Trust Bank (NTB)',
+        accountNumber: '7856941233',
         isOnDuty: true,
         completedTrips: 29,
-        rating: 4.95,
+        rating: 4.9,
         status: 'Active',
         registeredAt: now.subtract(const Duration(days: 42)),
       ),
       AdminDriverModel(
-        id: 'DRV-5306',
-        name: 'Sanjeewa Kumara',
-        phone: '+94715678901',
-        licenseNumber: 'B-91823',
-        vehicleType: 'Bolero Maxi Truck',
-        plateNumber: 'CP-DA-4521',
-        cargoCapacity: '1.2 Tons',
-        bankName: 'Bank of Ceylon',
-        accountNumber: '0034918274',
-        isOnDuty: false,
+        id: 'DRV-5205',
+        name: 'Janith',
+        phone: '752315698',
+        licenseNumber: 'H-5678',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'RS-1234',
+        cargoCapacity: '300g',
+        bankName: 'Bank of Ceylon (BOC)',
+        accountNumber: '147852369',
+        isOnDuty: true,
         completedTrips: 8,
-        rating: 4.7,
-        status: 'Offline',
+        rating: 4.9,
+        status: 'Active',
         registeredAt: now.subtract(const Duration(days: 28)),
       ),
       AdminDriverModel(
-        id: 'DRV-5307',
-        name: 'Roshan Bandara',
-        phone: '+94767890123',
-        licenseNumber: 'B-49201',
-        vehicleType: 'Insulated Box Van',
-        plateNumber: 'WP-LH-2391',
-        cargoCapacity: '2.0 Tons',
+        id: 'DRV-491939',
+        name: 'Lasiru Iduvara',
+        phone: '+94765642127',
+        licenseNumber: 'M-4567',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'WP-CA-8921',
+        cargoCapacity: '250g',
         bankName: 'People\'s Bank',
         accountNumber: '1284719201',
         isOnDuty: true,
         completedTrips: 21,
-        rating: 4.85,
+        rating: 4.9,
         status: 'Active',
         registeredAt: now.subtract(const Duration(days: 18)),
       ),
@@ -1240,51 +1250,77 @@ class AdminMarketplaceService extends ChangeNotifier {
         customerName: 'Chaminda Perera',
         customerPhone: '+94719876543',
         farmName: 'Sunil Perera Farm',
-        itemsSummary: '2 kg Organic Tomatoes, 1 kg Fresh Carrots, 1 kg Highland Potatoes',
+        itemsSummary: '2 kg Organic Tomatoes, 1 kg Fresh Carrots, 1 kg Highland Potatoes, 1 1 kg Nuwara Eliya Highland Carrots',
         totalAmount: 1071.0,
         status: 'Pending',
         deliveryAddress: '123, Main Street, Hambantota',
-        assignedDriverName: 'Madushi Perera',
-        assignedDriverPhone: '+94784521693',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
         orderDate: now.subtract(const Duration(hours: 4)),
       ),
       AdminOrderModel(
-        id: 'FH-8941',
-        customerName: 'Dilani Jayasinghe',
-        customerPhone: '+94776543210',
-        farmName: 'Hakgala Organic Highlands',
-        itemsSummary: '15 kg Highland Carrots, 10 kg Organic Tomatoes',
-        totalAmount: 8900.0,
-        status: 'In Transit',
-        deliveryAddress: '45, Peradeniya Road, Kandy',
-        assignedDriverName: 'Kamal Gunawardena',
-        assignedDriverPhone: '+94772345678',
+        id: 'FH-8841',
+        customerName: 'Chaminda Perera',
+        customerPhone: '+94719876543',
+        farmName: 'K. M. Bandara',
+        itemsSummary: '5 kg (Carrots & Leeks)',
+        totalAmount: 1450.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'No. 42 Havelock Rd, Colombo 05',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
         orderDate: now.subtract(const Duration(hours: 6)),
       ),
       AdminOrderModel(
-        id: 'FH-8942',
-        customerName: 'Keells Supermarket',
-        customerPhone: '+94771234567',
-        farmName: 'Dambulla Agro Green',
-        itemsSummary: '50 kg Green Chillies, 40 kg Red Onions',
-        totalAmount: 58300.0,
-        status: 'Confirmed',
-        deliveryAddress: 'Keells Distribution Centre, Kerawalapitiya',
+        id: 'FH-8850',
+        customerName: 'Dilani Jayawardena',
+        customerPhone: '+94719876543',
+        farmName: 'Sunil Perera',
+        itemsSummary: '12 kg (Tomatoes & Cabbages)',
+        totalAmount: 1800.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'Dehiwala Urban Center',
         assignedDriverName: 'Unassigned',
         assignedDriverPhone: '',
-        orderDate: now.subtract(const Duration(hours: 1)),
+        orderDate: now.subtract(const Duration(hours: 8)),
       ),
       AdminOrderModel(
-        id: 'FH-8943',
-        customerName: 'Sujith Fernando',
-        customerPhone: '+94754433221',
-        farmName: 'Welimada Valley Farms',
-        itemsSummary: '30 kg Highland Potatoes, 20 kg Cabbage',
-        totalAmount: 16800.0,
-        status: 'Delivered',
-        deliveryAddress: '88, Negombo Road, Kurunegala',
-        assignedDriverName: 'Roshan Bandara',
-        assignedDriverPhone: '+94767890123',
+        id: 'FT-1560',
+        customerName: 'Chaminda Perera',
+        customerPhone: '+94719876543',
+        farmName: 'Sunil Perera Farm',
+        itemsSummary: '2 kg Organic Tomatoes, 1 kg Fresh Carrots, 1 kg Highland Potatoes, 2 1 kg Crisp Field Salad Cucumber',
+        totalAmount: 1071.0,
+        status: 'Pending',
+        deliveryAddress: '123, Main Street, Hambantota',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 10)),
+      ),
+      AdminOrderModel(
+        id: 'FH-8862',
+        customerName: 'Anura Kumara (Cinnamon Mart)',
+        customerPhone: '+94719876543',
+        farmName: 'R. M. Dissanayake',
+        itemsSummary: '25 kg (Bell Peppers & Fresh Tomatoes)',
+        totalAmount: 2100.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'No. 18 Barnes Place, Colombo 07',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 12)),
+      ),
+      AdminOrderModel(
+        id: 'FH-8875',
+        customerName: 'Nimali Jayasinghe (Fresh Choice)',
+        customerPhone: '+94719876543',
+        farmName: 'S. K. Gunasekara',
+        itemsSummary: '8 kg (Salad Greens & Strawberries)',
+        totalAmount: 1650.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'Station Road, Moratuwa',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
         orderDate: now.subtract(const Duration(days: 1)),
       ),
     ];
