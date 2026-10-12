@@ -168,32 +168,5 @@ class PreOrderModel {
     );
   }
 
-  static List<PreOrderModel> get samplePreOrders => [
-    PreOrderModel(
-      id: 'po_sample_1',
-      buyerId: 'buyer_primary',
-      buyerName: 'Nadeesha Supermarkets',
-      farmerId: 'farmer_01',
-      farmerName: 'Kamal Perera',
-      cropName: 'Premium Carrots',
-      requiredQuantityKg: 500.0,
-      offeredPricePerKg: 350.0,
-      expectedDeliveryDate: DateTime.now().add(const Duration(days: 45)),
-      qualityRequirements: 'Must be large and clean without damages. Organic preferred.',
-      status: 'In Progress',
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-    ),
-    PreOrderModel(
-      id: 'po_sample_2',
-      buyerId: 'buyer_primary',
-      buyerName: 'Nadeesha Supermarkets',
-      cropName: 'Red Onions',
-      requiredQuantityKg: 1000.0,
-      offeredPricePerKg: 280.0,
-      expectedDeliveryDate: DateTime.now().add(const Duration(days: 90)),
-      qualityRequirements: 'Dry and well-cured red onions.',
-      status: 'Pending',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-  ];
+  static List<PreOrderModel> get samplePreOrders => const [];
 }

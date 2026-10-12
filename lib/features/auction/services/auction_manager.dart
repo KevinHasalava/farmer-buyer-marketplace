@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/supabase/supabase_config.dart';
 import '../models/auction_model.dart';
 import '../models/bid_model.dart';
 
@@ -47,16 +48,55 @@ class AuctionManager extends ChangeNotifier {
     ..sort((a, b) => a.endTime.compareTo(b.endTime));
 
   /// ──────────────────────────────────────────────────────────────────────────
-  /// 1. READ (R): Load auctions from local storage or initialize with sample data
+  /// 1. READ (R): Load auctions and bids from live Supabase database
   /// ──────────────────────────────────────────────────────────────────────────
   Future<void> loadAuctions() async {
     _isLoading = true;
     notifyListeners();
 
     try {
+      if (SupabaseConfig.isInitialized) {
+        try {
+          final auctionRows = await SupabaseConfig.client
+              .from('auctions')
+              .select()
+              .order('created_at', ascending: false);
+
+          final bidRows = await SupabaseConfig.client
+              .from('auction_bids')
+              .select()
+              .order('created_at', ascending: false);
+
+          final Map<String, List<BidModel>> bidsByAuction = {};
+          for (final b in (bidRows as List<dynamic>)) {
+            if (b is Map<String, dynamic>) {
+              final bid = BidModel.fromJson(b);
+              bidsByAuction.putIfAbsent(bid.auctionId, () => []).add(bid);
+            }
+          }
+
+          _auctions.clear();
+          for (final item in (auctionRows as List<dynamic>)) {
+            if (item is Map<String, dynamic>) {
+              final aId = item['id'] as String? ?? '';
+              final bidsForThis = bidsByAuction[aId] ?? [];
+              final auction = AuctionModel.fromJson(item).copyWith(bids: bidsForThis);
+              _auctions.add(auction);
+            }
+          }
+
+          await _saveToLocal();
+          _isLoading = false;
+          notifyListeners();
+          return;
+        } catch (dbErr) {
+          debugPrint('[AuctionManager] Supabase query error, falling back to local: $dbErr');
+        }
+      }
+
+      // Offline / Local cache fallback
       final prefs = await SharedPreferences.getInstance();
       final rawJson = prefs.getString(_kStorageKey);
-
       if (rawJson != null && rawJson.isNotEmpty) {
         final decoded = jsonDecode(rawJson) as List<dynamic>;
         _auctions.clear();
@@ -65,10 +105,6 @@ class AuctionManager extends ChangeNotifier {
             _auctions.add(AuctionModel.fromJson(item));
           }
         }
-      } else {
-        _auctions.clear();
-        _auctions.addAll(AuctionModel.sampleAuctions);
-        await _saveToLocal();
       }
     } catch (e) {
       debugPrint('[AuctionManager] Load error: $e');
@@ -149,6 +185,13 @@ class AuctionManager extends ChangeNotifier {
 
     _auctions.insert(0, newAuction);
     await _saveToLocal();
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auctions').insert(newAuction.toDb());
+      } catch (e) {
+        debugPrint('[AuctionManager] DB create error: $e');
+      }
+    }
 
     _isLoading = false;
     notifyListeners();
@@ -165,6 +208,14 @@ class AuctionManager extends ChangeNotifier {
     _auctions[idx] = updated;
     await _saveToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auctions').update(updated.toDb()).eq('id', updated.id);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB update error: $e');
+      }
+    }
     return true;
   }
 
@@ -178,6 +229,14 @@ class AuctionManager extends ChangeNotifier {
     _auctions.removeAt(idx);
     await _saveToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auctions').delete().eq('id', auctionId);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB delete error: $e');
+      }
+    }
     return true;
   }
 
@@ -189,13 +248,26 @@ class AuctionManager extends ChangeNotifier {
     if (idx == -1) return false;
 
     final target = _auctions[idx];
+    final newStatus = markAsSold && target.totalBids > 0 ? 'sold' : 'ended';
+    final now = DateTime.now();
     _auctions[idx] = target.copyWith(
-      status: markAsSold && target.totalBids > 0 ? 'sold' : 'ended',
-      endTime: DateTime.now(),
+      status: newStatus,
+      endTime: now,
     );
 
     await _saveToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auctions').update({
+          'status': newStatus,
+          'end_time': now.toIso8601String(),
+        }).eq('id', auctionId);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB end error: $e');
+      }
+    }
     return true;
   }
 
@@ -204,13 +276,25 @@ class AuctionManager extends ChangeNotifier {
     if (idx == -1) return false;
 
     final target = _auctions[idx];
+    final newDesc = reason.isNotEmpty ? '${target.description}\n[Cancelled: $reason]' : target.description;
     _auctions[idx] = target.copyWith(
       status: 'cancelled',
-      description: reason.isNotEmpty ? '${target.description}\n[Cancelled: $reason]' : target.description,
+      description: newDesc,
     );
 
     await _saveToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auctions').update({
+          'status': 'cancelled',
+          'description': newDesc,
+        }).eq('id', auctionId);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB cancel error: $e');
+      }
+    }
     return true;
   }
 
@@ -273,6 +357,20 @@ class AuctionManager extends ChangeNotifier {
     await _saveToLocal();
     notifyListeners();
 
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auction_bids').insert(newBid.toDb());
+        await SupabaseConfig.client.from('auctions').update({
+          'current_highest_bid': amount,
+          'highest_bidder_id': buyerId,
+          'highest_bidder_name': buyerName,
+          'total_bids': updatedAuction.totalBids,
+        }).eq('id', auctionId);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB bid error: $e');
+      }
+    }
+
     return BidResult(
       success: true,
       message: 'Bid of Rs. ${amount.toStringAsFixed(2)} placed successfully! You are currently the highest bidder 🏆',
@@ -326,6 +424,22 @@ class AuctionManager extends ChangeNotifier {
     _auctions[idx] = updatedAuction;
     await _saveToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('auction_bids').insert(newBid.toDb());
+        await SupabaseConfig.client.from('auctions').update({
+          'current_highest_bid': buyNowPrice,
+          'highest_bidder_id': buyerId,
+          'highest_bidder_name': buyerName,
+          'total_bids': updatedAuction.totalBids,
+          'status': 'sold',
+          'end_time': DateTime.now().toIso8601String(),
+        }).eq('id', auctionId);
+      } catch (e) {
+        debugPrint('[AuctionManager] DB buyNow error: $e');
+      }
+    }
 
     return BidResult(
       success: true,

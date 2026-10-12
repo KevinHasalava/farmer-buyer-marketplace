@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/supabase/supabase_config.dart';
 
 import '../models/cart_item_model.dart';
 
@@ -242,110 +243,82 @@ class MarketplaceState extends ChangeNotifier {
       ),
     ]);
 
-    // 3. Initial Orders
-    _orders.addAll([
-      FarmOrder(
-        id: 'FT-8291',
-        orderDate: DateTime(2026, 8, 18, 9, 30),
-        status: OrderStatus.inTransit,
-        items: const [
-          OrderItemSummary(
-            name: 'Organic Tomatoes',
-            quantity: 2,
-            unitPrice: 250.0,
-            unit: 'kg',
-            emoji: '🍅',
-          ),
-          OrderItemSummary(
-            name: 'Fresh Carrots',
-            quantity: 1,
-            unitPrice: 300.0,
-            unit: 'kg',
-            emoji: '🥕',
-          ),
-          OrderItemSummary(
-            name: 'Highland Potatoes',
-            quantity: 1,
-            unitPrice: 150.0,
-            unit: 'kg',
-            emoji: '🥔',
-          ),
-        ],
-        subtotal: 950.0,
-        deliveryFee: 0.0,
-        discount: 0.0,
-        totalAmount: 950.0,
-        deliveryAddress: '123, Main Street, Hambantota',
-        contactNumber: '076 323 8225',
-        deliveryMethod: 'Home Delivery',
-        preferredDateTime: '18 Aug 2026, 10:00 AM - 12:00 PM',
-        paymentMethod: 'Cash on Delivery',
-        trackingSteps: const [
-          OrderTrackingStep(
-            title: 'Order Placed',
-            description: 'Order confirmed and sent to Sunil Perera Farm',
-            time: '09:30 AM',
-            isCompleted: true,
-          ),
-          OrderTrackingStep(
-            title: 'Harvested & Packed',
-            description: 'Fresh vegetables picked and quality inspected',
-            time: '10:05 AM',
-            isCompleted: true,
-          ),
-          OrderTrackingStep(
-            title: 'In Transit with Rider',
-            description: 'Rider Nuwan is on the way to Hambantota',
-            time: '10:45 AM',
-            isCompleted: true,
-            isCurrent: true,
-          ),
-          OrderTrackingStep(
-            title: 'Delivered',
-            description: 'Package handed over to recipient',
-            time: 'Est. 11:30 AM',
-            isCompleted: false,
-          ),
-        ],
-      ),
-      FarmOrder(
-        id: 'FT-8120',
-        orderDate: DateTime(2026, 8, 14, 14, 15),
-        status: OrderStatus.delivered,
-        items: const [
-          OrderItemSummary(
-            name: 'Highland Potatoes',
-            quantity: 3,
-            unitPrice: 220.0,
-            unit: 'kg',
-            emoji: '🥔',
-          ),
-        ],
-        subtotal: 660.0,
-        deliveryFee: 0.0,
-        discount: 0.0,
-        totalAmount: 660.0,
-        deliveryAddress: '123, Main Street, Hambantota',
-        contactNumber: '076 323 8225',
-        deliveryMethod: 'Home Delivery',
-        preferredDateTime: '14 Aug 2026, 04:00 PM',
-        paymentMethod: 'Cash on Delivery',
-        trackingSteps: const [
-          OrderTrackingStep(
-            title: 'Order Placed',
-            description: 'Confirmed by buyer',
-            time: '02:15 PM',
-            isCompleted: true,
-          ),
-          OrderTrackingStep(
-            title: 'Delivered Successfully',
-            description: 'Handed over at 123, Main Street',
-            time: '04:10 PM',
-            isCompleted: true,
-          ),
-        ],
-      ),
-    ]);
+    // 3. Sync real orders from Supabase
+    loadOrdersFromDatabase();
+  }
+
+  Future<void> loadOrdersFromDatabase() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      final uid = SupabaseConfig.auth.currentUser?.id;
+      final query = SupabaseConfig.client.from('orders').select();
+      final rows = uid != null
+          ? await query.eq('buyer_id', uid).order('order_date', ascending: false)
+          : await query.order('order_date', ascending: false);
+
+      if ((rows as List).isNotEmpty) {
+        _orders.clear();
+        for (final r in rows) {
+          final row = Map<String, dynamic>.from(r as Map);
+          final id = row['id']?.toString() ?? '';
+          final totalNum = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
+          final statusStr = (row['status'] as String? ?? 'Pending').toLowerCase();
+          final orderStatus = statusStr.contains('transit')
+              ? OrderStatus.inTransit
+              : (statusStr.contains('deliver')
+                  ? OrderStatus.delivered
+                  : (statusStr.contains('pack') || statusStr.contains('process')
+                      ? OrderStatus.processing
+                      : OrderStatus.confirmed));
+
+          _orders.add(
+            FarmOrder(
+              id: id,
+              orderDate: row['order_date'] != null
+                  ? DateTime.tryParse(row['order_date'].toString()) ?? DateTime.now()
+                  : DateTime.now(),
+              status: orderStatus,
+              items: const [],
+              subtotal: totalNum,
+              deliveryFee: 0.0,
+              discount: 0.0,
+              totalAmount: totalNum,
+              deliveryAddress: row['delivery_address'] as String? ?? '',
+              contactNumber: row['customer_phone'] as String? ?? '',
+              deliveryMethod: 'Home Delivery',
+              preferredDateTime: 'Pending Dispatch',
+              paymentMethod: 'Cash on Delivery',
+              trackingSteps: [
+                OrderTrackingStep(
+                  title: 'Order Placed',
+                  description: 'Order recorded in system',
+                  time: 'Confirmed',
+                  isCompleted: true,
+                ),
+                OrderTrackingStep(
+                  title: 'In Transit',
+                  description:
+                      'Assigned to driver: ${row['assigned_driver_name'] ?? 'Transit'}',
+                  time: 'En route',
+                  isCompleted: orderStatus == OrderStatus.inTransit ||
+                      orderStatus == OrderStatus.delivered,
+                  isCurrent: orderStatus == OrderStatus.inTransit,
+                ),
+                OrderTrackingStep(
+                  title: 'Delivered',
+                  description: 'Delivered to address',
+                  time: 'Delivery completed',
+                  isCompleted: orderStatus == OrderStatus.delivered,
+                ),
+              ],
+            ),
+          );
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[MarketplaceState] loadOrdersFromDatabase: $e');
+    }
   }
 
   // ── Cart Actions ───────────────────────────────────────────────────────────

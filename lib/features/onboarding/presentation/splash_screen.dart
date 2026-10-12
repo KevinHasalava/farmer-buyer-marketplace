@@ -6,7 +6,9 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../admin/services/admin_auth_service.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
 class SplashScreen extends StatefulWidget {
@@ -33,32 +35,39 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
     final s = context.settings;
 
-    // Check if user is authenticated via Supabase (e.g., returned from Google OAuth)
+    // A returning user with a valid Supabase session goes straight home,
+    // using the role stored in the database (never a locally cached guess).
     if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
-      final sbUser = SupabaseConfig.auth.currentUser!;
-      final metadata = sbUser.userMetadata ?? {};
-      final roleStr = (metadata['role'] as String?)?.toLowerCase();
-      final isFarmer = (metadata['is_farmer'] as bool? ?? false) || roleStr == 'farmer';
-      final role = isFarmer
-          ? UserRole.farmer
-          : (roleStr == 'driver' ? UserRole.driver : (s.role ?? UserRole.buyer));
-      await s.setRole(role);
-      if (!mounted) return;
-      context.go(AppRoutes.homeFor(role));
-      return;
+      try {
+        final roleStr = await const AuthService().fetchRole();
+        if (!mounted) return;
+        if (roleStr == 'admin') {
+          final ok = await AdminAuthService.instance.adoptCurrentSession();
+          if (!mounted) return;
+          if (ok) {
+            context.go(AppRoutes.adminPanel);
+            return;
+          }
+        } else {
+          final role = UserRole.fromName(roleStr) ?? UserRole.buyer;
+          await s.setRole(role);
+          if (!mounted) return;
+          context.go(AppRoutes.homeFor(role));
+          return;
+        }
+      } catch (_) {
+        // Profile missing / suspended / offline: fall through to sign-in.
+        await const AuthService().signOut();
+      }
     }
+    if (!mounted) return;
 
     if (!s.hasLanguage) {
       context.go(AppRoutes.language);
       return;
     }
 
-    if (s.role != null) {
-      context.go(AppRoutes.homeFor(s.role!));
-      return;
-    }
-
-    context.go(s.onboardingSeen ? AppRoutes.roleSelection : AppRoutes.onboarding);
+    context.go(s.onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
   }
 
   @override

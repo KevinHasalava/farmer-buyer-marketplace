@@ -55,26 +55,5 @@ class PreOrderProgressModel {
     );
   }
 
-  static List<PreOrderProgressModel> get sampleProgress => [
-    PreOrderProgressModel(
-      id: 'prog_1',
-      preOrderId: 'po_sample_1',
-      stage: 'Land Preparation',
-      description: 'Cleared the field and prepared beds for planting carrots. The soil moisture is perfect.',
-      images: [
-        'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=400&auto=format&fit=crop&q=60'
-      ],
-      date: DateTime.now().subtract(const Duration(days: 8)),
-    ),
-    PreOrderProgressModel(
-      id: 'prog_2',
-      preOrderId: 'po_sample_1',
-      stage: 'Seeds Planted',
-      description: 'Planted premium carrot seeds today. Applied organic base fertilizer. Weather is good.',
-      images: [
-        'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&auto=format&fit=crop&q=60'
-      ],
-      date: DateTime.now().subtract(const Duration(days: 3)),
-    ),
-  ];
+  static List<PreOrderProgressModel> get sampleProgress => const [];
 }

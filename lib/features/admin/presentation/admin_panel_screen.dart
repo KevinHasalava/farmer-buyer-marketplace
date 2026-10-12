@@ -10,6 +10,7 @@ import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
 import '../../pre_order/presentation/pre_order_detail_screen.dart';
+import '../../pre_order/presentation/create_pre_order_screen.dart';
 import '../../auction/services/auction_manager.dart';
 import '../../auction/presentation/farmer/farmer_auction_detail_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
@@ -60,6 +61,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.addListener(_onServiceChanged);
     _auth.addListener(_onServiceChanged);
     AuctionManager.instance.addListener(_onServiceChanged);
+    _service.init();
   }
 
   @override
@@ -73,7 +75,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   void _onServiceChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    final err = _service.lastError;
+    if (err != null) {
+      _service.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _switchTab(int index) {
@@ -93,19 +107,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
-            SizedBox(width: 8),
+            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+            const SizedBox(width: 8),
             Text(
-              'Sign Out from Console',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              'Sign Out from Console'.trAuto(context),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to lock and exit the Master Administrator session?',
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        content: Text(
+          'Are you sure you want to lock and exit the Master Administrator session?'.trAuto(context),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
@@ -309,11 +323,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             const SizedBox(height: 12),
 
             // ── Section Label ───────────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               child: Text(
-                'MANAGEMENT MODULES',
-                style: TextStyle(
+                'MANAGEMENT MODULES'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF64748B),
@@ -403,11 +417,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Gateway Connected',
                             style: TextStyle(
                               fontSize: 11,
@@ -416,8 +430,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ),
                           Text(
-                            'Notify.lk SMS • Active',
-                            style: TextStyle(fontSize: 9.5, color: Color(0xFF6EE7B7)),
+                            'Notify.lk SMS • Active'.trAuto(context),
+                            style: const TextStyle(fontSize: 9.5, color: Color(0xFF6EE7B7)),
                           ),
                         ],
                       ),
@@ -472,7 +486,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            _auth.currentAdminEmail.isNotEmpty ? _auth.currentAdminEmail : 'admin@farm2home.lk',
+                            _auth.currentAdminEmail.isNotEmpty ? _auth.currentAdminEmail : '',
                             style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -538,7 +552,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  label,
+                  label.trAuto(context),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -879,7 +893,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   String _getTabTitle(int index) {
-    return switch (index) {
+    final title = switch (index) {
       1 => 'Farmers Registry',
       2 => 'Buyer Accounts',
       3 => 'Transit & Fleet',
@@ -889,18 +903,21 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       7 => 'Crop Auctions & Bids',
       _ => 'Executive Overview',
     };
+    return title.trAuto(context);
   }
 
   String _getCreateButtonLabelForTab(int tabIndex) {
-    return switch (tabIndex) {
+    final label = switch (tabIndex) {
       1 => 'Add Farmer',
       2 => 'Add Buyer',
       3 => 'Add Driver',
       4 => 'Add Product',
       5 => 'Create Order',
+      6 => 'New Contract',
       7 => 'Add Auction',
       _ => 'New Entry',
     };
+    return label.trAuto(context);
   }
 
   void _handleCreateActionForTab(int tabIndex) {
@@ -920,6 +937,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         break;
       case 5:
         showOrderEditDialog(context);
+        break;
+      case 6:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreatePreOrderScreen()),
+        );
         break;
       case 7:
         Navigator.push(
@@ -944,9 +967,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Quick Create New Entity',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
+            Text(
+              'Quick Create New Entity'.trAuto(context),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
             ),
             const SizedBox(height: 14),
             ListTile(
@@ -959,7 +982,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
             ListTile(
               leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB)),
-              title: const Text('Register Buyer Account'),
+              title: Text('Register Buyer Account'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showBuyerEditDialog(context);
@@ -967,7 +990,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
             ListTile(
               leading: const Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706)),
-              title: const Text('Enroll Transit Driver & Van'),
+              title: Text('Enroll Transit Driver & Van'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showDriverEditDialog(context);
@@ -975,7 +998,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
             ListTile(
               leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF059669)),
-              title: const Text('List Marketplace Product'),
+              title: Text('List Marketplace Product'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showProductEditDialog(context);
@@ -983,7 +1006,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             ),
             ListTile(
               leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF7E22CE)),
-              title: const Text('Create Manual Order & Dispatch'),
+              title: Text('Create Manual Order & Dispatch'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showOrderEditDialog(context);
@@ -2465,8 +2488,40 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   const SizedBox(height: 10),
 
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      PopupMenuButton<String>(
+                        tooltip: 'Change Contract Status',
+                        onSelected: (val) {
+                          PreOrderManager.instance.updatePreOrderStatus(o.id, val);
+                        },
+                        itemBuilder: (context) => [
+                          'Pending',
+                          'Accepted',
+                          'In Progress',
+                          'Completed',
+                          'Cancelled',
+                        ]
+                            .map((s) => PopupMenuItem(
+                                  value: s,
+                                  child: Text(s, style: TextStyle(fontWeight: s == o.status ? FontWeight.bold : FontWeight.normal)),
+                                ))
+                            .toList(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: _borderLight),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            children: [
+                              Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
                       ElevatedButton.icon(
                         onPressed: () {
                           // Allow admin to view the full detail screen
@@ -2805,8 +2860,39 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
                             // Action Buttons Row
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
+                                PopupMenuButton<String>(
+                                  tooltip: 'Change Auction Status',
+                                  onSelected: (val) {
+                                    if (val == 'sold') {
+                                      AuctionManager.instance.endAuction(a.id, markAsSold: true);
+                                    } else if (val == 'ended') {
+                                      AuctionManager.instance.endAuction(a.id, markAsSold: false);
+                                    } else if (val == 'cancelled') {
+                                      AuctionManager.instance.cancelAuction(a.id, reason: 'Administrative cancellation');
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(value: 'sold', child: Text('Mark as Sold')),
+                                    const PopupMenuItem(value: 'ended', child: Text('End Auction')),
+                                    const PopupMenuItem(value: 'cancelled', child: Text('Cancel Auction')),
+                                  ],
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: _borderLight),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Text('Status', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                        SizedBox(width: 3),
+                                        Icon(Icons.arrow_drop_down, size: 15, color: Color(0xFF475569)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
                                 ElevatedButton.icon(
                                   onPressed: () => Navigator.push(
                                     context,

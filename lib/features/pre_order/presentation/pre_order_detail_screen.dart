@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
@@ -61,9 +61,15 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
       body: ListenableBuilder(
         listenable: PreOrderManager.instance,
         builder: (context, _) {
-          final order = PreOrderManager.instance.preOrders.firstWhere(
+          final orderIndex = PreOrderManager.instance.preOrders.indexWhere(
             (o) => o.id == widget.preOrderId,
           );
+          if (orderIndex == -1) {
+            return const Scaffold(
+              body: Center(child: Text('Contract not found or has been removed.')),
+            );
+          }
+          final order = PreOrderManager.instance.preOrders[orderIndex];
           final progressList = PreOrderManager.instance.getProgressForOrder(widget.preOrderId);
 
           return Column(

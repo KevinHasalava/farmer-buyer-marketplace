@@ -58,7 +58,7 @@ class BuyerProfileModel {
   /// Returns 2-letter uppercase initials like "CP" from "Chaminda Perera"
   String get initials {
     final clean = name.trim();
-    if (clean.isEmpty) return 'CP';
+    if (clean.isEmpty) return 'U';
     final parts = clean.split(RegExp(r'\s+'));
     if (parts.length == 1) {
       return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
@@ -99,7 +99,7 @@ class BuyerProfileModel {
       }
       return deliveryHub;
     }
-    return 'Colombo 02, Western';
+    return 'Set delivery location';
   }
 
   BuyerProfileModel copyWith({
@@ -214,34 +214,28 @@ class BuyerProfileModel {
     );
   }
 
-  static const BuyerProfileModel defaultBuyer = BuyerProfileModel(
-    id: 'b-0034',
-    name: 'Chaminda Perera',
-    phone: '+94 77 123 4567',
-    email: 'chaminda.p@example.com',
+  /// Blank profile used before the real one is loaded from the database.
+  static const BuyerProfileModel empty = BuyerProfileModel(
+    id: '',
+    name: '',
+    phone: '',
+    email: '',
     avatarUrl: null,
-    isVerified: true,
-    buyerCode: '#B-0034',
-    memberSince: '2023',
-    buyerType: 'Family',
-    completedOrders: 34,
-    directFarmSpend: 42500.0,
-    co2SavedKg: 120,
-    walletBalance: 3450.0,
-    savedFarmersCount: 6,
-    deliveryHub: 'Colombo Western Regional Hub (Route 07)',
-    deliveryAddress: 'House 24, Flower Road, Colombo 07',
-    deliverySlot: 'Direct Morning Cold Transit Slot',
-    preferences: [
-      '100% Organic',
-      'Pesticide-Free',
-      'Highland Veggies',
-      'Low-Country Fruits',
-      'Heirloom Rice',
-    ],
-    hasActiveHarvestBox: true,
-    nextDispatch: 'Tomorrow, 7:00 - 9:00 AM',
-    dispatchDescription:
-        'Curated fresh harvest from Nuwara Eliya & Dambulla valley',
+    isVerified: false,
+    buyerCode: '',
+    memberSince: '',
+    buyerType: '',
+    completedOrders: 0,
+    directFarmSpend: 0,
+    co2SavedKg: 0,
+    walletBalance: 0,
+    savedFarmersCount: 0,
+    deliveryHub: '',
+    deliveryAddress: '',
+    deliverySlot: '',
+    preferences: [],
+    hasActiveHarvestBox: false,
+    nextDispatch: '',
+    dispatchDescription: '',
   );
 }

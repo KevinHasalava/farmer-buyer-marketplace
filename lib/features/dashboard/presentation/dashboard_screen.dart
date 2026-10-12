@@ -12,6 +12,7 @@ import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../../pre_order/presentation/pre_order_list_screen.dart';
 import '../../search/presentation/search_filter_screen.dart';
 import '../../auction/presentation/buyer/buyer_auction_list_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import 'farmer_profile_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -210,9 +211,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Select Delivery Location',
-              style: TextStyle(
+            Text(
+              'Select Delivery Location'.trAuto(context),
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: _textDark,
@@ -278,9 +279,9 @@ class _DashboardScreenState extends State<DashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Notifications',
-                  style: TextStyle(
+                Text(
+                  'Notifications'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: _textDark,
@@ -308,12 +309,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(n.$1, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _textDark)),
-                        Text(n.$3, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                        Text(n.$1.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _textDark)),
+                        Text(n.$3.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(n.$2, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    Text(n.$2.trAuto(context), style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                   ],
                 ),
               ),
@@ -393,9 +394,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Categories',
-                        style: TextStyle(
+                      Text(
+                        'Categories'.trAuto(context),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: _textDark,
@@ -412,9 +413,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
-                          'View All',
-                          style: TextStyle(
+                        child: Text(
+                          'View All'.trAuto(context),
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: _forestGreen,
@@ -466,9 +467,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Popular Products',
-                        style: TextStyle(
+                      Text(
+                        'Popular Products'.trAuto(context),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: _textDark,
@@ -488,9 +489,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
-                          'See All',
-                          style: TextStyle(
+                        child: Text(
+                          'See All'.trAuto(context),
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: _forestGreen,
@@ -726,9 +727,9 @@ class _PremiumSliverAppBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Good morning,',
-                          style: TextStyle(
+                        Text(
+                          'Good morning,'.trAuto(context),
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
@@ -777,7 +778,11 @@ class _PremiumSliverAppBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
+
+                  // Language Switcher Pill
+                  const AppLanguagePill(),
+                  const SizedBox(width: 6),
 
                   // Notification button with badge dot matching Image 1
                   GestureDetector(
@@ -916,10 +921,10 @@ class _PremiumSearchBar extends StatelessWidget {
             const SizedBox(width: 14),
             const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 21),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Search fresh veggies, fruits, spices...',
-                style: TextStyle(
+                'Search fresh veggies, fruits, spices...'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 13,
                   color: Color(0xFF94A3B8),
                   fontWeight: FontWeight.w400,
@@ -1057,12 +1062,12 @@ class _PromoBannerState extends State<_PromoBanner> {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Text('🌱', style: TextStyle(fontSize: 11)),
-                        SizedBox(width: 5),
+                      children: [
+                        const Text('🌱', style: TextStyle(fontSize: 11)),
+                        const SizedBox(width: 5),
                         Text(
-                          'SPRING HARVEST FEST',
-                          style: TextStyle(
+                          'SPRING HARVEST FEST'.trAuto(context),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
@@ -1074,9 +1079,9 @@ class _PromoBannerState extends State<_PromoBanner> {
                   ),
                   const SizedBox(height: 8),
 
-                  const Text(
-                    'Up to 25% Off Fresh\nGreens',
-                    style: TextStyle(
+                  Text(
+                    'Up to 25% Off Fresh\nGreens'.trAuto(context),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 19,
                       fontWeight: FontWeight.w800,
@@ -1086,9 +1091,9 @@ class _PromoBannerState extends State<_PromoBanner> {
                   ),
                   const SizedBox(height: 5),
 
-                  const Text(
-                    'Hand-cut at dawn from local organic\nfarmers across the valley.',
-                    style: TextStyle(
+                  Text(
+                    'Hand-cut at dawn from local organic\nfarmers across the valley.'.trAuto(context),
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 11,
                       height: 1.3,
@@ -1110,9 +1115,9 @@ class _PromoBannerState extends State<_PromoBanner> {
                           ),
                         ],
                       ),
-                      child: const Text(
-                        'Shop Season Specials',
-                        style: TextStyle(
+                      child: Text(
+                        'Shop Season Specials'.trAuto(context),
+                        style: const TextStyle(
                           color: Color(0xFF1E293B),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -1202,7 +1207,7 @@ class _CategoryChip extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          label,
+          label.trAuto(context),
           style: TextStyle(
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -1329,7 +1334,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard> {
                   children: [
                     // Title
                     Text(
-                      p.name,
+                      p.name.trAuto(context),
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1346,7 +1351,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          p.price,
+                          p.price.trAuto(context),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -1355,7 +1360,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard> {
                           ),
                         ),
                         Text(
-                          ' ${p.unit}',
+                          ' ${p.unit.trAuto(context)}',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF64748B),
@@ -1410,10 +1415,10 @@ class _PremiumProductCardState extends State<_PremiumProductCard> {
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${p.name} added to cart!'),
+                                content: Text('${p.name.trAuto(context)} ${"added to cart!".trAuto(context)}'),
                                 duration: const Duration(seconds: 1),
                                 action: SnackBarAction(
-                                  label: 'View Cart',
+                                  label: 'View Cart'.trAuto(context),
                                   textColor: const Color(0xFF4ADE80),
                                   onPressed: () => Navigator.push(
                                     context,

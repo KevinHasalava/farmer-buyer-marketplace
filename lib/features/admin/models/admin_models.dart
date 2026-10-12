@@ -24,14 +24,14 @@ class AdminFarmerModel {
     required this.farmName,
     required this.district,
     required this.agrarianCenter,
-    this.scale = '1 - 3 Acres',
-    this.practice = 'Certified Organic (SL-GAP)',
-    this.crops = const ['Carrots', 'Leeks', 'Tomatoes'],
+    this.scale = '',
+    this.practice = '',
+    this.crops = const [],
     this.nic = '',
-    this.bankName = 'Commercial Bank',
+    this.bankName = '',
     this.accountNumber = '',
-    this.isVerified = true,
-    this.status = 'Active',
+    this.isVerified = false,
+    this.status = 'Pending Verification',
     required this.registeredAt,
   });
 
@@ -117,17 +117,17 @@ class AdminFarmerModel {
       name: map['name'] ?? map['full_name'] ?? '',
       phone: map['phone'] ?? map['phone_number'] ?? '',
       farmName: map['farmName'] ?? map['farm_name'] ?? '',
-      district: map['district'] ?? 'Nuwara Eliya',
-      agrarianCenter: map['agrarianCenter'] ?? map['agrarian_center'] ?? 'Hakgala Center',
-      scale: map['scale'] ?? '1 - 3 Acres',
-      practice: map['practice'] ?? map['farming_practice'] ?? 'Certified Organic',
+      district: map['district'] ?? '',
+      agrarianCenter: map['agrarianCenter'] ?? map['agrarian_center'] ?? '',
+      scale: map['scale'] ?? '',
+      practice: map['practice'] ?? map['farming_practice'] ?? '',
       crops: (map['crops'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
-          ['Vegetables'],
+          const [],
       nic: map['nic'] ?? '',
-      bankName: map['bankName'] ?? map['bank_name'] ?? 'Commercial Bank',
+      bankName: map['bankName'] ?? map['bank_name'] ?? '',
       accountNumber: map['accountNumber'] ?? map['account_number'] ?? '',
-      isVerified: (map['isVerified'] ?? map['is_verified']) as bool? ?? true,
-      status: map['status'] ?? 'Active',
+      isVerified: (map['isVerified'] ?? map['is_verified']) as bool? ?? false,
+      status: map['status'] ?? 'Pending Verification',
       registeredAt: map['registeredAt'] != null
           ? DateTime.tryParse(map['registeredAt'].toString()) ?? DateTime.now()
           : (map['created_at'] != null
@@ -158,9 +158,9 @@ class AdminBuyerModel {
     required this.phone,
     required this.address,
     required this.hub,
-    this.buyerType = 'Family',
-    this.totalOrders = 1,
-    this.totalSpent = 3500.0,
+    this.buyerType = 'Family / Household',
+    this.totalOrders = 0,
+    this.totalSpent = 0.0,
     this.status = 'Active',
     required this.registeredAt,
   });
@@ -231,9 +231,9 @@ class AdminBuyerModel {
       name: map['name'] ?? map['full_name'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? map['phone_number'] ?? '',
-      address: map['address'] ?? map['delivery_address'] ?? 'Colombo',
-      hub: map['hub'] ?? map['delivery_hub'] ?? 'Colombo Central Hub',
-      buyerType: map['buyerType'] ?? map['buyer_type'] ?? 'Family',
+      address: map['address'] ?? map['delivery_address'] ?? '',
+      hub: map['hub'] ?? map['delivery_hub'] ?? '',
+      buyerType: map['buyerType'] ?? map['buyer_type'] ?? 'Family / Household',
       totalOrders: (map['totalOrders'] ?? map['total_orders'] as num?)?.toInt() ?? 0,
       totalSpent: (map['totalSpent'] ?? map['total_spent'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] ?? 'Active',
@@ -271,11 +271,11 @@ class AdminDriverModel {
     required this.vehicleType,
     required this.plateNumber,
     required this.cargoCapacity,
-    this.bankName = 'Commercial Bank',
+    this.bankName = '',
     this.accountNumber = '',
-    this.isOnDuty = true,
-    this.completedTrips = 184,
-    this.rating = 4.9,
+    this.isOnDuty = false,
+    this.completedTrips = 0,
+    this.rating = 0.0,
     this.status = 'Active',
     required this.registeredAt,
   });
@@ -333,7 +333,7 @@ class AdminDriverModel {
     };
   }
 
-  /// Exact schema matching live Supabase `drivers` table
+  /// Matches the `public.drivers` table.
   Map<String, dynamic> toSupabaseMap() {
     return {
       'id': id,
@@ -343,36 +343,31 @@ class AdminDriverModel {
       'vehicle_type': vehicleType,
       'vehicle_number': plateNumber,
       'cargo_capacity': cargoCapacity,
-      'is_cold_box_equipped': true,
-      'operating_corridors': const [
-        'Nuwara Eliya ⇄ Colombo (A7)',
-        'Dambulla ⇄ Colombo (A6)',
-      ],
       'bank_name': bankName,
       'bank_account_number': accountNumber,
       'duty_status': isOnDuty,
       'rating': rating,
       'completed_deliveries': completedTrips,
+      'status': status,
       'created_at': registeredAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 
   factory AdminDriverModel.fromMap(Map<String, dynamic> map) {
-    final isDuty = map['isOnDuty'] ?? map['duty_status'] ?? true;
+    final isDuty = map['isOnDuty'] ?? map['duty_status'] ?? false;
     return AdminDriverModel(
       id: map['id']?.toString() ?? '',
-      name: map['name'] ?? map['full_name'] ?? map['fullName'] ?? 'Fleet Driver',
+      name: map['name'] ?? map['full_name'] ?? map['fullName'] ?? '',
       phone: map['phone'] ?? map['phone_number'] ?? map['mobileNumber'] ?? '',
       licenseNumber: map['licenseNumber'] ?? map['license_number'] ?? '',
-      vehicleType: map['vehicleType'] ?? map['vehicle_type'] ?? 'Insulated Agro Van',
+      vehicleType: map['vehicleType'] ?? map['vehicle_type'] ?? '',
       plateNumber: map['plateNumber'] ?? map['vehicle_number'] ?? map['plate_number'] ?? '',
-      cargoCapacity: map['cargoCapacity'] ?? map['cargo_capacity'] ?? '1,000 kg',
-      bankName: map['bankName'] ?? map['bank_name'] ?? 'Commercial Bank',
+      cargoCapacity: map['cargoCapacity'] ?? map['cargo_capacity'] ?? '',
+      bankName: map['bankName'] ?? map['bank_name'] ?? '',
       accountNumber: map['accountNumber'] ?? map['bank_account_number'] ?? '',
       isOnDuty: isDuty == true,
-      completedTrips: (map['completedTrips'] ?? map['completed_deliveries'] as num?)?.toInt() ?? 0,
-      rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
+      completedTrips: ((map['completedTrips'] ?? map['completed_deliveries']) as num?)?.toInt() ?? 0,
+      rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] ?? (isDuty == true ? 'Active' : 'Offline'),
       registeredAt: map['registeredAt'] != null
           ? DateTime.tryParse(map['registeredAt'].toString()) ?? DateTime.now()
@@ -588,33 +583,27 @@ class AdminOrderModel {
       'total_amount': totalAmount,
       'status': status,
       'delivery_address': deliveryAddress,
-      'assigned_driver_name': assignedDriverName,
+      'assigned_driver_name':
+          assignedDriverName == 'Unassigned' ? '' : assignedDriverName,
       'assigned_driver_phone': assignedDriverPhone,
       'order_date': orderDate.toIso8601String(),
     };
   }
 
-  /// Exact mapping to Supabase `driver_deliveries` table
+  /// Matches the `public.driver_deliveries` table.
   Map<String, dynamic> toDeliveryMap() {
     final cleanId = id.replaceAll('#', '').trim();
     return {
       'id': cleanId,
       'order_number': id.startsWith('#') ? id : '#$id',
       'farmer_name': farmName,
-      'farmer_address': 'Hakgala Organic Farm, Nuwara Eliya',
-      'farmer_phone': '+94771122334',
       'buyer_name': customerName,
       'buyer_address': deliveryAddress,
       'buyer_phone': customerPhone,
       'items_summary': itemsSummary,
-      'crate_count': '1 Crate',
       'status': status,
-      'is_priority': false,
       'cod_amount': 'Rs. ${totalAmount.toStringAsFixed(0)}',
-      'payout_amount': 'Rs. ${(totalAmount * 0.85).toStringAsFixed(0)}',
-      'van_temp': '4.0°C',
       'created_at': orderDate.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 
@@ -640,20 +629,24 @@ class AdminOrderModel {
 
     return AdminOrderModel(
       id: idVal,
-      customerName: map['customerName'] ?? map['buyer_name'] ?? map['buyerName'] ?? 'Valued Buyer',
-      customerPhone: map['customerPhone'] ?? map['buyer_phone'] ?? map['buyerPhone'] ?? '+94771234567',
-      farmName: map['farmName'] ?? map['farmer_name'] ?? map['farmerName'] ?? 'Upcountry Farm',
-      itemsSummary: map['itemsSummary'] ?? map['items_summary'] ?? map['produceDescription'] ?? 'Fresh Farm Produce',
-      totalAmount: parsedAmount > 0 ? parsedAmount : 1760.0,
+      customerName: map['customerName'] ?? map['customer_name'] ?? map['buyer_name'] ?? map['buyerName'] ?? '',
+      customerPhone: map['customerPhone'] ?? map['customer_phone'] ?? map['buyer_phone'] ?? map['buyerPhone'] ?? '',
+      farmName: map['farmName'] ?? map['farm_name'] ?? map['farmer_name'] ?? map['farmerName'] ?? '',
+      itemsSummary: map['itemsSummary'] ?? map['items_summary'] ?? map['produceDescription'] ?? '',
+      totalAmount: parsedAmount,
       status: map['status']?.toString() ?? 'Pending',
-      deliveryAddress: map['deliveryAddress'] ?? map['buyer_address'] ?? map['buyerAddress'] ?? 'Colombo 05',
-      assignedDriverName: map['assignedDriverName'] ?? map['driver_name'] ?? 'Kasun Bandara',
-      assignedDriverPhone: map['assignedDriverPhone'] ?? map['driver_phone'] ?? '+94717724640',
+      deliveryAddress: map['deliveryAddress'] ?? map['delivery_address'] ?? map['buyer_address'] ?? map['buyerAddress'] ?? '',
+      assignedDriverName: ((map['assignedDriverName'] ?? map['assigned_driver_name'] ?? map['driver_name']) as String?)?.trim().isNotEmpty == true
+          ? (map['assignedDriverName'] ?? map['assigned_driver_name'] ?? map['driver_name']) as String
+          : 'Unassigned',
+      assignedDriverPhone: map['assignedDriverPhone'] ?? map['assigned_driver_phone'] ?? map['driver_phone'] ?? '',
       orderDate: map['orderDate'] != null
           ? DateTime.tryParse(map['orderDate'].toString()) ?? DateTime.now()
-          : (map['created_at'] != null
-              ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
-              : DateTime.now()),
+          : (map['order_date'] != null
+              ? DateTime.tryParse(map['order_date'].toString()) ?? DateTime.now()
+              : (map['created_at'] != null
+                  ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+                  : DateTime.now())),
     );
   }
 }

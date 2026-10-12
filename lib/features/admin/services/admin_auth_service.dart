@@ -1,45 +1,40 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Secure Master Administrator Authentication Service
+import '../../../core/supabase/supabase_config.dart';
+
+/// Real administrator authentication backed by Supabase Auth.
+///
+/// A user is an administrator only if `public.profiles.role = 'admin'`
+/// (set by a database owner via SQL – it can never be self-assigned).
+/// No credentials are stored in the app.
 class AdminAuthService extends ChangeNotifier {
   AdminAuthService._internal();
 
   static final AdminAuthService instance = AdminAuthService._internal();
   factory AdminAuthService() => instance;
 
-  static const String _kAdminAuthTokenKey = 'farm2home_admin_auth_token_v1';
-  static const String _kAdminEmailKey = 'farm2home_admin_email_v1';
-  static const String _kAdminNameKey = 'farm2home_admin_name_v1';
-
-  // Recognized Master Admin accounts
-  static const Map<String, String> _masterCredentials = {
-    'admin@farm2home.lk': 'Admin@2026',
-    'admin@farm2home.com': 'admin123',
-    'superadmin@farm2home.lk': 'Admin@2026',
-    'operations@farm2home.lk': 'Admin@2026',
-  };
-
   bool _isAuthenticated = false;
   String _currentAdminEmail = '';
   String _currentAdminName = '';
   bool _isInitialized = false;
+  String? _lastError;
 
   bool get isAuthenticated => _isAuthenticated;
   String get currentAdminEmail => _currentAdminEmail;
   String get currentAdminName => _currentAdminName;
   bool get isInitialized => _isInitialized;
 
-  /// Load persisted admin session on startup
+  /// Human readable reason of the last failed [login] call.
+  String? get lastError => _lastError;
+
+  /// Restores an existing Supabase session and verifies the admin role.
   Future<void> init() async {
     if (_isInitialized) return;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_kAdminAuthTokenKey);
-      if (token != null && token.isNotEmpty) {
-        _isAuthenticated = true;
-        _currentAdminEmail = prefs.getString(_kAdminEmailKey) ?? 'admin@farm2home.lk';
-        _currentAdminName = prefs.getString(_kAdminNameKey) ?? 'Master Administrator';
+      if (SupabaseConfig.isInitialized &&
+          SupabaseConfig.auth.currentUser != null) {
+        await _verifyCurrentUserIsAdmin();
       }
     } catch (e) {
       debugPrint('AdminAuthService init error: $e');
@@ -49,75 +44,98 @@ class AdminAuthService extends ChangeNotifier {
     }
   }
 
-  /// Check if the email belongs to a Master Admin account
-  bool isMasterAdminEmail(String email) {
-    final cleanEmail = email.trim().toLowerCase();
-    return _masterCredentials.containsKey(cleanEmail) ||
-        cleanEmail == 'admin@farm2home.lk' ||
-        cleanEmail == 'admin@farm2home.com';
-  }
-
-  /// Check if the given credentials match any Master Admin account
-  bool isValidAdminCredentials(String email, String password) {
-    final cleanEmail = email.trim().toLowerCase();
-    final cleanPass = password.trim();
-    if (_masterCredentials.containsKey(cleanEmail) &&
-        (_masterCredentials[cleanEmail] == cleanPass || cleanPass == 'Admin@2026' || cleanPass == 'admin123')) {
-      return true;
-    } else if (cleanEmail.contains('admin') && (cleanPass == 'Admin@2026' || cleanPass == 'admin123')) {
-      return true;
+  /// Used by the normal login screen: if the signed-in account is an admin,
+  /// switch the app into admin mode. Returns false for non-admin accounts.
+  Future<bool> adoptCurrentSession() async {
+    try {
+      final ok = await _verifyCurrentUserIsAdmin();
+      notifyListeners();
+      return ok;
+    } catch (e) {
+      debugPrint('AdminAuthService adoptCurrentSession error: $e');
+      return false;
     }
-    return false;
   }
 
-  /// Authenticate admin using email and password
+  Future<bool> _verifyCurrentUserIsAdmin() async {
+    final user = SupabaseConfig.auth.currentUser;
+    if (user == null) return false;
+
+    final row = await SupabaseConfig.client
+        .from('profiles')
+        .select('role, full_name, email, status')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    final isAdmin = row != null &&
+        row['role'] == 'admin' &&
+        (row['status'] ?? 'Active') == 'Active';
+
+    if (isAdmin) {
+      _isAuthenticated = true;
+      _currentAdminEmail = (row['email'] as String?)?.isNotEmpty == true
+          ? row['email'] as String
+          : (user.email ?? '');
+      final name = (row['full_name'] as String?) ?? '';
+      _currentAdminName = name.isNotEmpty ? name : 'Administrator';
+    } else {
+      _isAuthenticated = false;
+      _currentAdminEmail = '';
+      _currentAdminName = '';
+    }
+    return isAdmin;
+  }
+
+  /// Signs in with Supabase and only succeeds for users with the admin role.
   Future<bool> login({
     required String email,
     required String password,
     bool rememberSession = true,
   }) async {
-    final cleanEmail = email.trim().toLowerCase();
-
-    if (!isValidAdminCredentials(email, password)) {
+    _lastError = null;
+    if (!SupabaseConfig.isInitialized) {
+      _lastError = 'Cannot reach the server. Check your internet connection.';
       return false;
     }
 
-    _isAuthenticated = true;
-    _currentAdminEmail = cleanEmail;
-    _currentAdminName = cleanEmail.startsWith('operations')
-        ? 'Operations Director'
-        : 'Master Administrator';
+    try {
+      await SupabaseConfig.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
 
-    if (rememberSession) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_kAdminAuthTokenKey, 'AUTH-ADM-${DateTime.now().millisecondsSinceEpoch}');
-        await prefs.setString(_kAdminEmailKey, _currentAdminEmail);
-        await prefs.setString(_kAdminNameKey, _currentAdminName);
-      } catch (e) {
-        debugPrint('Error saving admin session: $e');
+      final ok = await _verifyCurrentUserIsAdmin();
+      if (!ok) {
+        // Valid account but not an administrator – do not keep the session.
+        await SupabaseConfig.auth.signOut();
+        _lastError = 'This account does not have administrator access.';
+        notifyListeners();
+        return false;
       }
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _lastError = e.message.toLowerCase().contains('invalid login')
+          ? 'Invalid email or password.'
+          : e.message;
+    } catch (e) {
+      _lastError = 'Sign in failed: $e';
     }
-
     notifyListeners();
-    return true;
+    return false;
   }
 
-  /// Terminate admin session and log out
   Future<void> logout() async {
     _isAuthenticated = false;
     _currentAdminEmail = '';
     _currentAdminName = '';
-
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kAdminAuthTokenKey);
-      await prefs.remove(_kAdminEmailKey);
-      await prefs.remove(_kAdminNameKey);
+      if (SupabaseConfig.isInitialized) {
+        await SupabaseConfig.auth.signOut();
+      }
     } catch (e) {
-      debugPrint('Error clearing admin session: $e');
+      debugPrint('Error signing out admin: $e');
     }
-
     notifyListeners();
   }
 }

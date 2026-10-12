@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -75,7 +75,7 @@ class _BuyerAuctionDetailScreenState extends State<BuyerAuctionDetailScreen> {
     if (enteredAmount < auction.minNextBid) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Minimum bid required is Rs. ${auction.minNextBid.toStringAsFixed(2)}'),
+          content: Text('${"Minimum bid required is".trAuto(context)} Rs. ${auction.minNextBid.toStringAsFixed(2)}'),
           backgroundColor: const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
         ),

@@ -224,6 +224,8 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           const SizedBox(width: 8),
           Row(
             children: [
+              const AppLanguagePill(),
+              const SizedBox(width: 8),
               // Notification bell with red alert dot
               GestureDetector(
                 onTap: () {
@@ -308,9 +310,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           children: [
             Row(
               children: [
-                const Text(
-                  'Farmer Orders',
-                  style: TextStyle(
+                Text(
+                  'Farmer Orders'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF111827),
@@ -324,9 +326,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                     color: const Color(0xFFDCFCE7),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'Live Sync',
-                    style: TextStyle(
+                  child: Text(
+                    'Live Sync'.trAuto(context),
+                    style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF15803D),
@@ -340,11 +342,11 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               onTap: () {
                 HapticFeedback.lightImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Orders synced with live marketplace ✓'),
-                    backgroundColor: Color(0xFF166534),
+                  SnackBar(
+                    content: Text('Orders synced with live marketplace ✓'.trAuto(context)),
+                    backgroundColor: const Color(0xFF166534),
                     behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 1),
+                    duration: const Duration(seconds: 1),
                   ),
                 );
               },
@@ -376,18 +378,18 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
-              '14 Orders Today',
-              style: TextStyle(
+            Text(
+              '14 Orders Today'.trAuto(context),
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF166534),
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
-              '•  Avg prep time: 18m',
-              style: TextStyle(
+            Text(
+              '•  Avg prep time: 18m'.trAuto(context),
+              style: const TextStyle(
                 fontSize: 13,
                 color: Color(0xFF6B7280),
                 fontWeight: FontWeight.w500,
@@ -424,7 +426,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  tabs[i],
+                  tabs[i].trAuto(context),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -481,7 +483,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      ord['tag'],
+                      (ord['tag'] as String).trAuto(context),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -496,7 +498,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF9CA3AF)),
                   const SizedBox(width: 4),
                   Text(
-                    ord['time'],
+                    (ord['time'] as String).trAuto(context),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -551,7 +553,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         const Icon(Icons.location_on_rounded, size: 13, color: Color(0xFF9CA3AF)),
                         const SizedBox(width: 3),
                         Text(
-                          ord['location'],
+                          (ord['location'] as String).trAuto(context),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF6B7280),
@@ -560,7 +562,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '•  ${ord['payment']}',
+                          '•  ${(ord['payment'] as String).trAuto(context)}',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -578,7 +580,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    ord['amount'],
+                    (ord['amount'] as String).trAuto(context),
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -636,7 +638,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      ord['itemHeader'],
+                      (ord['itemHeader'] as String).trAuto(context),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -645,7 +647,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                       ),
                     ),
                     Text(
-                      ord['itemBadge'],
+                      (ord['itemBadge'] as String).trAuto(context),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -680,7 +682,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            ord['itemTitle'],
+                            (ord['itemTitle'] as String).trAuto(context),
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -689,7 +691,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            ord['itemSubtitle'],
+                            (ord['itemSubtitle'] as String).trAuto(context),
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF64748B),
@@ -780,13 +782,13 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFF6EE7B7)),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF047857)),
-                          SizedBox(width: 4),
+                          const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF047857)),
+                          const SizedBox(width: 4),
                           Text(
-                            'Chat',
-                            style: TextStyle(
+                            'Chat'.trAuto(context),
+                            style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF047857),
@@ -823,9 +825,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'View Details',
-                        style: TextStyle(
+                      child: Text(
+                        'View Details'.trAuto(context),
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
@@ -848,7 +850,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${ord['id']} accepted! Moved to Preparing.'),
+                            content: Text('${ord['id']} accepted! Moved to Preparing.'.trAuto(context)),
                             backgroundColor: const Color(0xFF166534),
                             behavior: SnackBarBehavior.floating,
                           ),
@@ -863,9 +865,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                         ),
                       ),
                       icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
-                      label: const Text(
-                        'Accept Order',
-                        style: TextStyle(
+                      label: Text(
+                        'Accept Order'.trAuto(context),
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
@@ -890,7 +892,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${ord['id']} marked Ready for Pickup! Driver notified.'),
+                      content: Text('${ord['id']} marked Ready for Pickup! Driver notified.'.trAuto(context)),
                       backgroundColor: const Color(0xFF166534),
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -905,9 +907,9 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.inventory_2_outlined, size: 17),
-                label: const Text(
-                  'Mark Ready for Pickup',
-                  style: TextStyle(
+                label: Text(
+                  'Mark Ready for Pickup'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -922,14 +924,14 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                 color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 18),
-                  SizedBox(width: 6),
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 18),
+                  const SizedBox(width: 6),
                   Text(
-                    'Ready for Driver Pickup',
-                    style: TextStyle(
+                    'Ready for Driver Pickup'.trAuto(context),
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF15803D),
@@ -968,22 +970,22 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Logistics Hotline',
-                  style: TextStyle(
+                  'Logistics Hotline'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF1E1B4B),
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Direct driver dispatch coordinator',
-                  style: TextStyle(
+                  'Direct driver dispatch coordinator'.trAuto(context),
+                  style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF6B7280),
                   ),
@@ -1010,10 +1012,10 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-            child: const Text(
-              'Call Driver\nHub',
+            child: Text(
+              'Call Driver\nHub'.trAuto(context),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 height: 1.15,
@@ -1045,18 +1047,18 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'No orders in this status',
-            style: TextStyle(
+          Text(
+            'No orders in this status'.trAuto(context),
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: Color(0xFF475569),
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Check other tabs for active farm deliveries',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+          Text(
+            'Check other tabs for active farm deliveries'.trAuto(context),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
@@ -1093,7 +1095,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Order Details: ${ord['id']}',
+                  '${"Order Details".trAuto(context)}: ${ord['id']}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -1108,27 +1110,27 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Buyer: ${ord['customer']}',
+              '${"Buyer".trAuto(context)}: ${ord['customer']}',
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             Text(
-              'Location: ${ord['location']}',
+              '${"Location".trAuto(context)}: ${(ord['location'] as String).trAuto(context)}',
               style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
             Text(
-              'Payment Mode: ${ord['payment']}',
+              '${"Payment Mode".trAuto(context)}: ${(ord['payment'] as String).trAuto(context)}',
               style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 12),
             const Divider(),
             const SizedBox(height: 8),
             Text(
-              'Items: ${ord['itemTitle']} + ${ord['itemSubtitle']}',
+              '${"Items".trAuto(context)}: ${(ord['itemTitle'] as String).trAuto(context)} + ${(ord['itemSubtitle'] as String).trAuto(context)}',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
-              'Total Payout: ${ord['amount']}',
+              '${"Total Payout".trAuto(context)}: ${(ord['amount'] as String).trAuto(context)}',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -1279,7 +1281,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            label,
+            label.trAuto(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,

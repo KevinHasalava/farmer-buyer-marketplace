@@ -365,6 +365,10 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
 
           const Spacer(),
 
+          // Language Switcher Pill
+          const AppLanguagePill(),
+          const SizedBox(width: 8),
+
           // Notification Bell with Badge
           InkWell(
             onTap: () {

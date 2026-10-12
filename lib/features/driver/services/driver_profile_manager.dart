@@ -20,23 +20,20 @@ class DriverProfileManager extends ChangeNotifier {
   static const String _kDriverProfileKey = 'driver_profile_cache_v1';
 
   static final DriverModel _defaultDriver = DriverModel(
-    id: 'DRV-4091',
-    fullName: 'Ranjith Subha Udhasanak',
-    licenseNumber: 'B-8492019',
-    mobileNumber: '+94771234567',
-    vehicleType: 'Chilled / Refrigerated Van',
-    plateNumber: 'WP NC-4982',
-    cargoCapacity: '1,200 kg',
-    isColdBoxEquipped: true,
-    operatingCorridors: const [
-      'Nuwara Eliya ⇄ Colombo (A7)',
-      'Dambulla ⇄ Colombo (A6)',
-    ],
-    bankName: 'Commercial Bank of Ceylon',
-    accountNumber: '8004 1293 4198',
+    id: '',
+    fullName: 'Driver',
+    licenseNumber: '',
+    mobileNumber: '',
+    vehicleType: 'Delivery Vehicle',
+    plateNumber: '',
+    cargoCapacity: '1,000 kg',
+    isColdBoxEquipped: false,
+    operatingCorridors: const [],
+    bankName: '',
+    accountNumber: '',
     isOnDuty: true,
-    rating: 4.9,
-    completedTrips: 184,
+    rating: 5.0,
+    completedTrips: 0,
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
   );
@@ -66,19 +63,55 @@ class DriverProfileManager extends ChangeNotifier {
       if (SupabaseConfig.isInitialized) {
         final user = SupabaseConfig.auth.currentUser;
         if (user != null) {
-          final metadata = user.userMetadata;
-          if (metadata != null) {
+          try {
+            final profileRow = await SupabaseConfig.client
+                .from('profiles')
+                .select()
+                .eq('id', user.id)
+                .maybeSingle();
+
+            final driverRow = await SupabaseConfig.client
+                .from('drivers')
+                .select()
+                .eq('id', user.id)
+                .maybeSingle();
+
+            final metadata = user.userMetadata ?? {};
+            final pMap = profileRow != null
+                ? Map<String, dynamic>.from(profileRow)
+                : <String, dynamic>{};
+            final dMap = driverRow != null
+                ? Map<String, dynamic>.from(driverRow)
+                : <String, dynamic>{};
+
             _driver = _driver.copyWith(
               id: user.id,
-              fullName: metadata['full_name'] as String? ?? _driver.fullName,
-              mobileNumber: metadata['phone'] as String? ?? user.phone ?? _driver.mobileNumber,
-              licenseNumber: metadata['license_number'] as String? ?? _driver.licenseNumber,
-              vehicleType: metadata['vehicle_type'] as String? ?? _driver.vehicleType,
-              plateNumber: metadata['plate_number'] as String? ?? _driver.plateNumber,
-              cargoCapacity: metadata['cargo_capacity'] as String? ?? _driver.cargoCapacity,
-              bankName: metadata['bank_name'] as String? ?? _driver.bankName,
-              accountNumber: metadata['account_number'] as String? ?? _driver.accountNumber,
+              fullName: pMap['full_name'] as String? ??
+                  metadata['full_name'] as String? ??
+                  _driver.fullName,
+              mobileNumber: pMap['phone'] as String? ??
+                  metadata['phone'] as String? ??
+                  user.phone ??
+                  _driver.mobileNumber,
+              licenseNumber: dMap['license_number'] as String? ??
+                  metadata['license_number'] as String? ??
+                  _driver.licenseNumber,
+              vehicleType: dMap['vehicle_type'] as String? ??
+                  metadata['vehicle_type'] as String? ??
+                  _driver.vehicleType,
+              plateNumber: dMap['plate_number'] as String? ??
+                  metadata['plate_number'] as String? ??
+                  _driver.plateNumber,
+              cargoCapacity: dMap['cargo_capacity'] as String? ??
+                  metadata['cargo_capacity'] as String? ??
+                  _driver.cargoCapacity,
+              isColdBoxEquipped: dMap['cold_storage'] as bool? ?? _driver.isColdBoxEquipped,
+              isOnDuty: dMap['duty_status'] as bool? ?? _driver.isOnDuty,
+              rating: (dMap['rating'] as num?)?.toDouble() ?? _driver.rating,
+              completedTrips: (dMap['trips_completed'] as num?)?.toInt() ?? _driver.completedTrips,
             );
+          } catch (e) {
+            debugPrint('[DriverProfileManager] Supabase fetch error: $e');
           }
           await prefs.setString(_kDriverProfileKey, jsonEncode(_driver.toMap()));
         }

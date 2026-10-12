@@ -68,31 +68,35 @@ class FarmerProfileModel {
   final String onTimeRate;
   final String directTrace;
 
-  /// Default fallback farmer matching the current design
-  static const defaultFarmer = FarmerProfileModel(
-    id: 'farmer_default_1',
-    name: 'Sunil Perera',
-    phone: '076 323 8225',
-    email: 'sunil.perera@farm2home.lk',
-    farmName: 'Sunil Organic Valley',
+  /// Empty fallback farmer model for fresh registration / new accounts
+  static const empty = FarmerProfileModel(
+    id: '',
+    name: 'Farmer',
+    phone: '',
+    email: '',
+    farmName: 'My Farm',
     role: 'Small-Scale Farmer',
-    location: 'Hambantota',
-    district: 'Hambantota',
-    agrarianCenter: 'Hambantota Agrarian Center',
-    rating: '4.8',
-    reviews: '120',
-    yearsExperience: '5+',
-    isOrganic: true,
-    farmingPractice: 'Certified Organic (SL-GAP)',
-    happyCustomers: '200+',
-    about:
-        'I am a small-scale farmer from Hambantota. I grow fresh vegetables using natural methods. My goal is to provide healthy and fresh produce to my customers.',
+    location: '',
+    district: '',
+    agrarianCenter: '',
+    rating: '5.0',
+    reviews: '0',
+    yearsExperience: '1+',
+    isOrganic: false,
+    farmingPractice: 'Good Agricultural Practices (SL-GAP)',
+    happyCustomers: '0',
+    about: '',
     emoji: '👨‍🌾',
-    avatarUrl:
-        'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?w=400&auto=format&fit=crop&q=80',
-    coverUrl:
-        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&auto=format&fit=crop&q=80',
+    scale: '1 - 3 Acres',
+    crops: [],
+    isVerified: false,
+    ordersFulfilled: '0',
+    onTimeRate: '100%',
+    directTrace: '100%',
   );
+
+  /// Backwards-compatible alias for existing callers
+  static const defaultFarmer = empty;
 
   /// Converts this model to [FarmerData] used by Dashboard screens
   FarmerData toFarmerData() {
@@ -231,24 +235,24 @@ class FarmerProfileModel {
 
   factory FarmerProfileModel.fromJson(Map<String, dynamic> json) {
     return FarmerProfileModel(
-      id: json['id'] as String? ?? 'farmer_1',
-      name: json['name'] as String? ?? 'Sunil Perera',
-      phone: json['phone'] as String? ?? '076 323 8225',
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? json['full_name'] as String? ?? 'Farmer',
+      phone: json['phone'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      farmName: json['farm_name'] as String? ?? 'Sunil Organic Valley',
+      farmName: json['farm_name'] as String? ?? 'My Farm',
       role: json['role'] as String? ?? 'Small-Scale Farmer',
-      location: json['location'] as String? ?? 'Nuwara Eliya',
-      district: json['district'] as String? ?? 'Nuwara Eliya',
+      location: json['location'] as String? ?? '',
+      district: json['district'] as String? ?? '',
       agrarianCenter: json['agrarian_center'] as String? ?? '',
-      rating: json['rating'] as String? ?? '4.8',
-      reviews: json['reviews'] as String? ?? '120',
-      yearsExperience: json['years_experience'] as String? ?? '5+',
-      isOrganic: json['is_organic'] as bool? ?? true,
+      rating: json['rating']?.toString() ?? '5.0',
+      reviews: json['reviews']?.toString() ?? '0',
+      yearsExperience: json['years_experience'] as String? ?? '1+',
+      isOrganic: json['is_organic'] as bool? ?? false,
       farmingPractice: json['farming_practice'] as String? ??
-          'Certified Organic (SL-GAP)',
-      happyCustomers: json['happy_customers'] as String? ?? '200+',
-      about: json['about'] as String? ??
-          'Cultivating fresh vegetables using sustainable organic methods.',
+          json['practice'] as String? ??
+          'Good Agricultural Practices (SL-GAP)',
+      happyCustomers: json['happy_customers'] as String? ?? '0',
+      about: json['about'] as String? ?? '',
       emoji: json['emoji'] as String? ?? '👨‍🌾',
       avatarUrl: json['avatar_url'] as String?,
       coverUrl: json['cover_url'] as String?,
@@ -256,13 +260,13 @@ class FarmerProfileModel {
       crops: (json['crops'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
-          const ['Carrots & Root Veg', 'Leeks & Cabbage'],
+          const [],
       nic: json['nic'] as String?,
       bankName: json['bank_name'] as String?,
       accountNumber: json['account_number'] as String?,
-      isVerified: json['is_verified'] as bool? ?? true,
-      ordersFulfilled: json['orders_fulfilled'] as String? ?? '1,420+',
-      onTimeRate: json['on_time_rate'] as String? ?? '98.4%',
+      isVerified: json['is_verified'] as bool? ?? false,
+      ordersFulfilled: json['orders_fulfilled'] as String? ?? '0',
+      onTimeRate: json['on_time_rate'] as String? ?? '100%',
       directTrace: json['direct_trace'] as String? ?? '100%',
     );
   }

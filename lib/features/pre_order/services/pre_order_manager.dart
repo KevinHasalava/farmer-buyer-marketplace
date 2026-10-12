@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/supabase/supabase_config.dart';
 import '../models/pre_order_model.dart';
 import '../models/pre_order_progress_model.dart';
 
@@ -26,16 +27,52 @@ class PreOrderManager extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   /// ──────────────────────────────────────────────────────────────────────────
-  /// 1. READ (R): Load pre-orders & progress from local storage
+  /// 1. READ (R): Load pre-orders & progress from live Supabase database
   /// ──────────────────────────────────────────────────────────────────────────
   Future<void> loadPreOrders() async {
     _isLoading = true;
     notifyListeners();
 
     try {
+      if (SupabaseConfig.isInitialized) {
+        try {
+          final preOrderRows = await SupabaseConfig.client
+              .from('pre_orders')
+              .select()
+              .order('created_at', ascending: false);
+
+          final progressRows = await SupabaseConfig.client
+              .from('pre_order_progress')
+              .select()
+              .order('date', ascending: false);
+
+          _preOrders.clear();
+          for (final item in (preOrderRows as List<dynamic>)) {
+            if (item is Map<String, dynamic>) {
+              _preOrders.add(PreOrderModel.fromJson(item));
+            }
+          }
+
+          _progressUpdates.clear();
+          for (final item in (progressRows as List<dynamic>)) {
+            if (item is Map<String, dynamic>) {
+              _progressUpdates.add(PreOrderProgressModel.fromJson(item));
+            }
+          }
+
+          await _savePreOrdersToLocal();
+          await _saveProgressToLocal();
+          _isLoading = false;
+          notifyListeners();
+          return;
+        } catch (dbErr) {
+          debugPrint('[PreOrderManager] Supabase query error, fallback to local: $dbErr');
+        }
+      }
+
+      // Offline / Local cache fallback
       final prefs = await SharedPreferences.getInstance();
       
-      // Load Pre-Orders
       final rawJson = prefs.getString(_kStorageKey);
       if (rawJson != null && rawJson.isNotEmpty) {
         final decoded = jsonDecode(rawJson) as List<dynamic>;
@@ -45,13 +82,8 @@ class PreOrderManager extends ChangeNotifier {
             _preOrders.add(PreOrderModel.fromJson(item));
           }
         }
-      } else {
-        _preOrders.clear();
-        _preOrders.addAll(PreOrderModel.samplePreOrders);
-        await _savePreOrdersToLocal();
       }
 
-      // Load Progress Updates
       final rawProgJson = prefs.getString(_kProgressKey);
       if (rawProgJson != null && rawProgJson.isNotEmpty) {
         final decoded = jsonDecode(rawProgJson) as List<dynamic>;
@@ -61,12 +93,7 @@ class PreOrderManager extends ChangeNotifier {
             _progressUpdates.add(PreOrderProgressModel.fromJson(item));
           }
         }
-      } else {
-        _progressUpdates.clear();
-        _progressUpdates.addAll(PreOrderProgressModel.sampleProgress);
-        await _saveProgressToLocal();
       }
-
     } catch (e) {
       debugPrint('[PreOrderManager] Load error: $e');
     } finally {
@@ -114,6 +141,15 @@ class PreOrderManager extends ChangeNotifier {
 
       _preOrders.insert(0, newOrder);
       await _savePreOrdersToLocal();
+
+      if (SupabaseConfig.isInitialized) {
+        try {
+          await SupabaseConfig.client.from('pre_orders').insert(newOrder.toJson());
+        } catch (e) {
+          debugPrint('[PreOrderManager] DB insert error: $e');
+        }
+      }
+
       return newOrder;
     } finally {
       _isLoading = false;
@@ -138,16 +174,43 @@ class PreOrderManager extends ChangeNotifier {
     if (index == -1) return;
 
     var order = _preOrders[index].copyWith(status: newStatus);
-    if (farmerId != null) order = order.copyWith(farmerId: farmerId);
-    if (farmerName != null) order = order.copyWith(farmerName: farmerName);
-    if (farmerExpectedHarvestDate != null) order = order.copyWith(farmerExpectedHarvestDate: farmerExpectedHarvestDate);
-    if (farmerEstimatedYieldKg != null) order = order.copyWith(farmerEstimatedYieldKg: farmerEstimatedYieldKg);
-    if (farmerLocation != null) order = order.copyWith(farmerLocation: farmerLocation);
-    if (farmerNotes != null) order = order.copyWith(farmerNotes: farmerNotes);
+    final updateData = <String, dynamic>{'status': newStatus};
+    if (farmerId != null) {
+      order = order.copyWith(farmerId: farmerId);
+      updateData['farmer_id'] = farmerId;
+    }
+    if (farmerName != null) {
+      order = order.copyWith(farmerName: farmerName);
+      updateData['farmer_name'] = farmerName;
+    }
+    if (farmerExpectedHarvestDate != null) {
+      order = order.copyWith(farmerExpectedHarvestDate: farmerExpectedHarvestDate);
+      updateData['farmer_expected_harvest_date'] = farmerExpectedHarvestDate.toIso8601String();
+    }
+    if (farmerEstimatedYieldKg != null) {
+      order = order.copyWith(farmerEstimatedYieldKg: farmerEstimatedYieldKg);
+      updateData['farmer_estimated_yield_kg'] = farmerEstimatedYieldKg;
+    }
+    if (farmerLocation != null) {
+      order = order.copyWith(farmerLocation: farmerLocation);
+      updateData['farmer_location'] = farmerLocation;
+    }
+    if (farmerNotes != null) {
+      order = order.copyWith(farmerNotes: farmerNotes);
+      updateData['farmer_notes'] = farmerNotes;
+    }
 
     _preOrders[index] = order;
     await _savePreOrdersToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('pre_orders').update(updateData).eq('id', preOrderId);
+      } catch (e) {
+        debugPrint('[PreOrderManager] DB update error: $e');
+      }
+    }
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
@@ -157,15 +220,28 @@ class PreOrderManager extends ChangeNotifier {
     final index = _preOrders.indexWhere((o) => o.id == preOrderId);
     if (index == -1) return;
 
+    final now = DateTime.now();
     final order = _preOrders[index].copyWith(
       farmerRating: rating,
       farmerReview: review,
-      ratedAt: DateTime.now(),
+      ratedAt: now,
     );
 
     _preOrders[index] = order;
     await _savePreOrdersToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('pre_orders').update({
+          'farmer_rating': rating,
+          'farmer_review': review,
+          'rated_at': now.toIso8601String(),
+        }).eq('id', preOrderId);
+      } catch (e) {
+        debugPrint('[PreOrderManager] DB rate error: $e');
+      }
+    }
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
@@ -198,6 +274,15 @@ class PreOrderManager extends ChangeNotifier {
 
       _progressUpdates.insert(0, update);
       await _saveProgressToLocal();
+
+      if (SupabaseConfig.isInitialized) {
+        try {
+          await SupabaseConfig.client.from('pre_order_progress').insert(update.toJson());
+        } catch (e) {
+          debugPrint('[PreOrderManager] DB progress insert error: $e');
+        }
+      }
+
       return update;
     } finally {
       _isLoading = false;
@@ -221,12 +306,28 @@ class PreOrderManager extends ChangeNotifier {
     _progressUpdates.removeWhere((p) => p.preOrderId == preOrderId);
     await _saveProgressToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('pre_orders').delete().eq('id', preOrderId);
+      } catch (e) {
+        debugPrint('[PreOrderManager] DB delete error: $e');
+      }
+    }
   }
 
   Future<void> deleteProgressUpdate(String progressId) async {
     _progressUpdates.removeWhere((p) => p.id == progressId);
     await _saveProgressToLocal();
     notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('pre_order_progress').delete().eq('id', progressId);
+      } catch (e) {
+        debugPrint('[PreOrderManager] DB progress delete error: $e');
+      }
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────

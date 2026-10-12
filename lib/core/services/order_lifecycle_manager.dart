@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../supabase/supabase_config.dart';
 import '../../features/admin/models/admin_models.dart';
 import '../../features/admin/services/admin_marketplace_service.dart';
 import '../../features/cart/services/cart_state.dart';
@@ -79,6 +80,7 @@ class FarmerOrderItem {
 class OrderLifecycleManager extends ChangeNotifier {
   OrderLifecycleManager._internal() {
     _initDefaults();
+    syncOrdersFromDatabase();
   }
 
   static final OrderLifecycleManager instance = OrderLifecycleManager._internal();
@@ -98,75 +100,59 @@ class OrderLifecycleManager extends ChangeNotifier {
       .fold(0.0, (sum, o) => sum + o.amountValue);
 
   void _initDefaults() {
-    if (_farmerOrders.isEmpty) {
-      _farmerOrders.addAll([
-        FarmerOrderItem(
-          id: '#FH-1025',
-          customer: 'Nadeesha Fernando',
-          customerPhone: '+94 71 889 2314',
-          deliveryAddress: 'No. 42 Havelock Rd, Colombo 05',
-          amount: 'Rs. 950',
-          amountValue: 950.0,
-          status: 'Pending',
-          isPending: true,
-          avatarUrl:
-              'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-          handoverPin: '4921',
-          orderDate: DateTime.now().subtract(const Duration(minutes: 45)),
-          items: const [
-            OrderItemSummary(
-              name: 'Organic Tomatoes',
-              quantity: 2,
-              unitPrice: 250.0,
-              unit: 'kg',
-              emoji: '🍅',
+    // Zero hardcoded dummy orders. All orders are synced with Supabase.
+  }
+
+  Future<void> syncOrdersFromDatabase() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      final uid = SupabaseConfig.auth.currentUser?.id;
+      final query = SupabaseConfig.client.from('orders').select();
+      final rows = uid != null
+          ? await query
+              .or('farmer_id.eq.$uid,buyer_id.eq.$uid')
+              .order('order_date', ascending: false)
+          : await query.order('order_date', ascending: false);
+
+      if ((rows as List).isNotEmpty) {
+        _farmerOrders.clear();
+        for (final r in rows) {
+          final row = Map<String, dynamic>.from(r as Map);
+          final id = row['id']?.toString() ?? '';
+          final totalNum = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
+          final status = row['status'] as String? ?? 'Pending';
+          _farmerOrders.add(
+            FarmerOrderItem(
+              id: id.startsWith('#') ? id : '#$id',
+              customer: row['customer_name'] as String? ?? 'Buyer',
+              customerPhone: row['customer_phone'] as String? ?? '',
+              deliveryAddress: row['delivery_address'] as String? ?? '',
+              amount: 'Rs. ${totalNum.toStringAsFixed(0)}',
+              amountValue: totalNum,
+              status: status,
+              isPending: status == 'Pending',
+              avatarUrl:
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              handoverPin: '4921',
+              orderDate: row['order_date'] != null
+                  ? DateTime.tryParse(row['order_date'].toString()) ??
+                      DateTime.now()
+                  : DateTime.now(),
+              items: const [],
+              deliveryMethod: 'Home Delivery',
+              preferredTime: 'Pending Delivery',
+              paymentMethod: 'Cash on Delivery',
+              assignedDriverName:
+                  row['assigned_driver_name'] as String? ?? 'Unassigned',
+              assignedDriverPhone:
+                  row['assigned_driver_phone'] as String? ?? '',
             ),
-            OrderItemSummary(
-              name: 'Fresh Carrots',
-              quantity: 1,
-              unitPrice: 300.0,
-              unit: 'kg',
-              emoji: '🥕',
-            ),
-            OrderItemSummary(
-              name: 'Highland Potatoes',
-              quantity: 1,
-              unitPrice: 150.0,
-              unit: 'kg',
-              emoji: '🥔',
-            ),
-          ],
-          deliveryMethod: 'Home Delivery',
-          preferredTime: '10:00 AM - 12:00 PM',
-          paymentMethod: 'Cash on Delivery',
-        ),
-        FarmerOrderItem(
-          id: '#FH-1024',
-          customer: 'Kasun Perera',
-          customerPhone: '+94 77 341 9082',
-          deliveryAddress: 'De Fonseka Rd, Colombo 04',
-          amount: 'Rs. 1,200',
-          amountValue: 1200.0,
-          status: 'Packed & Ready',
-          isPending: false,
-          avatarUrl:
-              'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-          handoverPin: '6318',
-          orderDate: DateTime.now().subtract(const Duration(hours: 2)),
-          items: const [
-            OrderItemSummary(
-              name: 'Highland Potatoes',
-              quantity: 4,
-              unitPrice: 300.0,
-              unit: 'kg',
-              emoji: '🥔',
-            ),
-          ],
-          deliveryMethod: 'Direct Farm Pickup',
-          preferredTime: '02:00 PM - 04:00 PM',
-          paymentMethod: 'Farm Wallet',
-        ),
-      ]);
+          );
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('[OrderLifecycleManager] syncOrdersFromDatabase: $e');
     }
   }
 

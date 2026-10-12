@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/constants/constants.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../buyer/services/buyer_profile_manager.dart';
 import '../services/pre_order_manager.dart';
 
 class CreatePreOrderScreen extends StatefulWidget {
@@ -83,10 +85,18 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Typically you get buyer ID from Auth. Hardcoded for demo.
+      final user = SupabaseConfig.auth.currentUser;
+      final buyerProfile = BuyerProfileManager.instance.profile;
+      final buyerId = buyerProfile.id.isNotEmpty
+          ? buyerProfile.id
+          : (user?.id ?? 'buyer_${DateTime.now().millisecondsSinceEpoch}');
+      final buyerName = buyerProfile.name.trim().isNotEmpty
+          ? buyerProfile.name.trim()
+          : (user?.userMetadata?['full_name'] as String? ?? 'Wholesale Buyer');
+
       await PreOrderManager.instance.createPreOrder(
-        buyerId: 'buyer_primary',
-        buyerName: 'Premium Supermarkets Ltd',
+        buyerId: buyerId,
+        buyerName: buyerName,
         cropName: _cropNameCtrl.text.trim(),
         requiredQuantityKg: double.parse(_quantityCtrl.text.trim()),
         offeredPricePerKg: double.parse(_priceCtrl.text.trim()),

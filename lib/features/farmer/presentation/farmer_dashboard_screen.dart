@@ -135,9 +135,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ),
                 ),
                 icon: const Icon(Icons.handshake_rounded),
-                label: const Text(
-                  'Contract Farming / Pre-Orders',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  'Contract Farming / Pre-Orders'.trAuto(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -162,9 +162,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ),
                 ),
                 icon: const Icon(Icons.gavel_rounded),
-                label: const Text(
-                  'Crop Auctions / Bidding System',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  'Crop Auctions / Bidding System'.trAuto(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -541,9 +541,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
               const SizedBox(height: 3),
-              const Text(
-                'Hakgala Valley Organic Farm • Nuwara Eliya',
-                style: TextStyle(
+              Text(
+                'Hakgala Valley Organic Farm • Nuwara Eliya'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B),

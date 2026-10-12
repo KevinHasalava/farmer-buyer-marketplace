@@ -30,7 +30,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final role = _selected;
     if (role == null) return;
     await context.settings.setRole(role);
-    if (mounted) context.push(AppRoutes.phoneAuth);
+    if (mounted) context.push(AppRoutes.login);
   }
 
   @override

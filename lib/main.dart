@@ -71,8 +71,17 @@ class FarmTrustApp extends StatelessWidget {
     final currentLang = settings.language ?? AppLanguage.english;
 
     return MaterialApp.router(
+      key: const ValueKey('farm_trust_app_root'),
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
+
+      // ── Locale Configuration ─────────────────────────────────────────
+      locale: Locale(currentLang.code),
+      supportedLocales: const [
+        Locale('en'),
+        Locale('si'),
+        Locale('ta'),
+      ],
 
       // ── Theme (Dynamic Typography for Sinhala, Tamil, English) ───────
       theme: AppTheme.lightTheme(currentLang),

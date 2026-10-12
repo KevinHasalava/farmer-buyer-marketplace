@@ -7,10 +7,9 @@ import '../../features/onboarding/presentation/welcome_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/role_selection_screen.dart';
-import '../../features/auth/presentation/phone_auth_screen.dart';
-import '../../features/auth/presentation/buyer_registration_screen.dart';
-import '../../features/auth/presentation/farmer_registration_screen.dart';
-import '../../features/auth/presentation/driver_registration_screen.dart';
+import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/forgot_password_screen.dart';
+import '../supabase/supabase_config.dart';
 import '../../features/driver/presentation/driver_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_dashboard_screen.dart';
 import '../../features/farmer/presentation/farmer_products_screen.dart';
@@ -41,6 +40,7 @@ abstract final class AppRoutes {
   static const String chooseRole         = '/role';
   static const String phoneAuth          = '/phone-auth';
   static const String login              = '/login';
+  static const String forgotPassword     = '/forgot-password';
   static const String buyerRegister      = '/register-buyer';
   static const String farmerRegister     = '/register-farmer';
   static const String driverRegister     = '/register-driver';
@@ -87,6 +87,34 @@ abstract final class AppRoutes {
 final appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
   debugLogDiagnostics: true,
+  // Only the sign-in / onboarding screens are public. Everything else needs a
+  // real Supabase session (no guest / demo access).
+  redirect: (context, state) {
+    const publicPaths = <String>{
+      AppRoutes.splash,
+      AppRoutes.language,
+      AppRoutes.welcome,
+      AppRoutes.onboarding,
+      AppRoutes.onboarding2,
+      AppRoutes.onboarding3,
+      AppRoutes.roleSelection,
+      AppRoutes.phoneAuth,
+      AppRoutes.login,
+      AppRoutes.forgotPassword,
+      AppRoutes.buyerRegister,
+      AppRoutes.farmerRegister,
+      AppRoutes.driverRegister,
+      AppRoutes.driverRegistration,
+      AppRoutes.adminLogin,
+    };
+    final path = state.uri.path;
+    if (publicPaths.contains(path)) return null;
+    // /admin is protected by its own admin-role guard below.
+    if (path == AppRoutes.adminPanel) return null;
+    final signedIn = SupabaseConfig.isInitialized &&
+        SupabaseConfig.auth.currentUser != null;
+    return signedIn ? null : AppRoutes.login;
+  },
   routes: [
     GoRoute(
       path: AppRoutes.splash,
@@ -106,22 +134,31 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.phoneAuth,
       name: 'phoneAuth',
-      builder: (context, state) => const PhoneAuthScreen(),
+      // Phone-OTP sign-in was removed: every account uses email + password.
+      redirect: (context, state) => AppRoutes.login,
+    ),
+    GoRoute(
+      path: AppRoutes.forgotPassword,
+      name: 'forgotPassword',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
       path: AppRoutes.buyerRegister,
       name: 'buyerRegister',
-      builder: (context, state) => const BuyerRegistrationScreen(),
+      builder: (context, state) =>
+          const RegisterScreen(initialRole: UserRole.buyer),
     ),
     GoRoute(
       path: AppRoutes.farmerRegister,
       name: 'farmerRegister',
-      builder: (context, state) => const FarmerRegistrationScreen(),
+      builder: (context, state) =>
+          const RegisterScreen(initialRole: UserRole.farmer),
     ),
     GoRoute(
       path: AppRoutes.driverRegister,
       name: 'driverRegister',
-      builder: (context, state) => const DriverRegistrationScreen(),
+      builder: (context, state) =>
+          const RegisterScreen(initialRole: UserRole.driver),
     ),
     GoRoute(
       path: AppRoutes.welcome,
@@ -191,7 +228,8 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.driverRegistration,
       name: 'driverRegistration',
-      builder: (context, state) => const DriverRegistrationScreen(),
+      builder: (context, state) =>
+          const RegisterScreen(initialRole: UserRole.driver),
     ),
     GoRoute(
       path: AppRoutes.deliveryDetails,
