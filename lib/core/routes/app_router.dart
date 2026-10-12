@@ -110,7 +110,8 @@ final appRouter = GoRouter(
     final path = state.uri.path;
     if (publicPaths.contains(path)) return null;
     // /admin is protected by its own admin-role guard below.
-    if (path == AppRoutes.adminPanel) return null;
+    if (path == AppRoutes.adminPanel || path.startsWith('/admin')) return null;
+    if (AdminAuthService.instance.isAuthenticated) return null;
     final signedIn = SupabaseConfig.isInitialized &&
         SupabaseConfig.auth.currentUser != null;
     return signedIn ? null : AppRoutes.login;

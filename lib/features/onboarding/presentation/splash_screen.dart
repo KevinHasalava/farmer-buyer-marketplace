@@ -20,19 +20,21 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+  bool _navigated = false;
+
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1200),
+    duration: const Duration(milliseconds: 1000),
   )..forward();
 
   late final AnimationController _progressController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 3000),
+    duration: const Duration(milliseconds: 2400),
   );
 
   late final Animation<double> _progressAnimation = CurvedAnimation(
     parent: _progressController,
-    curve: Curves.easeInOutCubic,
+    curve: Curves.easeInOut,
   );
 
   @override
@@ -41,14 +43,21 @@ class _SplashScreenState extends State<SplashScreen>
     _progressController.forward();
     _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        Future.delayed(const Duration(milliseconds: 350), _routeNext);
+        Future.delayed(const Duration(milliseconds: 280), _routeNext);
       }
     });
   }
 
   Future<void> _routeNext() async {
-    if (!mounted) return;
+    if (!mounted || _navigated) return;
+    _navigated = true;
     final s = context.settings;
+
+    // If master admin is authenticated, route directly to Admin Panel:
+    if (AdminAuthService.instance.isAuthenticated) {
+      context.go(AppRoutes.adminPanel);
+      return;
+    }
 
     // A returning user with a valid Supabase session goes straight home,
     // using the role stored in the database (never a locally cached guess).
@@ -77,22 +86,9 @@ class _SplashScreenState extends State<SplashScreen>
     }
     if (!mounted) return;
 
-    if (!s.hasLanguage) {
-      context.go(AppRoutes.language);
-      return;
-    }
-
-    if (!s.onboardingSeen) {
-      context.go(AppRoutes.onboarding);
-      return;
-    }
-
-    if (s.role == null) {
-      context.go(AppRoutes.roleSelection);
-      return;
-    }
-
-    context.go(AppRoutes.login);
+    // Sequential onboarding flow for unauthenticated users:
+    // Splash -> Language -> Onboarding (1,2,3) -> Role Selection -> Login
+    context.go(AppRoutes.language);
   }
 
   @override
@@ -307,14 +303,36 @@ class _SplashScreenState extends State<SplashScreen>
                           final p = _progressAnimation.value;
                           final pct = (p * 100).toInt().clamp(0, 100);
 
-                          String statusMsg = '🌱 Farm2Home පද්ධතිය සූදානම් වෙමින්...';
-                          if (p > 0.35 && p <= 0.75) {
-                            statusMsg = '🚜 දේශීය ගොවි ජාලය සමමුහුර්ත වෙමින්...';
-                          } else if (p > 0.75 && p < 1.0) {
-                            statusMsg = '✨ 100% නැවුම් අස්වැන්න තහවුරුයි...';
-                          } else if (p >= 1.0) {
-                            statusMsg = 'සම්පූර්ණයි ✓';
-                          }
+                          final currentLang = context.currentLanguage;
+                          String statusMsg = switch (currentLang) {
+                            AppLanguage.sinhala => p > 0.30 && p <= 0.70
+                                ? '🚜 දේශීය ගොවි ජාලය සමමුහුර්ත වෙමින්...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% නැවුම් අස්වැන්න තහවුරුයි...'
+                                    : p >= 1.0
+                                        ? 'සම්පූර්ණයි ✓'
+                                        : '🌱 Farm2Home පද්ධතිය සූදානම් වෙමින්...',
+                            AppLanguage.tamil => p > 0.30 && p <= 0.70
+                                ? '🚜 உள்ளூர் விவசாயிகள் இணைக்கப்படுகிறார்கள்...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% புதிய விளைச்சல் உறுதி...'
+                                    : p >= 1.0
+                                        ? 'முடிந்தது ✓'
+                                        : '🌱 Farm2Home அமைப்பு தயாராகிறது...',
+                            AppLanguage.english => p > 0.30 && p <= 0.70
+                                ? '🚜 Syncing local farmer network...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% fresh harvest guaranteed...'
+                                    : p >= 1.0
+                                        ? 'Ready ✓'
+                                        : '🌱 Preparing Farm2Home system...',
+                          };
+
+                          final noteMsg = switch (currentLang) {
+                            AppLanguage.sinhala => 'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                            AppLanguage.tamil => 'இலங்கை விவசாய சமூகத்தை மேம்படுத்துகிறது 🇱🇰',
+                            AppLanguage.english => 'Empowering Sri Lankan Farming Community 🇱🇰',
+                          };
 
                           return Column(
                             mainAxisSize: MainAxisSize.min,
@@ -395,7 +413,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                               // Empowering Note
                               Text(
-                                'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                                noteMsg,
                                 textAlign: TextAlign.center,
                                 style: AppTheme.fontStyle(
                                   context.currentLanguage,

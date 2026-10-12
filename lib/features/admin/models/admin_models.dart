@@ -346,9 +346,9 @@ class AdminDriverModel {
       'bank_name': bankName,
       'bank_account_number': accountNumber,
       'duty_status': isOnDuty,
+      'is_on_duty': isOnDuty,
       'rating': rating,
       'completed_deliveries': completedTrips,
-      'status': status,
       'created_at': registeredAt.toIso8601String(),
     };
   }

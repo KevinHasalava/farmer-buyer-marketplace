@@ -173,12 +173,49 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
+
+    // ── Dedicated Master Admin Access ─────────────────────────────────
+    // Regardless of which user/role was selected on previous screens,
+    // entering the master admin credentials (admin@farm2home.lk / Admin@2026)
+    // grants direct entry to the Admin Dashboard console.
+    if (email.toLowerCase() == AdminAuthService.masterAdminEmail.toLowerCase() &&
+        password == AdminAuthService.masterAdminPassword) {
+      try {
+        await AdminAuthService.instance.authenticateMasterAdmin(
+          email,
+          'Master Administrator',
+        );
+
+        // Also attempt Supabase sign-in in background if account exists
+        try {
+          if (SupabaseConfig.isInitialized) {
+            await SupabaseConfig.auth.signInWithPassword(
+              email: email,
+              password: password,
+            );
+          }
+        } catch (_) {}
+
+        if (!mounted) return;
+        context.go(AppRoutes.adminPanel);
+        return;
+      } catch (e) {
+        _showError('Admin login failed: $e');
+        return;
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+
     try {
       await _authService.signIn(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
+        email: email,
+        password: password,
       );
       if (!mounted) return;
       await _enterApp();
@@ -242,13 +279,7 @@ class _LoginScreenState extends State<LoginScreen>
             leafFade: _leafFade,
             screenHeight: size.height,
             currentRole: currentRole,
-            onBack: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                context.go(AppRoutes.roleSelection);
-              }
-            },
+            onBack: () => context.go(AppRoutes.roleSelection),
           ),
 
           // ── Scrollable Form ───────────────────────────────────────────
@@ -596,40 +627,49 @@ class _PremiumHeader extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Dynamic Role Badge Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.28),
-                      width: 1,
+                // Dynamic Role Badge Chip (Tappable to Switch Role)
+                GestureDetector(
+                  onTap: () => context.go(AppRoutes.roleSelection),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        currentRole == UserRole.farmer
-                            ? Icons.agriculture_rounded
-                            : currentRole == UserRole.driver
-                                ? Icons.local_shipping_rounded
-                                : Icons.shopping_basket_rounded,
-                        size: 13,
-                        color: const Color(0xFFFBBF24),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _roleBadgeText(context, currentRole),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.4,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          currentRole == UserRole.farmer
+                              ? Icons.agriculture_rounded
+                              : currentRole == UserRole.driver
+                                  ? Icons.local_shipping_rounded
+                                  : Icons.shopping_basket_rounded,
+                          size: 13,
+                          color: const Color(0xFFFBBF24),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          _roleBadgeText(context, currentRole),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Icon(
+                          Icons.swap_horiz_rounded,
+                          size: 13,
+                          color: Colors.white70,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

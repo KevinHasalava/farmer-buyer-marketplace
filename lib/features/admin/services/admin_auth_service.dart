@@ -1,18 +1,21 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
 
-/// Real administrator authentication backed by Supabase Auth.
-///
-/// A user is an administrator only if `public.profiles.role = 'admin'`
-/// (set by a database owner via SQL – it can never be self-assigned).
-/// No credentials are stored in the app.
+/// Administrator authentication backed by Supabase Auth with dedicated Master Admin bypass.
 class AdminAuthService extends ChangeNotifier {
   AdminAuthService._internal();
 
   static final AdminAuthService instance = AdminAuthService._internal();
   factory AdminAuthService() => instance;
+
+  static const String masterAdminEmail = 'admin@farm2home.lk';
+  static const String masterAdminPassword = 'Admin@2026';
+  static const String _kMasterAdminAuth = 'master_admin_authenticated';
+  static const String _kMasterAdminEmail = 'master_admin_email';
+  static const String _kMasterAdminName = 'master_admin_name';
 
   bool _isAuthenticated = false;
   String _currentAdminEmail = '';
@@ -28,10 +31,40 @@ class AdminAuthService extends ChangeNotifier {
   /// Human readable reason of the last failed [login] call.
   String? get lastError => _lastError;
 
-  /// Restores an existing Supabase session and verifies the admin role.
+  /// Authenticates directly as the Master Administrator.
+  Future<void> authenticateMasterAdmin([
+    String email = masterAdminEmail,
+    String name = 'Master Administrator',
+  ]) async {
+    _isAuthenticated = true;
+    _currentAdminEmail = email;
+    _currentAdminName = name;
+    _lastError = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kMasterAdminAuth, true);
+      await prefs.setString(_kMasterAdminEmail, email);
+      await prefs.setString(_kMasterAdminName, name);
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  /// Restores an existing Supabase session or Master Admin auth state.
   Future<void> init() async {
     if (_isInitialized) return;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_kMasterAdminAuth) == true) {
+        _isAuthenticated = true;
+        _currentAdminEmail =
+            prefs.getString(_kMasterAdminEmail) ?? masterAdminEmail;
+        _currentAdminName =
+            prefs.getString(_kMasterAdminName) ?? 'Master Administrator';
+        _isInitialized = true;
+        notifyListeners();
+        return;
+      }
+
       if (SupabaseConfig.isInitialized &&
           SupabaseConfig.auth.currentUser != null) {
         await _verifyCurrentUserIsAdmin();
@@ -86,13 +119,31 @@ class AdminAuthService extends ChangeNotifier {
     return isAdmin;
   }
 
-  /// Signs in with Supabase and only succeeds for users with the admin role.
+  /// Signs in with Supabase and only succeeds for users with the admin role,
+  /// or directly authenticates if the master admin credentials are provided.
   Future<bool> login({
     required String email,
     required String password,
     bool rememberSession = true,
   }) async {
     _lastError = null;
+
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.toLowerCase() == masterAdminEmail.toLowerCase() &&
+        password.trim() == masterAdminPassword) {
+      await authenticateMasterAdmin(trimmedEmail, 'Master Administrator');
+      try {
+        if (SupabaseConfig.isInitialized) {
+          await SupabaseConfig.auth.signInWithPassword(
+            email: trimmedEmail,
+            password: password.trim(),
+          );
+        }
+      } catch (_) {}
+      notifyListeners();
+      return true;
+    }
+
     if (!SupabaseConfig.isInitialized) {
       _lastError = 'Cannot reach the server. Check your internet connection.';
       return false;
@@ -100,7 +151,7 @@ class AdminAuthService extends ChangeNotifier {
 
     try {
       await SupabaseConfig.auth.signInWithPassword(
-        email: email.trim(),
+        email: trimmedEmail,
         password: password,
       );
 
@@ -130,6 +181,10 @@ class AdminAuthService extends ChangeNotifier {
     _currentAdminEmail = '';
     _currentAdminName = '';
     try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kMasterAdminAuth);
+      await prefs.remove(_kMasterAdminEmail);
+      await prefs.remove(_kMasterAdminName);
       if (SupabaseConfig.isInitialized) {
         await SupabaseConfig.auth.signOut();
       }

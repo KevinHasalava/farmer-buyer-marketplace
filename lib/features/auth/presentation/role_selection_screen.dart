@@ -23,14 +23,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _selected = context.settings.role;
+    _selected = context.settings.role ?? UserRole.farmer;
   }
 
   Future<void> _continue() async {
-    final role = _selected;
-    if (role == null) return;
+    final role = _selected ?? UserRole.farmer;
     await context.settings.setRole(role);
-    if (mounted) context.push(AppRoutes.login);
+    if (mounted) context.go(AppRoutes.login);
   }
 
   @override
