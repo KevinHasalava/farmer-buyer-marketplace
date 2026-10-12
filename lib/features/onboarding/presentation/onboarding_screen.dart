@@ -71,6 +71,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
+    } else {
+      context.go(AppRoutes.language);
     }
   }
 

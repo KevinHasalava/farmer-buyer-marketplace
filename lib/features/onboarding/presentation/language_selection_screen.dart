@@ -33,7 +33,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     final s = context.settings;
     await s.setLanguage(lang);
     if (!mounted) return;
-    context.go(s.onboardingSeen ? AppRoutes.roleSelection : AppRoutes.onboarding);
+    context.go(AppRoutes.onboarding);
   }
 
   @override

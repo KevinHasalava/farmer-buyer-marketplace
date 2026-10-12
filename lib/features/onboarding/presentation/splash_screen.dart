@@ -82,7 +82,17 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    context.go(s.onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
+    if (!s.onboardingSeen) {
+      context.go(AppRoutes.onboarding);
+      return;
+    }
+
+    if (s.role == null) {
+      context.go(AppRoutes.roleSelection);
+      return;
+    }
+
+    context.go(AppRoutes.login);
   }
 
   @override
