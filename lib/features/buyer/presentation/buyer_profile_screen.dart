@@ -13,7 +13,6 @@ import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
 import 'buyer_notifications_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
 import '../../payment/presentation/saved_payment_methods_screen.dart';
 import '../../payment/services/payment_method_manager.dart';
 import '../../payment/presentation/widgets/wallet_top_up_sheet.dart';

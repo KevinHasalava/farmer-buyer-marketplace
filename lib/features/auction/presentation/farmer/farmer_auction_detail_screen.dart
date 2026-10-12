@@ -6,7 +6,6 @@ import '../../models/auction_model.dart';
 import '../../services/auction_manager.dart';
 import 'create_edit_auction_screen.dart';
 import '../../../../core/localization/app_settings.dart';
-import '../../../../core/theme/app_theme.dart';
 
 class FarmerAuctionDetailScreen extends StatefulWidget {
   final String auctionId;

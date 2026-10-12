@@ -145,21 +145,20 @@ class AppHeaderBanner extends StatelessWidget {
 
                   // Title
                   Text(
-                    title.trAuto(context),
+                    title,
                     textAlign: TextAlign.center,
                     style: AppTheme.fontStyle(
                       context.currentLanguage,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: -0.5,
                     ),
                   ),
 
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      subtitle!.trAuto(context),
+                      subtitle!,
                       textAlign: TextAlign.center,
                       style: AppTheme.fontStyle(
                         context.currentLanguage,
@@ -724,12 +723,11 @@ class AppSelectableCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                title.trAuto(context),
+                                title,
                                 style: AppTheme.fontStyle(
                                   context.currentLanguage,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
                                   color: isSelected
                                       ? AppColors.darkGreen
                                       : AppColors.textDark,
@@ -737,7 +735,7 @@ class AppSelectableCard extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                subtitle.trAuto(context),
+                                subtitle,
                                 style: AppTheme.fontStyle(
                                   context.currentLanguage,
                                   fontSize: 12,
@@ -957,13 +955,12 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        widget.label.trAuto(context),
+                        widget.label,
                         style: AppTheme.fontStyle(
                           context.currentLanguage,
                           fontSize: AppTextStyles.labelLarge,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: AppTextStyles.trackingWide,
                         ),
                       ),
                       if (widget.icon != null) ...[

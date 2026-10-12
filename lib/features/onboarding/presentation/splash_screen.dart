@@ -19,16 +19,31 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: const Duration(milliseconds: 1200),
   )..forward();
+
+  late final AnimationController _progressController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 3000),
+  );
+
+  late final Animation<double> _progressAnimation = CurvedAnimation(
+    parent: _progressController,
+    curve: Curves.easeInOutCubic,
+  );
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2200), _routeNext);
+    _progressController.forward();
+    _progressController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 350), _routeNext);
+      }
+    });
   }
 
   Future<void> _routeNext() async {
@@ -73,6 +88,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _anim.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -272,40 +288,116 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
 
-                    // ── Bottom Section (Grounded & Balanced) ─────────────────
+                    // ── Bottom Section (Grounded & Balanced with Live Progress) ─────────────────
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 36, left: 24, right: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Sleek Glowing Progress Bar
-                          SizedBox(
-                            width: 120,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: LinearProgressIndicator(
-                                minHeight: 4,
-                                backgroundColor: Colors.white.withValues(alpha: 0.15),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF34D399),
+                      padding: const EdgeInsets.only(bottom: 34, left: 24, right: 24),
+                      child: AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, _) {
+                          final p = _progressAnimation.value;
+                          final pct = (p * 100).toInt().clamp(0, 100);
+
+                          String statusMsg = '🌱 Farm2Home පද්ධතිය සූදානම් වෙමින්...';
+                          if (p > 0.35 && p <= 0.75) {
+                            statusMsg = '🚜 දේශීය ගොවි ජාලය සමමුහුර්ත වෙමින්...';
+                          } else if (p > 0.75 && p < 1.0) {
+                            statusMsg = '✨ 100% නැවුම් අස්වැන්න තහවුරුයි...';
+                          } else if (p >= 1.0) {
+                            statusMsg = 'සම්පූර්ණයි ✓';
+                          }
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Progress bar container with subtle glow
+                              Container(
+                                width: 200,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    FractionallySizedBox(
+                                      widthFactor: p.clamp(0.02, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF34D399),
+                                              Color(0xFF10B981),
+                                              Color(0xFFFBBF24),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          // Empowering Note
-                          Text(
-                            'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
-                            textAlign: TextAlign.center,
-                            style: AppTheme.fontStyle(
-                              context.currentLanguage,
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
+                              const SizedBox(height: 12),
+
+                              // Realtime Stage Text & Percent
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    statusMsg,
+                                    style: AppTheme.fontStyle(
+                                      context.currentLanguage,
+                                      color: const Color(0xFFD1FAE5).withValues(alpha: 0.85),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '$pct%',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFBBF24),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Empowering Note
+                              Text(
+                                'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                                textAlign: TextAlign.center,
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],

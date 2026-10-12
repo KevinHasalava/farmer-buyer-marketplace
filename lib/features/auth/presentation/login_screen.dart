@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../../widgets/premium/google_brand_button.dart';
 import '../../../core/routes/app_router.dart';
@@ -272,17 +273,18 @@ class _LoginScreenState extends State<LoginScreen>
                         // Title
                         Text(
                           context.tr.signInToYourAccount,
-                          style: const TextStyle(
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
-                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           context.tr.enterEmailPassword,
-                          style: const TextStyle(
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
@@ -749,11 +751,11 @@ class _PremiumField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-            letterSpacing: 0.1,
+            color: const Color(0xFF1E293B),
           ),
         ),
         const SizedBox(height: 7),
@@ -837,11 +839,11 @@ class _PremiumPasswordField extends StatelessWidget {
       children: [
         Text(
           context.tr.password,
-          style: const TextStyle(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-            letterSpacing: 0.1,
+            color: const Color(0xFF1E293B),
           ),
         ),
         const SizedBox(height: 7),

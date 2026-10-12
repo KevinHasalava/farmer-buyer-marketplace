@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -22,7 +20,6 @@ class AppAutoTranslator extends ChangeNotifier {
   static const String _cachePrefix = 'auto_trans_';
   SharedPreferences? _prefs;
   final Map<String, String> _memoryCache = {};
-  final Set<String> _pendingRequests = {};
 
   static Map<String, (String, String)>? _cachedIndex;
 
@@ -43,19 +40,17 @@ class AppAutoTranslator extends ChangeNotifier {
     return map;
   }
 
-  /// Initialize persistent cache storage.
+  /// Initialize persistent cache storage and purge any legacy corrupted entries.
   Future<void> init() async {
     try {
       _prefs = await SharedPreferences.getInstance();
       final keys = _prefs?.getKeys() ?? {};
       for (final k in keys) {
         if (k.startsWith(_cachePrefix)) {
-          final val = _prefs?.getString(k);
-          if (val != null) {
-            _memoryCache[k.substring(_cachePrefix.length)] = val;
-          }
+          await _prefs?.remove(k);
         }
       }
+      _memoryCache.clear();
     } catch (e) {
       debugPrint('[AppAutoTranslator] Init error: $e');
     }
@@ -65,9 +60,8 @@ class AppAutoTranslator extends ChangeNotifier {
   // PUBLIC TRANSLATION API
   // ───────────────────────────────────────────────────────────────────────────
 
-  /// Synchronously returns translated text. If the text is not yet cached or
-  /// recognized, returns an intelligent heuristic translation and schedules a
-  /// background fetch for future rebuilds.
+  /// Synchronously returns translated text. If the text is already localized
+  /// or not in the curated dictionary, returns the text cleanly without corruption.
   String translateSync(String text, AppLanguage targetLang) {
     if (text.isEmpty || targetLang == AppLanguage.english) {
       return text;
@@ -75,10 +69,20 @@ class AppAutoTranslator extends ChangeNotifier {
 
     final trimmed = text.trim();
     if (trimmed.isEmpty) return text;
+
+    // Guard: If the text is already in the target language (Sinhala or Tamil),
+    // NEVER alter or re-translate it.
+    if (targetLang == AppLanguage.sinhala && RegExp(r'[\u0D80-\u0DFF]').hasMatch(trimmed)) {
+      return text;
+    }
+    if (targetLang == AppLanguage.tamil && RegExp(r'[\u0B80-\u0BFF]').hasMatch(trimmed)) {
+      return text;
+    }
+
     final langCode = targetLang.code;
     final cacheKey = '${langCode}_$trimmed';
 
-    // 1. Check in-memory persistent cache
+    // 1. Check in-memory cache
     if (_memoryCache.containsKey(cacheKey)) {
       return _memoryCache[cacheKey]!;
     }
@@ -97,40 +101,19 @@ class AppAutoTranslator extends ChangeNotifier {
       return smartMatch;
     }
 
-    // 4. Smart composite phrase translation (e.g., "Rs. 1,500 / kg", "Fresh Carrot (500g)")
+    // 4. Smart composite phrase translation (currency & unit patterns)
     final compositeMatch = _translateComposite(trimmed, targetLang);
     if (compositeMatch != null) {
       _saveToCache(cacheKey, compositeMatch);
       return compositeMatch;
     }
 
-    // 5. Fallback: Trigger background translation for custom sentences
-    _scheduleAsyncTranslation(trimmed, targetLang);
-
-    // Return the original text while background resolution is in progress
     return text;
   }
 
-  /// Asynchronously translates text, guaranteeing fresh resolution and updating cache.
+  /// Asynchronously translates text, using synchronous curated dictionary.
   Future<String> translateAsync(String text, AppLanguage targetLang) async {
-    if (text.isEmpty || targetLang == AppLanguage.english) {
-      return text;
-    }
-
-    final syncResult = translateSync(text, targetLang);
-    if (syncResult != text) {
-      return syncResult;
-    }
-
-    final fetched = await _fetchOnlineTranslation(text, targetLang);
-    if (fetched != null && fetched.isNotEmpty) {
-      final cacheKey = '${targetLang.code}_${text.trim()}';
-      _saveToCache(cacheKey, fetched);
-      notifyListeners();
-      return fetched;
-    }
-
-    return text;
+    return translateSync(text, targetLang);
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -470,86 +453,12 @@ class AppAutoTranslator extends ChangeNotifier {
       }
     }
 
-    // Keyword replacements in phrases
-    for (final entry in _compositeKeywords.entries) {
-      final word = entry.key;
-      final regex = RegExp(r'\b' + RegExp.escape(word) + r'\b', caseSensitive: false);
-      if (regex.hasMatch(result)) {
-        final rep = targetLang == AppLanguage.sinhala ? entry.value.$1 : entry.value.$2;
-        result = result.replaceAll(regex, rep);
-        modified = true;
-      }
-    }
-
-    // Keyword replacements in phrases
-    for (final entry in _primaryVocab.entries) {
-      final word = entry.key;
-      final regex = RegExp(r'\b' + RegExp.escape(word) + r'\b', caseSensitive: false);
-      if (regex.hasMatch(result)) {
-        final rep = targetLang == AppLanguage.sinhala ? entry.value.$1 : entry.value.$2;
-        result = result.replaceAll(regex, rep);
-        modified = true;
-      }
-    }
-
     return modified ? result : null;
-  }
-
-  String? _lookupDictionary(String text, AppLanguage targetLang) {
-    return _lookup(text, targetLang);
   }
 
   void _saveToCache(String key, String value) {
     _memoryCache[key] = value;
     _prefs?.setString('$_cachePrefix$key', value);
-  }
-
-  void _scheduleAsyncTranslation(String text, AppLanguage targetLang) {
-    final key = '${targetLang.code}_$text';
-    if (_pendingRequests.contains(key)) return;
-    _pendingRequests.add(key);
-
-    Timer(const Duration(milliseconds: 100), () async {
-      try {
-        final result = await _fetchOnlineTranslation(text, targetLang);
-        if (result != null && result.isNotEmpty && result.toLowerCase() != text.toLowerCase()) {
-          _saveToCache(key, result);
-          notifyListeners();
-        }
-      } catch (e) {
-        debugPrint('[AppAutoTranslator] Background translation error: $e');
-      } finally {
-        _pendingRequests.remove(key);
-      }
-    });
-  }
-
-  Future<String?> _fetchOnlineTranslation(String text, AppLanguage targetLang) async {
-    HttpClient? client;
-    try {
-      final langPair = 'en|${targetLang.code}';
-      final uri = Uri.parse(
-        'https://api.mymemory.translated.net/get?q=${Uri.encodeComponent(text)}&langpair=$langPair',
-      );
-      client = HttpClient()..connectionTimeout = const Duration(seconds: 4);
-      final request = await client.getUrl(uri);
-      final response = await request.close().timeout(const Duration(seconds: 4));
-      if (response.statusCode == 200) {
-        final body = await response.transform(utf8.decoder).join();
-        final data = jsonDecode(body);
-        final translatedText = data['responseData']?['translatedText'] as String?;
-        if (translatedText != null &&
-            !translatedText.contains('MYMEMORY WARNING') &&
-            translatedText.trim().isNotEmpty) {
-          return translatedText.trim();
-        }
-      }
-    } catch (_) {
-      // Silently ignore network failures; offline vocabulary guarantees core operation.
-    } finally {
-      client?.close();
-    }
-    return null;
   }
 
   // ───────────────────────────────────────────────────────────────────────────
