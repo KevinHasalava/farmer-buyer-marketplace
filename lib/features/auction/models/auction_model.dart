@@ -206,42 +206,92 @@ class AuctionModel {
     };
   }
 
+  Map<String, dynamic> toDb() {
+    return {
+      'id': id,
+      'farmer_id': farmerId.isNotEmpty ? farmerId : null,
+      'farmer_name': farmerName,
+      'farmer_phone': farmerPhone,
+      'farmer_location': farmerLocation,
+      'farmer_avatar': farmerAvatar,
+      'crop_name': cropName,
+      'category': category,
+      'quantity': quantity,
+      'unit': unit,
+      'starting_price': startingPrice,
+      'min_bid_increment': minBidIncrement,
+      'reserve_price': reservePrice,
+      'buy_now_price': buyNowPrice,
+      'current_highest_bid': currentHighestBid,
+      'highest_bidder_id': highestBidderId,
+      'highest_bidder_name': highestBidderName,
+      'total_bids': totalBids,
+      'description': description,
+      'harvest_date': harvestDate?.toIso8601String(),
+      'delivery_terms': deliveryTerms,
+      'location': location,
+      'image_url': imageUrl,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+      'status': status,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
   factory AuctionModel.fromJson(Map<String, dynamic> json) {
+    final titleOrCrop = (json['crop_name'] ?? json['cropName'] ?? json['title']) as String? ?? '';
+    final catOrType = (json['category'] ?? json['crop_type']) as String? ?? 'Vegetables';
+    
+    // Parse quantity from numeric quantity or string lot_size ("850 kg")
+    double parsedQty = (json['quantity'] as num?)?.toDouble() ?? 0.0;
+    if (parsedQty <= 0 && json['lot_size'] != null) {
+      final str = json['lot_size'].toString();
+      final numMatch = RegExp(r'([0-9]+(\.[0-9]+)?)').firstMatch(str);
+      if (numMatch != null) {
+        parsedQty = double.tryParse(numMatch.group(1)!) ?? 100.0;
+      }
+    }
+    if (parsedQty <= 0) parsedQty = 100.0;
+
+    final currBid = ((json['current_highest_bid'] ?? json['currentHighestBid'] ?? json['current_bid']) as num?)?.toDouble() ?? 0.0;
+    final bidsCount = ((json['total_bids'] ?? json['totalBids'] ?? json['bid_count']) as num?)?.toInt() ?? 0;
+    final bidderName = (json['highest_bidder_name'] ?? json['highestBidderName'] ?? json['leader_name']) as String?;
+
     return AuctionModel(
       id: json['id'] as String? ?? '',
-      farmerId: json['farmerId'] as String? ?? '',
-      farmerName: json['farmerName'] as String? ?? 'Farmer',
-      farmerPhone: json['farmerPhone'] as String? ?? '',
-      farmerLocation: json['farmerLocation'] as String? ?? '',
-      farmerAvatar: json['farmerAvatar'] as String? ?? '',
-      cropName: json['cropName'] as String? ?? '',
-      category: json['category'] as String? ?? 'Vegetables',
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
+      farmerId: (json['farmer_id'] ?? json['farmerId']) as String? ?? '',
+      farmerName: (json['farmer_name'] ?? json['farmerName']) as String? ?? 'Farmer',
+      farmerPhone: (json['farmer_phone'] ?? json['farmerPhone']) as String? ?? '',
+      farmerLocation: (json['farmer_location'] ?? json['farmerLocation']) as String? ?? '',
+      farmerAvatar: (json['farmer_avatar'] ?? json['farmerAvatar']) as String? ?? '',
+      cropName: titleOrCrop,
+      category: catOrType,
+      quantity: parsedQty,
       unit: json['unit'] as String? ?? 'kg',
-      startingPrice: (json['startingPrice'] as num?)?.toDouble() ?? 0.0,
-      minBidIncrement: (json['minBidIncrement'] as num?)?.toDouble() ?? 5.0,
-      reservePrice: (json['reservePrice'] as num?)?.toDouble(),
-      buyNowPrice: (json['buyNowPrice'] as num?)?.toDouble(),
-      currentHighestBid: (json['currentHighestBid'] as num?)?.toDouble() ?? 0.0,
-      highestBidderId: json['highestBidderId'] as String?,
-      highestBidderName: json['highestBidderName'] as String?,
-      totalBids: json['totalBids'] as int? ?? 0,
+      startingPrice: ((json['starting_price'] ?? json['startingPrice']) as num?)?.toDouble() ?? 0.0,
+      minBidIncrement: ((json['min_bid_increment'] ?? json['minBidIncrement']) as num?)?.toDouble() ?? 5.0,
+      reservePrice: ((json['reserve_price'] ?? json['reservePrice']) as num?)?.toDouble(),
+      buyNowPrice: ((json['buy_now_price'] ?? json['buyNowPrice']) as num?)?.toDouble(),
+      currentHighestBid: currBid,
+      highestBidderId: (json['highest_bidder_id'] ?? json['highestBidderId']) as String?,
+      highestBidderName: bidderName,
+      totalBids: bidsCount,
       description: json['description'] as String? ?? '',
-      harvestDate: json['harvestDate'] != null
-          ? DateTime.tryParse(json['harvestDate'] as String)
+      harvestDate: (json['harvest_date'] ?? json['harvestDate']) != null
+          ? DateTime.tryParse((json['harvest_date'] ?? json['harvestDate']) as String)
           : null,
-      deliveryTerms: json['deliveryTerms'] as String? ?? 'Farmgate Pickup',
+      deliveryTerms: (json['delivery_terms'] ?? json['deliveryTerms']) as String? ?? 'Farmgate Pickup',
       location: json['location'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? '',
-      startTime: json['startTime'] != null
-          ? DateTime.tryParse(json['startTime'] as String) ?? DateTime.now()
+      imageUrl: (json['image_url'] ?? json['imageUrl']) as String? ?? '',
+      startTime: (json['start_time'] ?? json['startTime']) != null
+          ? DateTime.tryParse((json['start_time'] ?? json['startTime']) as String) ?? DateTime.now()
           : DateTime.now(),
-      endTime: json['endTime'] != null
-          ? DateTime.tryParse(json['endTime'] as String) ?? DateTime.now().add(const Duration(days: 1))
+      endTime: (json['end_time'] ?? json['endTime']) != null
+          ? DateTime.tryParse((json['end_time'] ?? json['endTime']) as String) ?? DateTime.now().add(const Duration(days: 1))
           : DateTime.now().add(const Duration(days: 1)),
-      status: json['status'] as String? ?? 'active',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+      status: (json['status'] as String? ?? 'active').toLowerCase(),
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']) as String) ?? DateTime.now()
           : DateTime.now(),
       bids: (json['bids'] as List<dynamic>?)
               ?.map((e) => BidModel.fromJson(e as Map<String, dynamic>))
@@ -250,7 +300,9 @@ class AuctionModel {
     );
   }
 
-  static List<AuctionModel> get sampleAuctions {
+  static List<AuctionModel> get sampleAuctions => const [];
+
+  static List<AuctionModel> get _legacySamples {
     final now = DateTime.now();
     return [
       AuctionModel(

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
-import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +152,6 @@ class AppHeaderBanner extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: -0.5,
                     ),
                   ),
 
@@ -730,7 +728,6 @@ class AppSelectableCard extends StatelessWidget {
                                   context.currentLanguage,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
                                   color: isSelected
                                       ? AppColors.darkGreen
                                       : AppColors.textDark,
@@ -964,7 +961,6 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
                           fontSize: AppTextStyles.labelLarge,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: AppTextStyles.trackingWide,
                         ),
                       ),
                       if (widget.icon != null) ...[
@@ -981,7 +977,7 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// App Language Pill (Light Themed)
+// App Language Pill (Light / Dark Header Themed)
 // ─────────────────────────────────────────────────────────────────────────────
 class AppLanguagePill extends StatelessWidget {
   const AppLanguagePill({super.key, this.isDarkHeader = false});
@@ -990,30 +986,25 @@ class AppLanguagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
-  
-  /*
-  @override
-  Widget build(BuildContext context) {
     AppSettings? settings;
     try {
       settings = context.watch<AppSettings>();
     } catch (_) {}
-    final lang = settings?.language ?? AppLanguage.english;
+    final lang = settings?.language ?? AppSettings.current.language ?? AppLanguage.english;
 
     return GestureDetector(
       onTap: () => showAppLanguageSheet(context),
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isDarkHeader
-              ? Colors.white.withValues(alpha: 0.15)
+              ? Colors.white.withValues(alpha: 0.18)
               : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDarkHeader
-                ? Colors.white.withValues(alpha: 0.3)
+                ? Colors.white.withValues(alpha: 0.35)
                 : const Color(0xFFE5E7EB),
           ),
           boxShadow: isDarkHeader
@@ -1034,21 +1025,21 @@ class AppLanguagePill extends StatelessWidget {
               color: isDarkHeader ? Colors.white : AppColors.primaryGreen,
               size: 15,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               lang.nativeName,
               style: AppTheme.fontStyle(
                 lang,
                 color: isDarkHeader ? Colors.white : AppColors.textDark,
                 fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(width: 2),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               color: isDarkHeader
-                  ? Colors.white.withValues(alpha: 0.7)
+                  ? Colors.white.withValues(alpha: 0.75)
                   : AppColors.textSecondary,
               size: 16,
             ),
@@ -1057,7 +1048,6 @@ class AppLanguagePill extends StatelessWidget {
       ),
     );
   }
-  */
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1073,8 +1063,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
       try {
         settings = ctx.watch<AppSettings>();
       } catch (_) {}
-      final currentLang = settings?.language ?? AppLanguage.english;
-      final strings = settings?.strings ?? const AppStrings(AppLanguage.english);
+      final currentLang = settings?.language ?? AppSettings.current.language ?? AppLanguage.english;
+      final strings = settings?.strings ?? AppSettings.current.strings;
 
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -1121,10 +1111,12 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.selectionClick();
-                    settings?.setLanguage(l);
-                    Navigator.pop(ctx);
+                    await AppSettings.current.setLanguage(l);
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(

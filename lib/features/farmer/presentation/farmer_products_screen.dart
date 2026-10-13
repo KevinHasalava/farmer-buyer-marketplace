@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/supabase/supabase_config.dart';
 
 import '../../admin/models/admin_models.dart';
 import '../../admin/services/admin_marketplace_service.dart';
@@ -30,7 +31,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
   FarmerData get _farmer => FarmerProfileManager.instance.profile.toFarmerData();
   List<String> get _filters => [context.tr.allProducts, context.tr.active, context.tr.outOfStock];
 
-  late List<ProductData> _products;
+  List<ProductData> _products = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -42,68 +44,41 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     )..forward();
     _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
 
-    _products = [
-      ProductData(
-        name: 'Tomatoes',
-        price: 'Rs. 250',
-        unit: '/kg',
-        rating: '4.8',
-        reviews: '32',
-        availability: 'Available: 25 kg',
-        emoji: '🍅',
-        tag: 'Bestseller',
-        tagColor: const Color(0xFFFF6B35),
-        description:
-            'Fresh and organic tomatoes from our farm. Hand-picked at dawn.',
-        harvestDate: '18 Aug 2026',
-        tags: const ['Organic', 'Fresh'],
-        farmer: _farmer,
-        category: 'Vegetables',
-        isActive: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80',
-      ),
-      ProductData(
-        name: 'Carrots',
-        price: 'Rs. 300',
-        unit: '/kg',
-        rating: '4.6',
-        reviews: '28',
-        availability: 'Available: 15 kg',
-        emoji: '🥕',
-        tag: 'Fresh',
-        tagColor: const Color(0xFF1E8342),
-        description:
-            'Crispy sweet carrots cultivated in natural mineral-rich soil.',
-        harvestDate: '19 Aug 2026',
-        tags: const ['Organic', 'Farm Fresh'],
-        farmer: _farmer,
-        category: 'Vegetables',
-        isActive: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
-      ),
-      ProductData(
-        name: 'Cucumber',
-        price: 'Rs. 200',
-        unit: '/kg',
-        rating: '4.7',
-        reviews: '24',
-        availability: 'Available: 10 kg',
-        emoji: '🥒',
-        tag: 'Hydrating',
-        tagColor: const Color(0xFF1E8342),
-        description:
-            'Freshly harvested crisp cucumbers with high water content.',
-        harvestDate: '21 Aug 2026',
-        tags: const ['Organic', 'Hydrating'],
-        farmer: _farmer,
-        category: 'Vegetables',
-        isActive: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=400&auto=format&fit=crop&q=80',
-      ),
-    ];
+    _loadProductsFromDatabase();
+  }
+
+  Future<void> _loadProductsFromDatabase() async {
+    setState(() => _isLoading = true);
+    try {
+      if (SupabaseConfig.isInitialized) {
+        final uid = SupabaseConfig.auth.currentUser?.id;
+        if (uid != null) {
+          final res = await SupabaseConfig.client
+              .from('products')
+              .select()
+              .eq('farmer_id', uid)
+              .order('created_at', ascending: false);
+
+          final loaded = (res as List)
+              .map((r) => ProductData.fromSupabase(
+                  Map<String, dynamic>.from(r as Map), _farmer))
+              .toList();
+
+          if (mounted) {
+            setState(() {
+              _products = loaded;
+              _isLoading = false;
+            });
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[FarmerProductsScreen] error loading products: $e');
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _onProfileChanged() {
@@ -135,7 +110,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     final cleanQty = p.availability.replaceAll('Available:', '').replaceAll('kg', '').replaceAll('Kg', '').trim();
     final qtyNum = double.tryParse(cleanQty) ?? 50.0;
     return AdminProductModel(
-      id: 'prod_${p.name.toLowerCase().replaceAll(' ', '_')}',
+      id: p.id ?? 'prod_${p.name.toLowerCase().replaceAll(' ', '_')}',
       name: p.name,
       category: p.category,
       price: priceNum,
@@ -159,7 +134,19 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       ),
     );
     if (updated != null && mounted) {
-      setState(() => _products[index] = updated);
+      final prodId = updated.id ?? prod.id;
+      if (prodId != null && prodId.isNotEmpty && SupabaseConfig.isInitialized) {
+        try {
+          final uid = SupabaseConfig.auth.currentUser?.id ?? '';
+          await SupabaseConfig.client
+              .from('products')
+              .update(updated.toSupabaseMap(uid))
+              .eq('id', prodId);
+        } catch (e) {
+          debugPrint('Error updating product in Supabase: $e');
+        }
+      }
+      setState(() => _products[index] = updated.copyWith(id: prodId));
       try {
         AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
       } catch (_) {}
@@ -173,6 +160,23 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
     );
     if (newProd != null && mounted) {
+      final uid = SupabaseConfig.isInitialized ? SupabaseConfig.auth.currentUser?.id : null;
+      if (uid != null) {
+        try {
+          final inserted = await SupabaseConfig.client
+              .from('products')
+              .insert(newProd.toSupabaseMap(uid))
+              .select()
+              .single();
+          final savedProduct = ProductData.fromSupabase(
+              Map<String, dynamic>.from(inserted), _farmer);
+          setState(() => _products.insert(0, savedProduct));
+          _showSnackBar(context.tr.productAdded(newProd.name));
+          return;
+        } catch (e) {
+          debugPrint('Error inserting product to Supabase: $e');
+        }
+      }
       setState(() => _products.insert(0, newProd));
       try {
         AdminMarketplaceService.instance.addProduct(_toAdminProduct(newProd));
@@ -181,17 +185,27 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     }
   }
 
-  void _toggleProductStatus(int index) {
-    setState(() {
-      final p = _products[index];
-      _products[index] = p.copyWith(isActive: !p.isActive);
-    });
-    final p = _products[index];
+  void _toggleProductStatus(int index) async {
+    final cur = _products[index];
+    final updated = cur.copyWith(isActive: !cur.isActive);
+    setState(() => _products[index] = updated);
+
+    final prodId = updated.id;
+    if (prodId != null && prodId.isNotEmpty && SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client
+            .from('products')
+            .update({'status': updated.isActive ? 'In Stock' : 'Out of Stock'})
+            .eq('id', prodId);
+      } catch (e) {
+        debugPrint('Error updating product status in Supabase: $e');
+      }
+    }
     try {
-      AdminMarketplaceService.instance.updateProduct(_toAdminProduct(p));
+      AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
     } catch (_) {}
     _showSnackBar(
-      '${p.name}: ${p.isActive ? context.tr.active : context.tr.outOfStock}',
+      '${updated.name}: ${updated.isActive ? context.tr.active : context.tr.outOfStock}',
     );
   }
 
@@ -267,8 +281,19 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(ctx);
+                      final prodId = prod.id;
+                      if (prodId != null && prodId.isNotEmpty && SupabaseConfig.isInitialized) {
+                        try {
+                          await SupabaseConfig.client
+                              .from('products')
+                              .delete()
+                              .eq('id', prodId);
+                        } catch (e) {
+                          debugPrint('Error deleting product from Supabase: $e');
+                        }
+                      }
                       setState(() => _products.removeAt(index));
                       try {
                         AdminMarketplaceService.instance.deleteProduct(_toAdminProduct(prod).id);
@@ -355,7 +380,14 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
                 const SizedBox(height: 20),
 
                 // ── Product Cards List ────────────────────────────────────
-                if (list.isEmpty)
+                if (_isLoading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: CircularProgressIndicator(color: Color(0xFF235A43)),
+                    ),
+                  )
+                else if (list.isEmpty)
                   _buildEmptyState()
                 else
                   ...List.generate(list.length, (i) {

@@ -5,6 +5,7 @@ class UserModel {
     required this.email,
     this.phone = '',
     this.isFarmer = false,
+    this.role = '',
     this.userMetadata,
   });
 
@@ -13,5 +14,8 @@ class UserModel {
   final String email;
   final String phone;
   final bool isFarmer;
+
+  /// 'farmer' | 'buyer' | 'driver' | 'admin' (from `public.profiles.role`).
+  final String role;
   final Map<String, dynamic>? userMetadata;
 }

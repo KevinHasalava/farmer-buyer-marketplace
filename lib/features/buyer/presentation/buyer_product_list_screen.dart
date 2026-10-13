@@ -59,6 +59,9 @@ class _BuyerProductListScreenState extends State<BuyerProductListScreen> {
         );
 
     _cartState.addListener(_onCartChanged);
+    BuyerMockData.syncFromDatabase().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override

@@ -52,6 +52,9 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _notifService.addListener(_onNotifChanged);
     AuctionManager.instance.addListener(_onCartChanged);
     _profileManager.loadProfile();
+    BuyerMockData.syncFromDatabase().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override

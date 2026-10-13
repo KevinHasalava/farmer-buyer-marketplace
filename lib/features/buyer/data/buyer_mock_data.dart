@@ -1,7 +1,27 @@
 import 'package:flutter/material.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../models/buyer_models.dart';
 
 class BuyerMockData {
+  static final List<BuyerProduct> _liveDbProducts = [];
+
+  /// Loads real products from Supabase database
+  static Future<void> syncFromDatabase() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      final rows = await SupabaseConfig.client
+          .from('products')
+          .select()
+          .order('created_at', ascending: false);
+      _liveDbProducts.clear();
+      for (final r in rows) {
+        _liveDbProducts.add(
+            BuyerProduct.fromDb(Map<String, dynamic>.from(r as Map)));
+      }
+    } catch (e) {
+      debugPrint('[BuyerMockData] syncFromDatabase note: $e');
+    }
+  }
   // ── Farmers ──────────────────────────────────────────────────────────
   static const BuyerFarmer primaryFarmer = BuyerFarmer(
     name: 'K. M. Bandara',
@@ -871,6 +891,7 @@ class BuyerMockData {
 
   // ── All Products Master Catalog ───────────────────────────────────────
   static List<BuyerProduct> get allProducts => [
+    ..._liveDbProducts,
     // Vegetables
     carrotProduct,
     tomatoProduct,

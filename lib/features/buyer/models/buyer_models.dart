@@ -59,6 +59,45 @@ class BuyerProduct {
   String get formattedOriginalPrice => originalPrice != null ? 'Rs. ${originalPrice!.toStringAsFixed(0)}' : '';
   bool get hasDiscount => originalPrice != null && originalPrice! > price;
   int get discountPercent => hasDiscount ? (((originalPrice! - price) / originalPrice!) * 100).round() : 0;
+
+  factory BuyerProduct.fromDb(Map<String, dynamic> row) {
+    final priceVal = (row['price'] is num)
+        ? (row['price'] as num).toDouble()
+        : double.tryParse(row['price']?.toString() ?? '0') ?? 0.0;
+    final qtyVal = (row['stock_qty'] is num)
+        ? (row['stock_qty'] as num).toDouble()
+        : (row['available_qty'] is num)
+            ? (row['available_qty'] as num).toDouble()
+            : double.tryParse((row['stock_qty'] ?? row['available_qty'])?.toString() ?? '10') ?? 10.0;
+    final isOrganic = row['is_organic'] as bool? ?? false;
+    final imgUrl = (row['image_url'] as String?)?.isNotEmpty == true
+        ? row['image_url'] as String
+        : 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80';
+
+    return BuyerProduct(
+      id: row['id']?.toString() ?? '',
+      name: row['name'] as String? ?? 'Fresh Product',
+      price: priceVal,
+      originalPrice: (priceVal * 1.15).roundToDouble(),
+      unit: row['unit'] as String? ?? '1 kg',
+      rating: 4.9,
+      reviewsCount: 14,
+      availableStock: '${qtyVal.toStringAsFixed(0)} kg',
+      farmerName: (row['farmer_name'] as String?)?.isNotEmpty == true
+          ? row['farmer_name'] as String
+          : 'Local Farmer',
+      farmLocation: 'Sri Lanka',
+      farmName: (row['farm_name'] as String?)?.isNotEmpty == true
+          ? row['farm_name'] as String
+          : 'Organic Farm',
+      harvestTime: 'Picked Fresh Today',
+      imageUrl: imgUrl,
+      category: row['category'] as String? ?? 'Vegetables',
+      description: row['description'] as String? ?? 'Fresh direct from farm harvest.',
+      isOrganic: isOrganic,
+      tags: isOrganic ? const ['Organic', 'Farm Fresh'] : const ['Farm Fresh'],
+    );
+  }
 }
 
 class BuyerFarmer {

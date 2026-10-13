@@ -336,6 +336,17 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
 
     return Scaffold(
       backgroundColor: _bgSoft,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateOrEditNotificationDialog(),
+        backgroundColor: _forestGreen,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_alert_rounded, size: 20),
+        label: const Text(
+          'New Alert',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -429,7 +440,7 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
               ),
             ),
 
-            // Header Row: Title, Subtitle & Mark read button
+            // Header Row: Title, Subtitle & Action buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
               child: Row(
@@ -464,40 +475,88 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      _notifService.markAllAsRead();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.tr.allNotificationsMarkedRead),
-                          backgroundColor: _forestGreen,
-                          duration: const Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFDBEAFE)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_rounded, size: 13, color: Color(0xFF2563EB)),
-                          const SizedBox(width: 4),
-                          Text(
-                            context.tr.markAllRead,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2563EB),
-                            ),
+                  Wrap(
+                    spacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      // + Add Alert (CREATE)
+                      GestureDetector(
+                        onTap: () => _showCreateOrEditNotificationDialog(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
                           ),
-                        ],
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_rounded, size: 14, color: _forestGreen),
+                              SizedBox(width: 3),
+                              Text(
+                                'Alert',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: _forestGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      // Mark all read (UPDATE)
+                      GestureDetector(
+                        onTap: () {
+                          _notifService.markAllAsRead();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(context.tr.allNotificationsMarkedRead),
+                              backgroundColor: _forestGreen,
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFDBEAFE)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_rounded, size: 13, color: Color(0xFF2563EB)),
+                              const SizedBox(width: 3),
+                              Text(
+                                context.tr.markAllRead,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Clear All (DELETE ALL)
+                      GestureDetector(
+                        onTap: _confirmClearAllNotifications,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: const Icon(Icons.delete_sweep_rounded, size: 15, color: Color(0xFFDC2626)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -518,16 +577,61 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Notifications List
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                children: [
-                  ..._filteredItems.map((item) => _buildNotificationCard(item)),
-                ],
+            // Notifications List / Empty State
+            if (_filteredItems.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFDCFCE7),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.notifications_none_rounded, size: 40, color: _forestGreen),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No Notifications Here',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'You\'re all caught up! Create a custom alert or wait for farm updates.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12.5, color: _textMuted),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => _showCreateOrEditNotificationDialog(),
+                          icon: const Icon(Icons.add_alert_rounded, size: 18),
+                          label: const Text('Create New Alert'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _forestGreen,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                  children: [
+                    ..._filteredItems.map((item) => _buildNotificationCard(item)),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -568,18 +672,522 @@ class _BuyerNotificationsScreenState extends State<BuyerNotificationsScreen> {
   }
 
   Widget _buildNotificationCard(BuyerNotificationItem item) {
+    Widget card;
     switch (item.type) {
       case BuyerNotificationType.driverAlert:
-        return _buildDriverAlertCard(item);
+        card = _buildDriverAlertCard(item);
+        break;
       case BuyerNotificationType.harvestAlert:
-        return _buildHarvestAlertCard(item);
+        card = _buildHarvestAlertCard(item);
+        break;
       case BuyerNotificationType.dispatched:
-        return _buildDispatchedCard(item);
+        card = _buildDispatchedCard(item);
+        break;
       case BuyerNotificationType.delivered:
-        return _buildDeliveredCard(item);
+        card = _buildDeliveredCard(item);
+        break;
       case BuyerNotificationType.priceDrop:
-        return _buildPriceDropCard(item);
+        card = _buildPriceDropCard(item);
+        break;
+      case BuyerNotificationType.general:
+        card = _buildGeneralCard(item);
+        break;
     }
+    return _wrapNotificationCard(item, card);
+  }
+
+  /// Wraps card with swipe-to-delete Dismissible and 3-dots popup options
+  Widget _wrapNotificationCard(BuyerNotificationItem item, Widget card) {
+    return Dismissible(
+      key: ValueKey(item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.centerRight,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 6),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+      onDismissed: (_) {
+        _notifService.deleteNotification(item.id);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notification removed'),
+            backgroundColor: _forestGreen,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      child: Stack(
+        children: [
+          card,
+          Positioned(
+            top: 8,
+            right: 8,
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, size: 18, color: _textMuted),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 4,
+              onSelected: (val) {
+                if (val == 'toggle_read') {
+                  if (item.isRead) {
+                    _notifService.markAsUnread(item.id);
+                  } else {
+                    _notifService.markAsRead(item.id);
+                  }
+                } else if (val == 'edit') {
+                  _showCreateOrEditNotificationDialog(existing: item);
+                } else if (val == 'delete') {
+                  _confirmDeleteNotification(item);
+                }
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'toggle_read',
+                  child: Row(
+                    children: [
+                      Icon(
+                        item.isRead
+                            ? Icons.mark_email_unread_outlined
+                            : Icons.mark_email_read_outlined,
+                        size: 18,
+                        color: _forestGreen,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(item.isRead ? 'Mark unread' : 'Mark read',
+                          style: const TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2563EB)),
+                      SizedBox(width: 8),
+                      Text('Edit notification', style: TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded,
+                          size: 18, color: Color(0xFFDC2626)),
+                      SizedBox(width: 8),
+                      Text('Delete',
+                          style: TextStyle(fontSize: 13, color: Color(0xFFDC2626))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateOrEditNotificationDialog({BuyerNotificationItem? existing}) {
+    final isNew = existing == null;
+    final titleCtrl = TextEditingController(text: existing?.title ?? '');
+    final msgCtrl = TextEditingController(text: existing?.message ?? '');
+    final tagCtrl = TextEditingController(text: existing?.tag ?? 'Alert');
+    final produceCtrl = TextEditingController(text: existing?.produceName ?? '');
+    BuyerNotificationCategory selectedCategory =
+        existing?.category ?? BuyerNotificationCategory.orders;
+    BuyerNotificationType selectedType =
+        existing?.type ?? BuyerNotificationType.general;
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.add_alert_rounded, color: _forestGreen, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                isNew ? 'Create New Alert' : 'Edit Notification',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 380,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<BuyerNotificationCategory>(
+                      initialValue: selectedCategory,
+                      decoration: InputDecoration(
+                        labelText: 'Category',
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.category_outlined, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: BuyerNotificationCategory.orders,
+                          child: Text('Orders & Delivery'),
+                        ),
+                        DropdownMenuItem(
+                          value: BuyerNotificationCategory.harvestAlerts,
+                          child: Text('Harvest & Price Alert'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setS(() => selectedCategory = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<BuyerNotificationType>(
+                      initialValue: selectedType,
+                      decoration: InputDecoration(
+                        labelText: 'Alert Type',
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.notifications_active_outlined, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: BuyerNotificationType.general,
+                          child: Text('General Notification'),
+                        ),
+                        DropdownMenuItem(
+                          value: BuyerNotificationType.harvestAlert,
+                          child: Text('Harvest Alert 🍓'),
+                        ),
+                        DropdownMenuItem(
+                          value: BuyerNotificationType.priceDrop,
+                          child: Text('Price Drop 🍅'),
+                        ),
+                        DropdownMenuItem(
+                          value: BuyerNotificationType.driverAlert,
+                          child: Text('Driver Alert 🚚'),
+                        ),
+                        DropdownMenuItem(
+                          value: BuyerNotificationType.dispatched,
+                          child: Text('Order Dispatched 📦'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setS(() => selectedType = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: titleCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.title_rounded, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a title' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: msgCtrl,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Message / Details',
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.notes_rounded, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter details' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: produceCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Produce Name (optional)',
+                        hintText: 'e.g. Red Carrots, Tomatoes',
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.eco_rounded, size: 18),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: _textMuted)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _forestGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                Navigator.pop(ctx);
+                if (isNew) {
+                  await _notifService.createNotification(
+                    title: titleCtrl.text.trim(),
+                    message: msgCtrl.text.trim(),
+                    type: selectedType,
+                    category: selectedCategory,
+                    tag: tagCtrl.text.trim().isEmpty ? 'Alert' : tagCtrl.text.trim(),
+                    produceName: produceCtrl.text.trim().isEmpty ? null : produceCtrl.text.trim(),
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Alert created successfully!'),
+                        backgroundColor: _forestGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } else {
+                  final updated = existing.copyWith(
+                    title: titleCtrl.text.trim(),
+                    message: msgCtrl.text.trim(),
+                    type: selectedType,
+                    category: selectedCategory,
+                    produceName: produceCtrl.text.trim().isEmpty ? null : produceCtrl.text.trim(),
+                  );
+                  await _notifService.updateNotification(updated);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Notification updated!'),
+                        backgroundColor: _forestGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: Text(isNew ? 'Create' : 'Save Changes'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteNotification(BuyerNotificationItem item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Notification', style: TextStyle(fontWeight: FontWeight.w700)),
+        content: Text('Are you sure you want to delete "${item.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _notifService.deleteNotification(item.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Notification deleted'),
+                  backgroundColor: Color(0xFFDC2626),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmClearAllNotifications() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Clear All Notifications', style: TextStyle(fontWeight: FontWeight.w700)),
+        content: const Text('Are you sure you want to remove all notifications? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _notifService.deleteAllNotifications();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('All notifications cleared'),
+                  backgroundColor: Color(0xFFDC2626),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// General / admin-broadcast notification card
+  Widget _buildGeneralCard(BuyerNotificationItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: item.isRead ? Colors.white : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: item.isRead ? _borderColor : const Color(0xFF86EFAC),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _generalIcon(item.tag),
+                  color: _emerald,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.tag,
+                      style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: _textMuted,
+                          letterSpacing: 0.5),
+                    ),
+                    Text(
+                      item.timeAgo,
+                      style: const TextStyle(fontSize: 10, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              if (!item.isRead)
+                GestureDetector(
+                  onTap: () => _notifService.markAsRead(item.id),
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: const BoxDecoration(
+                        color: _emerald, shape: BoxShape.circle),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            item.title,
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: _textDark),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            item.message,
+            style: const TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFF475569),
+                height: 1.35),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => _notifService.markAsRead(item.id),
+              style: TextButton.styleFrom(foregroundColor: _emerald),
+              child: Text(
+                item.isRead ? 'Read' : 'Mark as read',
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _generalIcon(String tag) {
+    final t = tag.toLowerCase();
+    if (t.contains('offer')) return Icons.local_offer_rounded;
+    if (t.contains('harvest') || t.contains('alert')) return Icons.eco_rounded;
+    if (t.contains('deliver')) return Icons.local_shipping_rounded;
+    if (t.contains('order')) return Icons.receipt_long_rounded;
+    return Icons.notifications_rounded;
   }
 
   // 1. Driver Approaching Card matching Screenshot 25

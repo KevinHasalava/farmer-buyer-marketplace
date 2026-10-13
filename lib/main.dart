@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/localization/app_settings.dart';
@@ -7,6 +9,42 @@ import 'core/routes/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/services/admin_auth_service.dart';
+
+/// Fallback delegate ensuring that locales without native MaterialLocalizations in Flutter SDK
+/// (like Sinhala 'si') gracefully fall back to DefaultMaterialLocalizations, preventing
+/// "No MaterialLocalizations found" on TextFields and other Material components.
+class FallbackMaterialLocalizationsDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
+  const FallbackMaterialLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<MaterialLocalizations> load(Locale locale) async {
+    return const DefaultMaterialLocalizations();
+  }
+
+  @override
+  bool shouldReload(FallbackMaterialLocalizationsDelegate old) => false;
+}
+
+/// Fallback delegate for Cupertino components on unsupported locales.
+class FallbackCupertinoLocalizationsDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
+  const FallbackCupertinoLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) async {
+    return const DefaultCupertinoLocalizations();
+  }
+
+  @override
+  bool shouldReload(FallbackCupertinoLocalizationsDelegate old) => false;
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,8 +109,34 @@ class FarmTrustApp extends StatelessWidget {
     final currentLang = settings.language ?? AppLanguage.english;
 
     return MaterialApp.router(
+      key: const ValueKey('farm_trust_app_root'),
       title: 'Farm2Home',
       debugShowCheckedModeBanner: false,
+
+      // ── Locale Configuration ─────────────────────────────────────────
+      locale: Locale(currentLang.code),
+      supportedLocales: const [
+        Locale('en'),
+        Locale('si'),
+        Locale('ta'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        FallbackMaterialLocalizationsDelegate(),
+        FallbackCupertinoLocalizationsDelegate(),
+      ],
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale != null) {
+          for (final supported in supportedLocales) {
+            if (supported.languageCode == locale.languageCode) {
+              return supported;
+            }
+          }
+        }
+        return const Locale('en');
+      },
 
       // ── Theme (Dynamic Typography for Sinhala, Tamil, English) ───────
       theme: AppTheme.lightTheme(currentLang),

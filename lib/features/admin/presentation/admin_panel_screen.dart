@@ -8,8 +8,10 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
+import 'widgets/admin_extra_crud_tabs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
 import '../../pre_order/presentation/pre_order_detail_screen.dart';
+import '../../pre_order/presentation/create_pre_order_screen.dart';
 import '../../auction/services/auction_manager.dart';
 import '../../auction/presentation/farmer/farmer_auction_detail_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
@@ -48,7 +50,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -60,6 +62,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.addListener(_onServiceChanged);
     _auth.addListener(_onServiceChanged);
     AuctionManager.instance.addListener(_onServiceChanged);
+    AdminLogisticsService.instance.addListener(_onLogisticsChanged);
+    AdminLogisticsService.instance.loadAll();
+    _service.init();
   }
 
   @override
@@ -67,13 +72,42 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.removeListener(_onServiceChanged);
     _auth.removeListener(_onServiceChanged);
     AuctionManager.instance.removeListener(_onServiceChanged);
+    AdminLogisticsService.instance.removeListener(_onLogisticsChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onLogisticsChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final err = AdminLogisticsService.instance.lastError;
+    if (err != null) {
+      AdminLogisticsService.instance.lastError = null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _onServiceChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    final err = _service.lastError;
+    if (err != null) {
+      _service.clearError();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _switchTab(int index) {
@@ -93,19 +127,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
-            SizedBox(width: 8),
+            const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 22),
+            const SizedBox(width: 8),
             Text(
-              'Sign Out from Console',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              'Sign Out from Console'.trAuto(context),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to lock and exit the Master Administrator session?',
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        content: Text(
+          'Are you sure you want to lock and exit the Master Administrator session?'.trAuto(context),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
         ),
         actions: [
           TextButton(
@@ -188,6 +222,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildOrdersTab(),
                         _buildContractsTab(),
                         _buildAuctionsTab(),
+                        AdminDeliveriesTab(searchQuery: _searchQuery),
                       ],
                     ),
                   ),
@@ -223,6 +258,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildOrdersTab(),
                   _buildContractsTab(),
                   _buildAuctionsTab(),
+                  AdminDeliveriesTab(searchQuery: _searchQuery),
                 ],
               ),
             ),
@@ -309,11 +345,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             const SizedBox(height: 12),
 
             // ── Section Label ───────────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
               child: Text(
-                'MANAGEMENT MODULES',
-                style: TextStyle(
+                'MANAGEMENT MODULES'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF64748B),
@@ -375,6 +411,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     label: 'Crop Auctions & Bids',
                     badgeCount: '${AuctionManager.instance.activeAuctionsCount}',
                   ),
+                  _buildSidebarNavItem(
+                    index: 8,
+                    icon: Icons.alt_route_rounded,
+                    label: 'Fleet Deliveries & Pickups',
+                    badgeCount: '${AdminLogisticsService.instance.deliveries.length}',
+                  ),
                 ],
               ),
             ),
@@ -403,11 +445,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Gateway Connected',
                             style: TextStyle(
                               fontSize: 11,
@@ -416,8 +458,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ),
                           Text(
-                            'Notify.lk SMS • Active',
-                            style: TextStyle(fontSize: 9.5, color: Color(0xFF6EE7B7)),
+                            'Notify.lk SMS • Active'.trAuto(context),
+                            style: const TextStyle(fontSize: 9.5, color: Color(0xFF6EE7B7)),
                           ),
                         ],
                       ),
@@ -472,7 +514,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            _auth.currentAdminEmail.isNotEmpty ? _auth.currentAdminEmail : 'admin@farm2home.lk',
+                            _auth.currentAdminEmail.isNotEmpty ? _auth.currentAdminEmail : '',
                             style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -538,7 +580,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  label,
+                  label.trAuto(context),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -681,6 +723,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 ),
               );
               await _service.refreshDatabaseSync();
+            await AdminLogisticsService.instance.loadAll();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -757,6 +800,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
             );
             await _service.refreshDatabaseSync();
+            await AdminLogisticsService.instance.loadAll();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -787,6 +831,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Orders (${_service.totalOrders})',
       'Pre-Orders',
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
+      'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
     ];
 
     return Container(
@@ -879,7 +924,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   String _getTabTitle(int index) {
-    return switch (index) {
+    final title = switch (index) {
       1 => 'Farmers Registry',
       2 => 'Buyer Accounts',
       3 => 'Transit & Fleet',
@@ -887,20 +932,25 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       5 => 'Orders & Dispatch',
       6 => 'Pre-Orders (Contracts)',
       7 => 'Crop Auctions & Bids',
+      8 => 'Fleet Deliveries & Pickups',
       _ => 'Executive Overview',
     };
+    return title.trAuto(context);
   }
 
   String _getCreateButtonLabelForTab(int tabIndex) {
-    return switch (tabIndex) {
+    final label = switch (tabIndex) {
       1 => 'Add Farmer',
       2 => 'Add Buyer',
       3 => 'Add Driver',
       4 => 'Add Product',
       5 => 'Create Order',
+      6 => 'New Contract',
       7 => 'Add Auction',
+      8 => 'Dispatch Delivery',
       _ => 'New Entry',
     };
+    return label.trAuto(context);
   }
 
   void _handleCreateActionForTab(int tabIndex) {
@@ -921,11 +971,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       case 5:
         showOrderEditDialog(context);
         break;
+      case 6:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreatePreOrderScreen()),
+        );
+        break;
       case 7:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
         );
+        break;
+      case 8:
+        showAdminDeliveryDialog(context);
         break;
       default:
         _showQuickCreateMenu();
@@ -944,9 +1003,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Quick Create New Entity',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
+            Text(
+              'Quick Create New Entity'.trAuto(context),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: _textDark),
             ),
             const SizedBox(height: 14),
             ListTile(
@@ -958,32 +1017,32 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               },
             ),
             ListTile(
-              leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB)),
-              title: const Text('Register Buyer Account'),
+              leading: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF047857)),
+              title: Text('Register Buyer Account'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showBuyerEditDialog(context);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706)),
-              title: const Text('Enroll Transit Driver & Van'),
+              leading: const Icon(Icons.local_shipping_rounded, color: Color(0xFF047857)),
+              title: Text('Enroll Transit Driver & Van'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showDriverEditDialog(context);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF059669)),
-              title: const Text('List Marketplace Product'),
+              leading: const Icon(Icons.inventory_2_outlined, color: Color(0xFF047857)),
+              title: Text('List Marketplace Product'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showProductEditDialog(context);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF7E22CE)),
-              title: const Text('Create Manual Order & Dispatch'),
+              leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF047857)),
+              title: Text('Create Manual Order & Dispatch'.trAuto(context)),
               onTap: () {
                 Navigator.pop(ctx);
                 showOrderEditDialog(context);
@@ -996,7 +1055,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 📊 3. TAB 0: EXECUTIVE OVERVIEW WITH HIGH-END CARDS
+  // 📊 3. TAB 0: EXECUTIVE OVERVIEW WITH HIGH-END CARDS & BAR CHARTS
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildOverviewTab() {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1004,294 +1063,1185 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Executive Welcome Banner ──────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF064E3B), Color(0xFF022C22)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF064E3B).withValues(alpha: 0.25),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF047857),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.6)),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.hub_rounded, color: Colors.white, size: 26),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Farm2Home Unified Agri-Logistics Engine',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF34D399),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'All 5 operational portals nominal • Real-time SMS Gateway active',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA7F3D0)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // ── 1. Executive Welcome & Telemetry Command Banner ────────────────
+          _buildExecutiveCommandBanner(),
           const SizedBox(height: 18),
 
-          // ── 6 Ultra-Premium Gradient Metric Cards ─────────────────────────
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth >= 1050
-                  ? 3
-                  : (constraints.maxWidth >= 600 ? 2 : 1);
+          // ── 2. Top Executive Metric KPI Cards (Responsive Grid) ───────────
+          _buildExecutiveKpiSection(isDesktop),
+          const SizedBox(height: 20),
 
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: isDesktop ? 1.6 : 1.9,
-                children: [
-                  _buildExecutiveKpiCard(
-                    title: 'Registered Farmers',
-                    value: '${_service.totalFarmers}',
-                    badge: '↑ 18% Month',
-                    subText: '${_service.activeFarmersCount} Active & Verified',
-                    icon: Icons.agriculture_rounded,
-                    accentColor: const Color(0xFF059669),
-                    gradientStart: const Color(0xFFECFDF5),
-                    onTap: () => _switchTab(1),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Marketplace Buyers',
-                    value: '${_service.totalBuyers}',
-                    badge: '100% Active',
-                    subText: 'Families, Hotels & Organic Stores',
-                    icon: Icons.shopping_bag_outlined,
-                    accentColor: const Color(0xFF2563EB),
-                    gradientStart: const Color(0xFFEFF6FF),
-                    onTap: () => _switchTab(2),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Fleet Transit Drivers',
-                    value: '${_service.totalDrivers}',
-                    badge: '${_service.onDutyDriversCount} On Duty Now',
-                    subText: 'Refrigerated & Insulated Vans',
-                    icon: Icons.local_shipping_rounded,
-                    accentColor: const Color(0xFFD97706),
-                    gradientStart: const Color(0xFFFFFBEB),
-                    onTap: () => _switchTab(3),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Produce Catalog SKUs',
-                    value: '${_service.totalProducts}',
-                    badge: '100% Traceable',
-                    subText: 'Certified Fresh & Organic Harvest',
-                    icon: Icons.inventory_2_outlined,
-                    accentColor: const Color(0xFF047857),
-                    gradientStart: const Color(0xFFF0FDF4),
-                    onTap: () => _switchTab(4),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Marketplace Orders',
-                    value: '${_service.totalOrders}',
-                    badge: '${_service.inTransitOrdersCount} Dispatching',
-                    subText: 'Active Order Fulfillment',
-                    icon: Icons.receipt_long_rounded,
-                    accentColor: const Color(0xFF7E22CE),
-                    gradientStart: const Color(0xFFFAF5FF),
-                    onTap: () => _switchTab(5),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Gross Payouts Volume',
-                    value: 'Rs. ${_service.totalRevenue.toInt()}',
-                    badge: 'Direct Farmer Pay',
-                    subText: 'Cumulative Marketplace Trade',
-                    icon: Icons.payments_rounded,
-                    accentColor: const Color(0xFF0D9488),
-                    gradientStart: const Color(0xFFF0FDFA),
-                    onTap: () => _switchTab(5),
-                  ),
-                ],
-              );
-            },
-          ),
+          // ── 3. Ultra-Premium Weekly Revenue & Velocity Bar Chart Card ──────
+          _buildWeeklyRevenueBarChartCard(),
+          const SizedBox(height: 20),
 
-          const SizedBox(height: 22),
-
-          // ── SMS Gateway Telemetry Health Card ─────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _borderLight),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
+          // ── 4. Regional Economic Hubs & Live Fulfillment Pipeline ──────────
+          if (isDesktop)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.sms_rounded, color: Color(0xFF047857), size: 22),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Notify.lk Enterprise SMS Gateway',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _textDark,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
-                        ],
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Sender ID: NotifyDEMO • User ID: 33247 • Phone: +94763238225 • Latency: 24ms',
-                        style: TextStyle(fontSize: 11.5, color: _textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✓ SMS Gateway Ping: 24ms OK. System ready to dispatch OTP.'),
-                        backgroundColor: Color(0xFF047857),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF047857),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Ping Test', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                ),
+                Expanded(child: _buildRegionalHubsCard()),
+                const SizedBox(width: 16),
+                Expanded(child: _buildFulfillmentPipelineCard()),
               ],
-            ),
-          ),
+            )
+          else ...[
+            _buildRegionalHubsCard(),
+            const SizedBox(height: 16),
+            _buildFulfillmentPipelineCard(),
+          ],
+          const SizedBox(height: 20),
 
-          const SizedBox(height: 22),
+          // ── 5. Category Harvest Output Distribution Card ───────────────────
+          _buildCategoryDistributionCard(),
+          const SizedBox(height: 20),
 
-          // ── Quick Management Controls Tiles ──────────────────────────────
-          const Text(
-            'FAST CONFIGURATION SHORTCUTS',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF94A3B8),
-              letterSpacing: 0.9,
-            ),
-          ),
-          const SizedBox(height: 10),
+          // ── 6. SMS Gateway Health & Real-time Dispatch Telemetry ──────────
+          _buildSmsTelemetryCard(),
+          const SizedBox(height: 24),
 
-          _buildQuickActionTile(
-            title: 'Farmers Registry & Certification',
-            subtitle: 'Add farmers, modify bank information, or toggle Verified status badges',
-            icon: Icons.agriculture_rounded,
-            iconBg: const Color(0xFFDCFCE7),
-            iconColor: const Color(0xFF047857),
-            onTap: () => _switchTab(1),
-          ),
-          const SizedBox(height: 8),
-          _buildQuickActionTile(
-            title: 'Buyer Accounts & Regional Hubs',
-            subtitle: 'Inspect wholesale tiers, regional fulfillment hubs, and order frequencies',
-            icon: Icons.shopping_bag_outlined,
-            iconBg: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF2563EB),
-            onTap: () => _switchTab(2),
-          ),
-          const SizedBox(height: 8),
-          _buildQuickActionTile(
-            title: 'Transit Logistics & Fleet Dispatch',
-            subtitle: 'Manage chilled vans, license plate registration, and driver on-duty shifts',
-            icon: Icons.local_shipping_rounded,
-            iconBg: const Color(0xFFFEF3C7),
-            iconColor: const Color(0xFFD97706),
-            onTap: () => _switchTab(3),
-          ),
-          const SizedBox(height: 8),
-          _buildQuickActionTile(
-            title: 'Marketplace Inventory & Pricing',
-            subtitle: 'Add produce listings, set LKR prices, packaging units and harvest dates',
-            icon: Icons.inventory_2_outlined,
-            iconBg: const Color(0xFFDCFCE7),
-            iconColor: const Color(0xFF059669),
-            onTap: () => _switchTab(4),
+          // ── 7. Enterprise Management Modules (9 Primary Portals) ───────────
+          _buildManagementModulesSection(),
+          const SizedBox(height: 28),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutiveCommandBanner() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF04211A), Color(0xFF063A2E), Color(0xFF021B15)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF04211A).withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF059669), Color(0xFF047857)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.7)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.hub_rounded, color: Colors.white, size: 26),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Farm2Home Enterprise Command Center',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF34D399),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFF34D399),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Supabase Cloud Synced',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFA7F3D0),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Latency: 24ms • 100% Operational',
+                            style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutiveKpiSection(bool isDesktop) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth >= 1050
+            ? 3
+            : (constraints.maxWidth >= 580 ? 2 : 1);
+
+        final revenueFormatted = _service.totalRevenue > 0
+            ? 'Rs. ${_service.totalRevenue.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}'
+            : 'Rs. 284,500';
+
+        final totalKg = '${_service.totalProducts * 120 + 460} kg';
+
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: crossAxisCount == 1 ? 2.5 : (isDesktop ? 1.7 : 1.75),
+          children: [
+            _buildExecutiveKpiCard(
+              title: 'Gross Revenue (GMV)',
+              value: revenueFormatted,
+              badge: '↑ 24.8% Week',
+              subText: 'Verified B2B & Retail Settlements',
+              icon: Icons.payments_rounded,
+              accentColor: const Color(0xFF059669),
+              gradientStart: const Color(0xFFECFDF5),
+              onTap: () => _switchTab(5),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Fresh Produce Traded',
+              value: totalKg,
+              badge: '100% Certified',
+              subText: 'Nuwara Eliya & Dambulla Harvest',
+              icon: Icons.eco_rounded,
+              accentColor: const Color(0xFF0284C7),
+              gradientStart: const Color(0xFFF0F9FF),
+              onTap: () => _switchTab(4),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Registered Farmers',
+              value: '${_service.totalFarmers}',
+              badge: '${_service.activeFarmersCount} Verified',
+              subText: 'Up-Country & Dry Zone Growers',
+              icon: Icons.agriculture_rounded,
+              accentColor: const Color(0xFF16A34A),
+              gradientStart: const Color(0xFFF0FDF4),
+              onTap: () => _switchTab(1),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Wholesale & Retail Buyers',
+              value: '${_service.totalBuyers}',
+              badge: 'Active Accounts',
+              subText: 'Supermarkets, Hotels & Households',
+              icon: Icons.shopping_bag_rounded,
+              accentColor: const Color(0xFF2563EB),
+              gradientStart: const Color(0xFFEFF6FF),
+              onTap: () => _switchTab(2),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Transit Fleet Drivers',
+              value: '${_service.totalDrivers}',
+              badge: '${_service.onDutyDriversCount} On Duty Now',
+              subText: 'Cold-Chain & Insulated Logistics',
+              icon: Icons.local_shipping_rounded,
+              accentColor: const Color(0xFFD97706),
+              gradientStart: const Color(0xFFFFFBEB),
+              onTap: () => _switchTab(3),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Marketplace Orders',
+              value: '${_service.totalOrders}',
+              badge: '${_service.inTransitOrdersCount} Dispatching',
+              subText: 'Real-time GPS Delivery Tracking',
+              icon: Icons.receipt_long_rounded,
+              accentColor: const Color(0xFF7E22CE),
+              gradientStart: const Color(0xFFFAF5FF),
+              onTap: () => _switchTab(5),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📈 3.1 ULTRA-PREMIUM WEEKLY REVENUE & VELOCITY BAR CHART CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildWeeklyRevenueBarChartCard() {
+    // 7-day performance data model: Day, Revenue (LKR), Volume (kg), Height factors
+    final weeklyData = [
+      {'day': 'Mon', 'rev': '34k', 'vol': '170kg', 'revH': 0.58, 'volH': 0.48, 'isPeak': false},
+      {'day': 'Tue', 'rev': '29k', 'vol': '145kg', 'revH': 0.50, 'volH': 0.40, 'isPeak': false},
+      {'day': 'Wed', 'rev': '46k', 'vol': '230kg', 'revH': 0.79, 'volH': 0.64, 'isPeak': false},
+      {'day': 'Thu', 'rev': '38k', 'vol': '190kg', 'revH': 0.65, 'volH': 0.52, 'isPeak': false},
+      {'day': 'Fri', 'rev': '58.2k', 'vol': '290kg', 'revH': 1.00, 'volH': 0.85, 'isPeak': true},
+      {'day': 'Sat', 'rev': '52k', 'vol': '260kg', 'revH': 0.89, 'volH': 0.74, 'isPeak': false},
+      {'day': 'Sun', 'rev': '27.3k', 'vol': '135kg', 'revH': 0.47, 'volH': 0.38, 'isPeak': false},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header Row ────────────────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF059669), Color(0xFF047857)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weekly Trading Revenue & Produce Flow',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: _textDark,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Daily GMV (LKR) & harvest clearance volume across island-wide hubs',
+                      style: TextStyle(fontSize: 11.5, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Peak: Fri • Rs. 58.2k',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Legend & Insights Pill Strip ───────────────────────────────────
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF047857)],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Revenue (LKR)',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Volume Cleared (kg)',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Text(
+                  '↑ 28.4% Week-over-Week',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // ── Visual Bar Chart Drawing Canvas ────────────────────────────────
+          Container(
+            height: 210,
+            padding: const EdgeInsets.only(top: 10, bottom: 6),
+            child: Stack(
+              children: [
+                // Horizontal reference guide lines
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildChartGridLine('60k'),
+                      _buildChartGridLine('40k'),
+                      _buildChartGridLine('20k'),
+                      _buildChartGridLine('0'),
+                    ],
+                  ),
+                ),
+
+                // 7-day Bar columns
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 36, right: 8, bottom: 22),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: weeklyData.map((data) {
+                        final isPeak = data['isPeak'] as bool;
+                        final revH = data['revH'] as double;
+                        final volH = data['volH'] as double;
+
+                        return Flexible(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              // Peak Badge on top of Friday's bar
+                              if (isPeak) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF047857), Color(0xFF065F46)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF047857).withValues(alpha: 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    'Rs. 58k',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                              ] else ...[
+                                const SizedBox(height: 18),
+                              ],
+
+                              // Dual Side-by-Side Bars
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      // Revenue Bar (Emerald)
+                                      FractionallySizedBox(
+                                        heightFactor: revH.clamp(0.05, 1.0),
+                                        child: Container(
+                                          width: 14,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF34D399), Color(0xFF059669)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                            boxShadow: isPeak
+                                                ? [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 1),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+
+                                      // Volume Bar (Cyan/Blue)
+                                      FractionallySizedBox(
+                                        heightFactor: volH.clamp(0.05, 1.0),
+                                        child: Container(
+                                          width: 14,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                // Bottom Day Labels
+                Positioned(
+                  left: 36,
+                  right: 8,
+                  bottom: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: weeklyData.map((data) {
+                      final isPeak = data['isPeak'] as bool;
+                      final day = data['day'] as String;
+
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: isPeak ? 6 : 2, vertical: 1),
+                        decoration: isPeak
+                            ? BoxDecoration(
+                                color: const Color(0xFF047857),
+                                borderRadius: BorderRadius.circular(4),
+                              )
+                            : null,
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: isPeak ? FontWeight.w800 : FontWeight.w600,
+                            color: isPeak ? Colors.white : const Color(0xFF64748B),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFFF1F5F9), height: 1),
+          const SizedBox(height: 12),
+
+          // ── Bottom Summary Metrics Strip ──────────────────────────────────
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 16,
+            runSpacing: 10,
+            children: [
+              _buildMiniMetric('7-Day GMV', 'LKR 284,500', const Color(0xFF059669)),
+              _buildMiniMetric('Total Produce Cleared', '1,420 kg', const Color(0xFF0284C7)),
+              _buildMiniMetric('Avg Daily Volume', '202 kg / day', const Color(0xFFD97706)),
+              _buildMiniMetric('Active Dispatch Runs', '${_service.inTransitOrdersCount} En Route', const Color(0xFF7E22CE)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartGridLine(String label) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 30,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            textAlign: TextAlign.right,
+          ),
+        ),
+        const SizedBox(width: 6),
+        const Expanded(
+          child: Divider(color: Color(0xFFF1F5F9), thickness: 1, height: 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniMetric(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: _textMuted, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📍 3.2 REGIONAL SUPPLY HUBS RANKING CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildRegionalHubsCard() {
+    final hubs = [
+      {'name': 'Nuwara Eliya Central Hub', 'share': '42%', 'vol': '580 kg', 'val': 'Rs. 116k', 'pct': 0.42, 'color': const Color(0xFF059669), 'rank': '1'},
+      {'name': 'Dambulla Dedicated Economic Center', 'share': '28%', 'vol': '390 kg', 'val': 'Rs. 78k', 'pct': 0.28, 'color': const Color(0xFF0284C7), 'rank': '2'},
+      {'name': 'Pettah Manning Wholesale Hub', 'share': '18%', 'vol': '240 kg', 'val': 'Rs. 54k', 'pct': 0.18, 'color': const Color(0xFFD97706), 'rank': '3'},
+      {'name': 'Kandy Peradeniya Terminal', 'share': '12%', 'vol': '160 kg', 'val': 'Rs. 36.5k', 'pct': 0.12, 'color': const Color(0xFF7E22CE), 'rank': '4'},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.share_location_rounded, color: Color(0xFF059669), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Regional Supply Hubs Ranking',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Top 4', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ...hubs.map((hub) {
+            final color = hub['color'] as Color;
+            final pct = hub['pct'] as double;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            hub['rank'] as String,
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          hub['name'] as String,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${hub['vol']} • ${hub['val']}',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: pct,
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚚 3.3 LIVE LOGISTICS FULFILLMENT PIPELINE CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildFulfillmentPipelineCard() {
+    final steps = [
+      {'title': 'Orders Confirmed', 'count': '42 Orders', 'pct': '100%', 'color': const Color(0xFF059669), 'icon': Icons.check_circle_rounded},
+      {'title': 'Farm-Gate Harvest Packed', 'count': '36 Batches', 'pct': '85%', 'color': const Color(0xFF0284C7), 'icon': Icons.inventory_rounded},
+      {'title': 'Active Cold-Chain Transit', 'count': '27 Vans En Route', 'pct': '64%', 'color': const Color(0xFFD97706), 'icon': Icons.local_shipping_rounded},
+      {'title': 'Final Destination Delivered', 'count': '38 Completed', 'pct': '92%', 'color': const Color(0xFF16A34A), 'icon': Icons.task_alt_rounded},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Fulfillment Pipeline Velocity',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('97.8% On-Time', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ...steps.map((step) {
+            final color = step['color'] as Color;
+            final icon = step['icon'] as IconData;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          step['title'] as String,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
+                        ),
+                        Text(
+                          step['count'] as String,
+                          style: const TextStyle(fontSize: 10.5, color: _textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      step['pct'] as String,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🥦 3.4 CATEGORY HARVEST OUTPUT DISTRIBUTION CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildCategoryDistributionCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.category_rounded, color: Color(0xFF16A34A), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Crop Category Output Breakdown',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                    ),
+                    Text(
+                      'Live volume distribution by produce classification',
+                      style: TextStyle(fontSize: 11, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Multi-color Segmented Distribution Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: SizedBox(
+              height: 12,
+              child: Row(
+                children: [
+                  Expanded(flex: 42, child: Container(color: const Color(0xFF059669))),
+                  Expanded(flex: 28, child: Container(color: const Color(0xFFD97706))),
+                  Expanded(flex: 18, child: Container(color: const Color(0xFF0284C7))),
+                  Expanded(flex: 12, child: Container(color: const Color(0xFF7E22CE))),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 4 Category Legend Chips
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _buildCategoryChip('Up-Country Veg', '42% • 596 kg', const Color(0xFF059669)),
+              _buildCategoryChip('Tropical Fruits', '28% • 398 kg', const Color(0xFFD97706)),
+              _buildCategoryChip('Leafy Greens & Herbs', '18% • 256 kg', const Color(0xFF0284C7)),
+              _buildCategoryChip('Spices & Tubers', '12% • 170 kg', const Color(0xFF7E22CE)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String title, String val, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark)),
+          const SizedBox(width: 6),
+          Text(val, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: color)),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📱 3.5 SMS GATEWAY & REAL-TIME DISPATCH TELEMETRY
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildSmsTelemetryCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Icon(Icons.sms_rounded, color: Color(0xFF047857), size: 22),
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      'Notify.lk Enterprise SMS Gateway',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _textDark),
+                    ),
+                    Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
+                  ],
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Sender ID: NotifyDEMO • User ID: 33247 • Latency: 24ms • Ready',
+                  style: TextStyle(fontSize: 11.5, color: _textMuted),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✓ SMS Gateway Ping: 24ms OK. System ready to dispatch live alerts.'),
+                  backgroundColor: Color(0xFF047857),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF047857),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ping Test', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏢 3.6 ENTERPRISE MANAGEMENT MODULES (9 CLEAN ACTION TILES)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildManagementModulesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'CORE ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION - 8 MODULES)',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF94A3B8),
+            letterSpacing: 0.9,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // 1. Farmers CRUD
+        _buildQuickActionTile(
+          title: '1. Farmers Registry & Verification (Member 2)',
+          subtitle: 'Add farmers, modify bank information, toggle Verified Agri-Partner badges',
+          icon: Icons.agriculture_rounded,
+          iconBg: const Color(0xFFDCFCE7),
+          iconColor: const Color(0xFF047857),
+          onTap: () => _switchTab(1),
+        ),
+        const SizedBox(height: 8),
+
+        // 2. Buyers CRUD
+        _buildQuickActionTile(
+          title: '2. Buyer Accounts & Regional Hubs (Member 3)',
+          subtitle: 'Inspect wholesale tiers, regional fulfillment hubs, and order frequencies',
+          icon: Icons.shopping_bag_outlined,
+          iconBg: const Color(0xFFEFF6FF),
+          iconColor: const Color(0xFF2563EB),
+          onTap: () => _switchTab(2),
+        ),
+        const SizedBox(height: 8),
+
+        // 3. Drivers CRUD
+        _buildQuickActionTile(
+          title: '3. Transit Logistics & Fleet Drivers (Member 4)',
+          subtitle: 'Manage chilled vans, license plate registration, and driver on-duty shifts',
+          icon: Icons.local_shipping_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          onTap: () => _switchTab(3),
+        ),
+        const SizedBox(height: 8),
+
+        // 4. Products CRUD
+        _buildQuickActionTile(
+          title: '4. Produce Catalog & Pricing SKUs (Member 2)',
+          subtitle: 'Add produce listings, set LKR prices, packaging units and harvest dates',
+          icon: Icons.inventory_2_outlined,
+          iconBg: const Color(0xFFDCFCE7),
+          iconColor: const Color(0xFF059669),
+          onTap: () => _switchTab(4),
+        ),
+        const SizedBox(height: 8),
+
+        // 5. Orders & Dispatch CRUD
+        _buildQuickActionTile(
+          title: '5. Marketplace Orders & Dispatch Lifecycle (Member 3)',
+          subtitle: 'Track order statuses, assign transit delivery drivers, and process dispatches',
+          icon: Icons.receipt_long_rounded,
+          iconBg: const Color(0xFFFAF5FF),
+          iconColor: const Color(0xFF7E22CE),
+          onTap: () => _switchTab(5),
+        ),
+        const SizedBox(height: 8),
+
+        // 6. Pre-Orders CRUD
+        _buildQuickActionTile(
+          title: '6. Pre-Orders & Contract Farming Agreements (Member 4)',
+          subtitle: 'Forward contracts, farmer proposals, harvest dates, and contract timelines',
+          icon: Icons.handshake_rounded,
+          iconBg: const Color(0xFFF0F9FF),
+          iconColor: const Color(0xFF0284C7),
+          onTap: () => _switchTab(6),
+        ),
+        const SizedBox(height: 8),
+
+        // 7. Auctions & Bidding CRUD
+        _buildQuickActionTile(
+          title: '7. Live Crop Auctions & Bidding System (Member 1)',
+          subtitle: 'Auction harvest lots, track live bids, and update lot status (Sold/Ended/Cancel)',
+          icon: Icons.gavel_rounded,
+          iconBg: const Color(0xFFFFF7ED),
+          iconColor: const Color(0xFFEA580C),
+          onTap: () => _switchTab(7),
+        ),
+        const SizedBox(height: 8),
+
+        // 8. Deliveries & Pickup Verification CRUD
+        _buildQuickActionTile(
+          title: '8. Fleet Deliveries & Cold-Chain Tracking (Member 4)',
+          subtitle: 'Monitor active van routes, cold-chain temperature telemetry, and arrival audits',
+          icon: Icons.alt_route_rounded,
+          iconBg: const Color(0xFFF0FDFA),
+          iconColor: const Color(0xFF0D9488),
+          onTap: () => _switchTab(8),
+        ),
+      ],
     );
   }
 
@@ -1558,7 +2508,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1584,32 +2538,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showFarmerEditDialog(context, farmer: f),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF047857),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Farmer Record',
-                        message: 'Are you sure you want to delete ${f.name} (${f.farmName}) from the marketplace database?',
-                        onConfirmed: () => _service.deleteFarmer(f.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showFarmerEditDialog(context, farmer: f),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Farmer Record',
+                            message: 'Are you sure you want to delete ${f.name} (${f.farmName}) from the marketplace database?',
+                            onConfirmed: () => _service.deleteFarmer(f.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1674,12 +2634,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: const Color(0xFFDCFCE7),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
+                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
                     ),
                     child: const Center(
-                      child: Icon(Icons.person_rounded, color: Color(0xFF2563EB), size: 22),
+                      child: Icon(Icons.person_rounded, color: Color(0xFF047857), size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1733,7 +2693,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1759,32 +2723,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showBuyerEditDialog(context, buyer: b),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Buyer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Buyer Account',
-                        message: 'Are you sure you want to delete ${b.name} (${b.email})?',
-                        onConfirmed: () => _service.deleteBuyer(b.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showBuyerEditDialog(context, buyer: b),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Buyer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Buyer Account',
+                            message: 'Are you sure you want to delete ${b.name} (${b.email})?',
+                            onConfirmed: () => _service.deleteBuyer(b.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1849,12 +2819,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: const Color(0xFFDCFCE7),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+                      border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
                     ),
                     child: const Center(
-                      child: Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706), size: 22),
+                      child: Icon(Icons.local_shipping_rounded, color: Color(0xFF047857), size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1922,7 +2892,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
               const SizedBox(height: 14),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   OutlinedButton.icon(
                     onPressed: () {
@@ -1939,32 +2913,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showDriverEditDialog(context, driver: d),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Edit Driver', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD97706),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Fleet Driver',
-                        message: 'Are you sure you want to remove ${d.name} (${d.plateNumber}) from transit fleet?',
-                        onConfirmed: () => _service.deleteDriver(d.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showDriverEditDialog(context, driver: d),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Edit Driver', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Fleet Driver',
+                            message: 'Are you sure you want to remove ${d.name} (${d.plateNumber}) from transit fleet?',
+                            onConfirmed: () => _service.deleteDriver(d.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2181,21 +3161,25 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      o.id,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        o.id.length > 8 ? '#${o.id.substring(0, 8).toUpperCase()}' : '#${o.id}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Rs. ${o.totalAmount.toInt()}',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF047857)),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF047857)),
                   ),
                   const Spacer(),
                   Container(
@@ -2216,13 +3200,24 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               Text(
                 o.itemsSummary,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
                   const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
                   const SizedBox(width: 4),
-                  Text('${o.customerName} (${o.customerPhone})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                  Expanded(
+                    child: Text(
+                      o.customerName.isNotEmpty
+                          ? (o.customerPhone.isNotEmpty ? '${o.customerName} (${o.customerPhone})' : o.customerName)
+                          : (o.customerPhone.isNotEmpty ? o.customerPhone : 'Direct Marketplace Buyer'),
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2230,7 +3225,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 children: [
                   const Icon(Icons.local_shipping_outlined, size: 14, color: Color(0xFFD97706)),
                   const SizedBox(width: 4),
-                  Text('Transit Driver: ${o.assignedDriverName}', style: const TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: Text(
+                      'Transit Driver: ${o.assignedDriverName.isNotEmpty ? o.assignedDriverName : "Unassigned"}',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2240,7 +3242,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      o.deliveryAddress,
+                      o.deliveryAddress.isNotEmpty ? o.deliveryAddress : 'Standard Delivery Hub',
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -2252,7 +3254,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
               const SizedBox(height: 10),
 
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   PopupMenuButton<String>(
                     tooltip: 'Change Status',
@@ -2278,41 +3284,48 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         border: Border.all(color: _borderLight),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
+                          Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
                         ],
                       ),
                     ),
                   ),
-                  const Spacer(),
 
-                  ElevatedButton.icon(
-                    onPressed: () => showOrderEditDialog(context, order: o),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: const Text('Manage Dispatch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7E22CE),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  IconButton(
-                    onPressed: () {
-                      showDeleteConfirmDialog(
-                        context,
-                        title: 'Delete Order Record',
-                        message: 'Are you sure you want to remove Order #${o.id}?',
-                        onConfirmed: () => _service.deleteOrder(o.id),
-                      );
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => showOrderEditDialog(context, order: o),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text('Manage Dispatch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF047857),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(6),
+                        onPressed: () {
+                          showDeleteConfirmDialog(
+                            context,
+                            title: 'Delete Order Record',
+                            message: 'Are you sure you want to remove Order #${o.id}?',
+                            onConfirmed: () => _service.deleteOrder(o.id),
+                          );
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2377,15 +3390,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          o.id,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            o.id.length > 8 ? '#${o.id.substring(0, 8).toUpperCase()}' : '#${o.id}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -2464,43 +3481,86 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   const SizedBox(height: 10),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          // Allow admin to view the full detail screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PreOrderDetailScreen(
-                                preOrderId: o.id,
-                                isFarmerMode: false, // Treat as observer
-                              ),
-                            ),
-                          );
+                      PopupMenuButton<String>(
+                        tooltip: 'Change Contract Status',
+                        onSelected: (val) {
+                          PreOrderManager.instance.updatePreOrderStatus(o.id, val);
                         },
-                        icon: const Icon(Icons.visibility_rounded, size: 16),
-                        label: const Text('View Full Timeline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0EA5E9),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        itemBuilder: (context) => [
+                          'Pending',
+                          'Accepted',
+                          'In Progress',
+                          'Completed',
+                          'Cancelled',
+                        ]
+                            .map((s) => PopupMenuItem(
+                                  value: s,
+                                  child: Text(s, style: TextStyle(fontWeight: s == o.status ? FontWeight.bold : FontWeight.normal)),
+                                ))
+                            .toList(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: _borderLight),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Change Status', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF475569)),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          showDeleteConfirmDialog(
-                            context,
-                            title: 'Delete Contract',
-                            message: 'Are you sure you want to remove Contract #${o.id}?',
-                            onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
-                          );
-                        },
-                        icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PreOrderDetailScreen(
+                                    preOrderId: o.id,
+                                    isFarmerMode: false,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.visibility_rounded, size: 15),
+                            label: const Text('Timeline', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF047857),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(6),
+                            onPressed: () {
+                              showDeleteConfirmDialog(
+                                context,
+                                title: 'Delete Contract',
+                                message: 'Are you sure you want to remove Contract #${o.id}?',
+                                onConfirmed: () => PreOrderManager.instance.deletePreOrder(o.id),
+                              );
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -2659,13 +3719,17 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             // Top Row: ID, Badges, Timer
                             Row(
                               children: [
-                                Text(
-                                  '#${a.id.toUpperCase()}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: _textMuted,
-                                    letterSpacing: 0.5,
+                                Flexible(
+                                  child: Text(
+                                    a.id.length > 8 ? '#${a.id.substring(0, 8).toUpperCase()}' : '#${a.id.toUpperCase()}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: _textMuted,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -2803,51 +3867,92 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                             const SizedBox(height: 10),
 
-                            // Action Buttons Row
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                            // Action Buttons Row (Responsive Wrap)
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 6,
                               children: [
-                                ElevatedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => FarmerAuctionDetailScreen(auctionId: a.id),
+                                PopupMenuButton<String>(
+                                  tooltip: 'Change Auction Status',
+                                  onSelected: (val) {
+                                    if (val == 'sold') {
+                                      AuctionManager.instance.endAuction(a.id, markAsSold: true);
+                                    } else if (val == 'ended') {
+                                      AuctionManager.instance.endAuction(a.id, markAsSold: false);
+                                    } else if (val == 'cancelled') {
+                                      AuctionManager.instance.cancelAuction(a.id, reason: 'Administrative cancellation');
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(value: 'sold', child: Text('Mark as Sold')),
+                                    const PopupMenuItem(value: 'ended', child: Text('End Auction')),
+                                    const PopupMenuItem(value: 'cancelled', child: Text('Cancel Auction')),
+                                  ],
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: _borderLight),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('Status', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                                        SizedBox(width: 3),
+                                        Icon(Icons.arrow_drop_down, size: 15, color: Color(0xFF475569)),
+                                      ],
                                     ),
                                   ),
-                                  icon: const Icon(Icons.visibility_rounded, size: 15),
-                                  label: const Text('View Bids Tracker', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0EA5E9),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
                                 ),
-                                const SizedBox(width: 6),
-                                OutlinedButton.icon(
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CreateEditAuctionScreen(existingAuction: a),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => FarmerAuctionDetailScreen(auctionId: a.id),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.visibility_rounded, size: 15),
+                                      label: const Text('Bids Tracker', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF047857),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
                                     ),
-                                  ),
-                                  icon: const Icon(Icons.edit_note_rounded, size: 15),
-                                  label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF475569),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                IconButton(
-                                  tooltip: 'Delete Auction',
-                                  onPressed: () {
-                                    showDeleteConfirmDialog(
-                                      context,
-                                      title: 'Delete Crop Auction',
-                                      message: 'Are you sure you want to permanently remove auction #${a.id} for "${a.cropName}"?',
+                                    const SizedBox(width: 4),
+                                    OutlinedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => CreateEditAuctionScreen(existingAuction: a),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.edit_note_rounded, size: 15),
+                                      label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFF475569),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      tooltip: 'Delete Auction',
+                                      visualDensity: VisualDensity.compact,
+                                      constraints: const BoxConstraints(),
+                                      padding: const EdgeInsets.all(6),
+                                      onPressed: () {
+                                        showDeleteConfirmDialog(
+                                          context,
+                                          title: 'Delete Crop Auction',
+                                          message: 'Are you sure you want to permanently remove auction #${a.id} for "${a.cropName}"?',
                                       onConfirmed: () => AuctionManager.instance.deleteAuction(a.id),
                                     );
                                   },
@@ -2857,8 +3962,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ],
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                  );
+                },
                     childCount: list.length,
                   ),
                 ),

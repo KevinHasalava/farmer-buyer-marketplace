@@ -15,7 +15,7 @@ class FarmerProfileManager extends ChangeNotifier {
   static final FarmerProfileManager instance = FarmerProfileManager._internal();
   factory FarmerProfileManager() => instance;
 
-  FarmerProfileModel _profile = FarmerProfileModel.defaultFarmer;
+  FarmerProfileModel _profile = FarmerProfileModel.empty;
   bool _isLoading = false;
 
   FarmerProfileModel get profile => _profile;
@@ -42,21 +42,80 @@ class FarmerProfileManager extends ChangeNotifier {
       if (SupabaseConfig.isInitialized) {
         final user = SupabaseConfig.auth.currentUser;
         if (user != null) {
-          final metadata = user.userMetadata;
-          if (metadata != null) {
+          try {
+            final profileRow = await SupabaseConfig.client
+                .from('profiles')
+                .select()
+                .eq('id', user.id)
+                .maybeSingle();
+
+            final farmerRow = await SupabaseConfig.client
+                .from('farmers')
+                .select()
+                .eq('id', user.id)
+                .maybeSingle();
+
+            final metadata = user.userMetadata ?? {};
+            final pMap = profileRow != null
+                ? Map<String, dynamic>.from(profileRow)
+                : <String, dynamic>{};
+            final fMap = farmerRow != null
+                ? Map<String, dynamic>.from(farmerRow)
+                : <String, dynamic>{};
+
             _profile = _profile.copyWith(
               id: user.id,
-              name: metadata['full_name'] as String? ?? _profile.name,
-              phone: metadata['phone'] as String? ?? user.phone ?? _profile.phone,
-              email: user.email ?? _profile.email,
-              farmName: metadata['farm_name'] as String? ?? _profile.farmName,
-              district: metadata['district'] as String? ?? _profile.district,
-              location: metadata['location'] as String? ?? _profile.location,
-              agrarianCenter: metadata['agrarian_center'] as String? ?? _profile.agrarianCenter,
-              scale: metadata['scale'] as String? ?? _profile.scale,
-              farmingPractice: metadata['practice'] as String? ?? _profile.farmingPractice,
-              avatarUrl: metadata['avatar_url'] as String? ?? _profile.avatarUrl,
+              name: pMap['full_name'] as String? ??
+                  metadata['full_name'] as String? ??
+                  _profile.name,
+              phone: pMap['phone'] as String? ??
+                  metadata['phone'] as String? ??
+                  user.phone ??
+                  _profile.phone,
+              email: pMap['email'] as String? ?? user.email ?? _profile.email,
+              avatarUrl: pMap['avatar_url'] as String? ??
+                  metadata['avatar_url'] as String? ??
+                  _profile.avatarUrl,
+              district: fMap['district'] as String? ??
+                  pMap['district'] as String? ??
+                  metadata['district'] as String? ??
+                  _profile.district,
+              location: fMap['location'] as String? ??
+                  fMap['district'] as String? ??
+                  metadata['location'] as String? ??
+                  _profile.location,
+              farmName: fMap['farm_name'] as String? ??
+                  metadata['farm_name'] as String? ??
+                  _profile.farmName,
+              agrarianCenter: fMap['agrarian_center'] as String? ??
+                  metadata['agrarian_center'] as String? ??
+                  _profile.agrarianCenter,
+              scale: fMap['scale'] as String? ??
+                  metadata['scale'] as String? ??
+                  _profile.scale,
+              farmingPractice: fMap['practice'] as String? ??
+                  metadata['practice'] as String? ??
+                  _profile.farmingPractice,
+              crops: (fMap['crops'] is List)
+                  ? (fMap['crops'] as List).map((e) => e.toString()).toList()
+                  : (metadata['crops'] is List
+                      ? (metadata['crops'] as List)
+                          .map((e) => e.toString())
+                          .toList()
+                      : _profile.crops),
+              nic: fMap['nic'] as String? ??
+                  metadata['nic'] as String? ??
+                  _profile.nic,
+              bankName: fMap['bank_name'] as String? ??
+                  metadata['bank_name'] as String? ??
+                  _profile.bankName,
+              accountNumber: fMap['account_number'] as String? ??
+                  metadata['account_number'] as String? ??
+                  _profile.accountNumber,
+              isVerified: fMap['is_verified'] as bool? ?? _profile.isVerified,
             );
+          } catch (e) {
+            debugPrint('[FarmerProfileManager] Supabase fetch error: $e');
           }
           await prefs.setString(_kFarmerProfileKey, jsonEncode(_profile.toJson()));
         }

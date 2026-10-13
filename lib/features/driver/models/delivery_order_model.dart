@@ -53,6 +53,29 @@ class DeliveryOrderModel {
     };
   }
 
+  /// Format matching remote Supabase `public.driver_deliveries` columns.
+  Map<String, dynamic> toSupabaseMap() {
+    final cleanId = id.replaceAll('#', '').trim();
+    return {
+      'id': cleanId,
+      'order_number': orderNumber.startsWith('#') ? orderNumber : '#$orderNumber',
+      'status': status,
+      'crate_count': crateCount,
+      'pickup_due_text': pickupDueText,
+      'farmer_name': farmerName,
+      'farmer_address': farmerAddress,
+      'buyer_name': buyerName,
+      'buyer_address': buyerAddress,
+      'items_summary': produceDescription,
+      'produce_description': produceDescription,
+      'payout_amount': 'Rs. ${driverFee.toStringAsFixed(0)}',
+      'driver_fee': driverFee,
+      'is_priority': isPriority,
+      'created_at': (createdAt ?? DateTime.now()).toIso8601String(),
+      'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
+    };
+  }
+
   static DateTime _parseDate(dynamic val) {
     if (val is DateTime) return val;
     if (val is String) {
@@ -63,22 +86,49 @@ class DeliveryOrderModel {
   }
 
   factory DeliveryOrderModel.fromMap(Map<String, dynamic> map, String docId) {
+    final feeVal = (map['driverFee'] as num?)?.toDouble() ??
+        (map['driver_fee'] as num?)?.toDouble() ??
+        (map['payout_amount'] != null
+            ? double.tryParse(map['payout_amount'].toString().replaceAll(RegExp(r'[^0-9.]'), ''))
+            : null) ??
+        (map['cod_amount'] != null
+            ? double.tryParse(map['cod_amount'].toString().replaceAll(RegExp(r'[^0-9.]'), ''))
+            : null) ??
+        0.0;
+
     return DeliveryOrderModel(
       id: docId,
-      orderNumber: map['orderNumber'] as String? ?? '#FH-8841',
-      status: map['status'] as String? ?? 'Ready for Pickup',
-      crateCount: map['crateCount'] as String? ?? '1 Crate',
-      pickupDueText: map['pickupDueText'] as String? ?? 'Pickup Due in 20m',
-      farmerName: map['farmerName'] as String? ?? 'K. M. Bandara',
-      farmerAddress: map['farmerAddress'] as String? ?? 'Upper Division, Hakgala Rd, Nuwara Eliya',
-      buyerName: map['buyerName'] as String? ?? 'Chaminda Perera',
-      buyerAddress: map['buyerAddress'] as String? ?? 'No. 42 Havelock Rd, Colombo 05',
-      produceDescription: map['produceDescription'] as String? ?? '5 kg (Carrots & Leeks)',
-      producePackageType: map['producePackageType'] as String? ?? 'Cool storage packed',
-      driverFee: (map['driverFee'] as num?)?.toDouble() ?? 1450.0,
-      isPriority: map['isPriority'] as bool? ?? false,
-      createdAt: _parseDate(map['createdAt']),
-      updatedAt: _parseDate(map['updatedAt']),
+      orderNumber: map['orderNumber'] as String? ??
+          map['order_number'] as String? ??
+          '#$docId',
+      status: map['status'] as String? ?? 'Pending',
+      crateCount: map['crateCount'] as String? ??
+          map['crate_count'] as String? ??
+          '1 Crate',
+      pickupDueText: map['pickupDueText'] as String? ?? 'Pickup Pending',
+      farmerName: map['farmerName'] as String? ??
+          map['farmer_name'] as String? ??
+          'Farmer',
+      farmerAddress: map['farmerAddress'] as String? ??
+          map['farmer_address'] as String? ??
+          'Farm Depot',
+      buyerName: map['buyerName'] as String? ??
+          map['buyer_name'] as String? ??
+          'Buyer',
+      buyerAddress: map['buyerAddress'] as String? ??
+          map['buyer_address'] as String? ??
+          '',
+      produceDescription: map['produceDescription'] as String? ??
+          map['items_summary'] as String? ??
+          'Fresh Farm Produce',
+      producePackageType: map['producePackageType'] as String? ??
+          'Cool storage packed',
+      driverFee: feeVal,
+      isPriority: map['isPriority'] as bool? ??
+          map['is_priority'] as bool? ??
+          false,
+      createdAt: _parseDate(map['createdAt'] ?? map['created_at']),
+      updatedAt: _parseDate(map['updatedAt'] ?? map['updated_at']),
     );
   }
 

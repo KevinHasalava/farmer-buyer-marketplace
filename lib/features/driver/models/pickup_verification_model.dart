@@ -52,6 +52,26 @@ class PickupVerificationModel {
     };
   }
 
+  /// Maps directly to remote Supabase `public.pickup_verifications` columns.
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'order_id': orderId,
+      'crate_id': crateId,
+      'farmer_name': farmerName,
+      'farm_location': farmLocation,
+      'gate_info': gateInfo,
+      'handover_pin': handoverPin,
+      'is_pin_matched': isPinMatched,
+      'van_temp': '${vanTemperature.toStringAsFixed(1)}°C',
+      'ambient_temp': '${ambientTemperature.toStringAsFixed(1)}°C',
+      'verified_weight': verifiedWeight,
+      'checklist_items': checklistItems,
+      'status': status,
+      'verified_at': verifiedAt.toIso8601String(),
+    };
+  }
+
   static DateTime _parseDate(dynamic val) {
     if (val is DateTime) return val;
     if (val is String) {
@@ -62,21 +82,49 @@ class PickupVerificationModel {
   }
 
   factory PickupVerificationModel.fromMap(Map<String, dynamic> map, String docId) {
+    final vTemp = (map['vanTemperature'] as num?)?.toDouble() ??
+        (map['van_temp'] != null
+            ? double.tryParse(map['van_temp'].toString().replaceAll(RegExp(r'[^0-9.]'), ''))
+            : null) ??
+        4.2;
+
+    final aTemp = (map['ambientTemperature'] as num?)?.toDouble() ??
+        (map['ambient_temp'] != null
+            ? double.tryParse(map['ambient_temp'].toString().replaceAll(RegExp(r'[^0-9.]'), ''))
+            : null) ??
+        16.0;
+
     return PickupVerificationModel(
       id: docId,
-      orderId: map['orderId']?.toString() ?? '',
-      crateId: map['crateId']?.toString() ?? '',
-      farmerName: map['farmerName']?.toString() ?? '',
-      farmLocation: map['farmLocation']?.toString() ?? '',
-      gateInfo: map['gateInfo']?.toString() ?? '',
-      handoverPin: map['handoverPin']?.toString() ?? '',
-      isPinMatched: map['isPinMatched'] == true,
-      vanTemperature: (map['vanTemperature'] as num?)?.toDouble() ?? 4.2,
-      ambientTemperature: (map['ambientTemperature'] as num?)?.toDouble() ?? 16.0,
-      verifiedWeight: map['verifiedWeight']?.toString() ?? '5.0 kg',
-      checklistItems: List<String>.from(map['checklistItems'] ?? []),
+      orderId: map['order_id']?.toString() ??
+          map['orderId']?.toString() ??
+          '',
+      crateId: map['crate_id']?.toString() ??
+          map['crateId']?.toString() ??
+          '',
+      farmerName: map['farmer_name']?.toString() ??
+          map['farmerName']?.toString() ??
+          '',
+      farmLocation: map['farm_location']?.toString() ??
+          map['farmLocation']?.toString() ??
+          '',
+      gateInfo: map['gate_info']?.toString() ??
+          map['gateInfo']?.toString() ??
+          '',
+      handoverPin: map['handover_pin']?.toString() ??
+          map['handoverPin']?.toString() ??
+          '',
+      isPinMatched: map['is_pin_matched'] == true ||
+          map['isPinMatched'] == true,
+      vanTemperature: vTemp,
+      ambientTemperature: aTemp,
+      verifiedWeight: map['verified_weight']?.toString() ??
+          map['verifiedWeight']?.toString() ??
+          '5.0 kg',
+      checklistItems: List<String>.from(
+          map['checklist_items'] ?? map['checklistItems'] ?? []),
       status: map['status']?.toString() ?? 'VERIFIED_AND_LOADED',
-      verifiedAt: _parseDate(map['verifiedAt']),
+      verifiedAt: _parseDate(map['verified_at'] ?? map['verifiedAt']),
     );
   }
 

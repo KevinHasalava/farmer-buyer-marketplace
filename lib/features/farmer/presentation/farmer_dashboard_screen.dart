@@ -21,6 +21,8 @@ import '../../../core/services/order_lifecycle_manager.dart';
 import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../../orders_chat/presentation/chat_detail_screen.dart';
 import '../../../services/chat_service.dart';
+import '../../buyer/services/buyer_review_service.dart';
+import '../../buyer/presentation/buyer_reviews_screen.dart';
 
 /// Pixel-perfect Farmer Dashboard Screen matching reference design
 class FarmerDashboardScreen extends StatefulWidget {
@@ -135,9 +137,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ),
                 ),
                 icon: const Icon(Icons.handshake_rounded),
-                label: const Text(
-                  'Contract Farming / Pre-Orders',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  'Contract Farming / Pre-Orders'.trAuto(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -162,9 +164,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                   ),
                 ),
                 icon: const Icon(Icons.gavel_rounded),
-                label: const Text(
-                  'Crop Auctions / Bidding System',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  'Crop Auctions / Bidding System'.trAuto(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -294,6 +296,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Quick Actions ─────────────────────────────────────────
                 _buildQuickActions(context),
+                const SizedBox(height: 20),
+
+                // ── Buyer Feedback & Ratings (Idea 2 ⭐) ───────────────────
+                _buildFarmerReviewsBanner(context),
                 const SizedBox(height: 20),
 
                 // ── Crop Auctions & Bidding Live Banner ───────────────────
@@ -541,9 +547,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                 ),
               ),
               const SizedBox(height: 3),
-              const Text(
-                'Hakgala Valley Organic Farm • Nuwara Eliya',
-                style: TextStyle(
+              Text(
+                'Hakgala Valley Organic Farm • Nuwara Eliya'.trAuto(context),
+                style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF64748B),
@@ -1170,6 +1176,144 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // ── Buyer Feedback & Farmer Ratings Banner (Idea 2 ⭐) ──────────────────────
+  Widget _buildFarmerReviewsBanner(BuildContext context) {
+    return ListenableBuilder(
+      listenable: BuyerReviewService.instance,
+      builder: (context, _) {
+        final farmerName = _profileManager.profile.name.isNotEmpty
+            ? _profileManager.profile.name
+            : 'K. M. Bandara';
+        final reviews = BuyerReviewService.instance.reviewsForFarmer(farmerName);
+        final avgRating = BuyerReviewService.instance.getAverageRatingForFarmer(farmerName);
+        final pendingReplies = reviews.where((r) => r.farmerReply == null || r.farmerReply!.trim().isEmpty).length;
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E3A2F), Color(0xFF2E6B4E)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2E6B4E).withValues(alpha: 0.25),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.6)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFBBF24)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${avgRating.toStringAsFixed(1)} ★ (${reviews.length} Reviews)',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFFDE68A),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (pendingReplies > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFF87171).withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.mark_chat_unread_rounded, size: 12, color: Color(0xFFFCA5A5)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$pendingReplies Pending',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFCA5A5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Buyer Feedback & Ratings ⭐'.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Buyers rate your harvest freshness & delivery. Respond to buyer reviews to build trust.'
+                    .trAuto(context),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFD1FAE5),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BuyerReviewsScreen(initialFarmerName: farmerName),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F3822),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                  icon: const Icon(Icons.rate_review_rounded, size: 16, color: Color(0xFF0F3822)),
+                  label: Text(
+                    'Manage Reviews & Replies'.trAuto(context),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

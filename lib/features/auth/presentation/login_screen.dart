@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../../widgets/premium/google_brand_button.dart';
 import '../../../core/routes/app_router.dart';
@@ -80,51 +81,18 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     if (SupabaseConfig.isInitialized) {
+      // Email/password sign-in is handled by _submit(); this only covers the
+      // return from an OAuth (Google) redirect.
       _authSubscription =
           SupabaseConfig.auth.onAuthStateChange.listen((data) async {
-        final session = data.session;
-        if (session != null && mounted) {
-          final sbUser = session.user;
-          final metadata = sbUser.userMetadata ?? {};
-          UserRole targetRole = _selectedRole;
-          final registeredRoleStr =
-              (metadata['role'] as String?)?.toLowerCase();
-          if (registeredRoleStr == 'farmer' ||
-              (metadata['is_farmer'] as bool? ?? false)) {
-            targetRole = UserRole.farmer;
-          } else if (registeredRoleStr == 'buyer') {
-            targetRole = UserRole.buyer;
-          } else if (registeredRoleStr == 'driver') {
-            targetRole = UserRole.driver;
-          }
-
-          await context.read<AppSettings>().setRole(targetRole);
-          final effectiveName = (metadata['full_name'] as String?) ??
-              sbUser.email?.split('@').first ??
-              'User';
-          final phone = sbUser.phone ?? (metadata['phone'] as String? ?? '');
-
-          if (targetRole == UserRole.farmer) {
-            await FarmerProfileManager.instance.updateProfile(
-              name: effectiveName,
-              email: sbUser.email,
-              phone: phone.isNotEmpty ? phone : null,
-            );
-          } else if (targetRole == UserRole.buyer) {
-            await BuyerProfileManager.instance.updateProfile(
-              name: effectiveName,
-              email: sbUser.email,
-              phone: phone.isNotEmpty ? phone : null,
-            );
-          } else if (targetRole == UserRole.driver) {
-            await DriverProfileManager.instance.updateProfile(
-              fullName: effectiveName,
-              mobileNumber: phone.isNotEmpty ? phone : null,
-            );
-          }
-
-          if (mounted) {
-            context.go(AppRoutes.homeFor(targetRole));
+        if (data.event == AuthChangeEvent.signedIn &&
+            data.session != null &&
+            mounted &&
+            !_isLoading) {
+          try {
+            await _enterApp();
+          } on AuthException catch (e) {
+            _showError(e.message);
           }
         }
       });
@@ -150,97 +118,43 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // ── Supabase submit ──────────────────────────────────────────────────
-  Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+  // ── Supabase sign-in ─────────────────────────────────────────────────
+  bool _entering = false;
 
-    final inputEmail = _emailCtrl.text.trim();
-    final inputPassword = _passwordCtrl.text;
-
-    // ── Master Admin Authentication Interceptor ─────────────────────────
-    // Allows logging in as Master Admin from any role screen (Buyer, Farmer, Driver)
-    if (AdminAuthService.instance.isMasterAdminEmail(inputEmail)) {
-      if (AdminAuthService.instance.isValidAdminCredentials(inputEmail, inputPassword)) {
-        setState(() => _isLoading = true);
-        HapticFeedback.mediumImpact();
-
-        final success = await AdminAuthService.instance.login(
-          email: inputEmail,
-          password: inputPassword,
-          rememberSession: true,
-        );
-
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.shield_rounded, color: Colors.white, size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '✓ Master Admin verified. Redirecting to Admin Console...',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: const Color(0xFF047857),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-          context.go(AppRoutes.adminPanel);
-          return;
-        }
-      } else {
-        _showError('Invalid administrator password. Please check your credentials.');
-        return;
-      }
-    }
-
-    setState(() => _isLoading = true);
+  /// Reads the role from the database and opens the matching home screen.
+  Future<void> _enterApp() async {
+    if (_entering) return;
+    _entering = true;
     try {
-      final user = await _authService.signIn(
-        email: inputEmail,
-        password: inputPassword,
-      );
-
+      final roleStr = await _authService.fetchRole();
       if (!mounted) return;
 
-      // Auto-detect registered role from Supabase metadata
-      UserRole targetRole = _selectedRole;
-      final registeredRoleStr =
-          (user.userMetadata?['role'] as String?)?.toLowerCase();
-      if (registeredRoleStr == 'farmer' || user.isFarmer) {
-        targetRole = UserRole.farmer;
-      } else if (registeredRoleStr == 'buyer') {
-        targetRole = UserRole.buyer;
-      } else if (registeredRoleStr == 'driver') {
-        targetRole = UserRole.driver;
+      if (roleStr == 'admin') {
+        final ok = await AdminAuthService.instance.adoptCurrentSession();
+        if (ok && mounted) context.go(AppRoutes.adminPanel);
+        return;
       }
 
+      final targetRole = UserRole.fromName(roleStr) ?? UserRole.buyer;
       await context.read<AppSettings>().setRole(targetRole);
 
-      final effectiveName =
-          user.name.isNotEmpty && !user.name.startsWith('User ')
-              ? user.name
-              : _emailCtrl.text.trim().split('@').first;
-      final phone = user.phone;
+      final user = _authService.currentUser;
+      final effectiveName = (user?.name.isNotEmpty ?? false)
+          ? user!.name
+          : (user?.email.split('@').first ?? '');
+      final email = user?.email;
+      final phone = user?.phone ?? '';
 
       if (targetRole == UserRole.farmer) {
         await FarmerProfileManager.instance.updateProfile(
           name: effectiveName,
-          email: user.email,
+          email: email,
           phone: phone.isNotEmpty ? phone : null,
         );
       } else if (targetRole == UserRole.buyer) {
         await BuyerProfileManager.instance.updateProfile(
           name: effectiveName,
-          email: user.email,
+          email: email,
           phone: phone.isNotEmpty ? phone : null,
         );
       } else if (targetRole == UserRole.driver) {
@@ -250,20 +164,65 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
 
-      if (mounted) {
-        context.go(AppRoutes.homeFor(targetRole));
+      if (mounted) context.go(AppRoutes.homeFor(targetRole));
+    } finally {
+      _entering = false;
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final email = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
+
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    // ── Dedicated Master Admin Access ─────────────────────────────────
+    // Regardless of which user/role was selected on previous screens,
+    // entering the master admin credentials (admin@farm2home.lk / Admin@2026)
+    // grants direct entry to the Admin Dashboard console.
+    if (email.toLowerCase() == AdminAuthService.masterAdminEmail.toLowerCase() &&
+        password == AdminAuthService.masterAdminPassword) {
+      try {
+        await AdminAuthService.instance.authenticateMasterAdmin(
+          email,
+          'Master Administrator',
+        );
+
+        // Also attempt Supabase sign-in in background if account exists
+        try {
+          if (SupabaseConfig.isInitialized) {
+            await SupabaseConfig.auth.signInWithPassword(
+              email: email,
+              password: password,
+            );
+          }
+        } catch (_) {}
+
+        if (!mounted) return;
+        context.go(AppRoutes.adminPanel);
+        return;
+      } catch (e) {
+        _showError('Admin login failed: $e');
+        return;
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
+    }
+
+    try {
+      await _authService.signIn(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      await _enterApp();
     } on AuthException catch (e) {
-      final msg = e.message.toLowerCase();
-      if (msg.contains('rate limit')) {
-        if (mounted) {
-          _showRateLimitDialog();
-          return;
-        }
-      }
       _showError(e.message);
     } catch (e) {
-      _showError('Authentication error: ${e.toString()}');
+      _showError('Sign in failed: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -283,118 +242,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _showRateLimitDialog() {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.hourglass_top_rounded, color: Color(0xFFE65100), size: 24),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                context.tr.emailNoticeTitle,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr.emailNoticeBody,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8E1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFFE082)),
-              ),
-              child: Text(
-                context.tr.emailNoticeTip,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF795548),
-                  height: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              context.tr.enterDirectlyPrompt,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF235D3A),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              context.tr.cancel,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final inputEmail = _emailCtrl.text.trim();
-              if (inputEmail.isNotEmpty) {
-                final derivedName = inputEmail.split('@').first;
-                if (_selectedRole == UserRole.farmer) {
-                  await FarmerProfileManager.instance.updateProfile(
-                    name: derivedName,
-                    email: inputEmail,
-                  );
-                } else if (_selectedRole == UserRole.buyer) {
-                  await BuyerProfileManager.instance.updateProfile(
-                    name: derivedName,
-                    email: inputEmail,
-                  );
-                } else if (_selectedRole == UserRole.driver) {
-                  await DriverProfileManager.instance.updateProfile(
-                    fullName: derivedName,
-                  );
-                }
-              }
-              if (mounted) {
-                context.go(AppRoutes.homeFor(_selectedRole));
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF235D3A),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(context.tr.continueToApp),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── Registration & Guest Navigation with pre-selected role ─────────
   void _onRegisterTap(BuildContext ctx) {
@@ -403,14 +250,6 @@ class _LoginScreenState extends State<LoginScreen>
     ctx.push(AppRoutes.registerFor(role));
   }
 
-  Future<void> _continueAsGuest(BuildContext ctx) async {
-    HapticFeedback.lightImpact();
-    final role = ctx.read<AppSettings>().role ?? _selectedRole;
-    await ctx.read<AppSettings>().setRole(role);
-    if (ctx.mounted) {
-      ctx.go(AppRoutes.homeFor(role));
-    }
-  }
 
   void _showError(String msg) {
     if (!mounted) return;
@@ -440,13 +279,7 @@ class _LoginScreenState extends State<LoginScreen>
             leafFade: _leafFade,
             screenHeight: size.height,
             currentRole: currentRole,
-            onBack: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                context.go(AppRoutes.roleSelection);
-              }
-            },
+            onBack: () => context.go(AppRoutes.roleSelection),
           ),
 
           // ── Scrollable Form ───────────────────────────────────────────
@@ -471,17 +304,18 @@ class _LoginScreenState extends State<LoginScreen>
                         // Title
                         Text(
                           context.tr.signInToYourAccount,
-                          style: const TextStyle(
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textDark,
-                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           context.tr.enterEmailPassword,
-                          style: const TextStyle(
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
@@ -511,7 +345,24 @@ class _LoginScreenState extends State<LoginScreen>
                               (v == null || v.length < 6) ? context.tr.passwordMinLength : null,
                         ),
 
-                        const SizedBox(height: AppDimensions.spaceLG),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => context.push(AppRoutes.forgotPassword),
+                            child: AutoText(
+                              'Forgot password?',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: AppDimensions.spaceSM),
 
                         // CTA Button
                         _PremiumCTAButton(
@@ -569,36 +420,6 @@ class _LoginScreenState extends State<LoginScreen>
                           isLoading: _isLoading,
                         ),
 
-                        const SizedBox(height: 14),
-
-                        // ── Mobile OTP Alternative Pill ─────────────────────
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: TextButton.icon(
-                            onPressed: () => context.go(AppRoutes.phoneAuth),
-                            icon: const Icon(
-                              Icons.phone_iphone_rounded,
-                              size: 18,
-                              color: Color(0xFF1E8342),
-                            ),
-                            label: Text(
-                              context.tr.mobileOtpInstead,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E8342),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              backgroundColor: const Color(0xFFF1F8F5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-
                         const SizedBox(height: 22),
 
                         // ── Register / Sign Up Prompt Card ──────────────────
@@ -644,39 +465,6 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 18),
-
-                        // ── Guest / Demo Explore Mode (ලියාපදිංචි නොවී App එක බලන්න) ──
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _continueAsGuest(context),
-                            icon: const Icon(
-                              Icons.explore_outlined,
-                              size: 19,
-                              color: Color(0xFF1E8342),
-                            ),
-                            label: Text(
-                              context.tr.skipDemoUser,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E8342),
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: Color(0xFFA7F3D0),
-                                width: 1.2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              backgroundColor: const Color(0xFFF0FDF4),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -839,40 +627,49 @@ class _PremiumHeader extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Dynamic Role Badge Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.28),
-                      width: 1,
+                // Dynamic Role Badge Chip (Tappable to Switch Role)
+                GestureDetector(
+                  onTap: () => context.go(AppRoutes.roleSelection),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                        width: 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        currentRole == UserRole.farmer
-                            ? Icons.agriculture_rounded
-                            : currentRole == UserRole.driver
-                                ? Icons.local_shipping_rounded
-                                : Icons.shopping_basket_rounded,
-                        size: 13,
-                        color: const Color(0xFFFBBF24),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _roleBadgeText(context, currentRole),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.4,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          currentRole == UserRole.farmer
+                              ? Icons.agriculture_rounded
+                              : currentRole == UserRole.driver
+                                  ? Icons.local_shipping_rounded
+                                  : Icons.shopping_basket_rounded,
+                          size: 13,
+                          color: const Color(0xFFFBBF24),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          _roleBadgeText(context, currentRole),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Icon(
+                          Icons.swap_horiz_rounded,
+                          size: 13,
+                          color: Colors.white70,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -994,11 +791,11 @@ class _PremiumField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-            letterSpacing: 0.1,
+            color: const Color(0xFF1E293B),
           ),
         ),
         const SizedBox(height: 7),
@@ -1082,11 +879,11 @@ class _PremiumPasswordField extends StatelessWidget {
       children: [
         Text(
           context.tr.password,
-          style: const TextStyle(
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
-            letterSpacing: 0.1,
+            color: const Color(0xFF1E293B),
           ),
         ),
         const SizedBox(height: 7),

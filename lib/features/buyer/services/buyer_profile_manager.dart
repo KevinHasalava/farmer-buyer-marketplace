@@ -9,13 +9,17 @@ import '../models/buyer_profile_model.dart';
 
 class BuyerProfileManager extends ChangeNotifier {
   BuyerProfileManager._internal() {
+    if (SupabaseConfig.isInitialized) {
+      // Reload whenever someone signs in / out so accounts never mix.
+      SupabaseConfig.auth.onAuthStateChange.listen((_) => loadProfile());
+    }
     loadProfile();
   }
 
   static final BuyerProfileManager instance = BuyerProfileManager._internal();
   factory BuyerProfileManager() => instance;
 
-  BuyerProfileModel _profile = BuyerProfileModel.defaultBuyer;
+  BuyerProfileModel _profile = BuyerProfileModel.empty;
   bool _isLoading = false;
 
   BuyerProfileModel get profile => _profile;
@@ -23,40 +27,40 @@ class BuyerProfileManager extends ChangeNotifier {
 
   static const String _kBuyerProfileKey = 'buyer_profile_cache_v1';
 
-  /// Loads profile from SharedPreferences cache, and synchronizes with Supabase if online
+  /// Loads the signed-in buyer's profile from the `buyers` table.
   Future<void> loadProfile() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedJson = prefs.getString(_kBuyerProfileKey);
-
-      if (cachedJson != null) {
-        try {
-          final map = jsonDecode(cachedJson) as Map<String, dynamic>;
-          _profile = BuyerProfileModel.fromJson(map);
-        } catch (_) {}
-      }
-
-      // Check Supabase Auth
-      if (SupabaseConfig.isInitialized) {
-        final user = SupabaseConfig.auth.currentUser;
-        if (user != null) {
-          final metadata = user.userMetadata;
-          if (metadata != null) {
-            _profile = _profile.copyWith(
-              id: user.id,
-              name: metadata['full_name'] as String? ?? _profile.name,
-              phone: metadata['phone'] as String? ?? user.phone ?? _profile.phone,
-              email: user.email ?? _profile.email,
-              deliveryAddress: metadata['address'] as String? ?? _profile.deliveryAddress,
-              deliveryHub: metadata['hub'] as String? ?? _profile.deliveryHub,
-              buyerType: metadata['buyer_type'] as String? ?? _profile.buyerType,
-            );
-          }
-          await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
-        }
+      final user =
+          SupabaseConfig.isInitialized ? SupabaseConfig.auth.currentUser : null;
+      if (user == null) {
+        _profile = BuyerProfileModel.empty;
+      } else {
+        final row = await SupabaseConfig.client
+            .from('buyers')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+        _profile = BuyerProfileModel.empty.copyWith(
+          id: user.id,
+          email: user.email ?? '',
+          name: (row?['full_name'] as String?) ??
+              (user.userMetadata?['full_name'] as String?) ??
+              '',
+          phone: (row?['phone'] as String?) ?? '',
+          deliveryAddress: (row?['delivery_address'] as String?) ?? '',
+          deliveryHub: (row?['delivery_hub'] as String?) ?? '',
+          buyerType: (row?['buyer_type'] as String?) ?? '',
+          completedOrders: (row?['total_orders'] as num?)?.toInt() ?? 0,
+          directFarmSpend: (row?['total_spent'] as num?)?.toDouble() ?? 0,
+          isVerified: true,
+          memberSince: row?['created_at'] != null
+              ? (DateTime.tryParse(row!['created_at'].toString())?.year ?? '')
+                  .toString()
+              : '',
+        );
       }
     } catch (e) {
       debugPrint('Error loading buyer profile: $e');

@@ -54,17 +54,30 @@ class BidModel {
     };
   }
 
+  Map<String, dynamic> toDb() {
+    return {
+      'id': id,
+      'auction_id': auctionId,
+      'bidder_id': bidderId,
+      'bidder_name': bidderName,
+      'amount': amount,
+      'created_at': createdAt.toIso8601String(),
+      'is_winning': isWinning,
+      'notes': notes,
+    };
+  }
+
   factory BidModel.fromJson(Map<String, dynamic> json) {
     return BidModel(
       id: json['id'] as String? ?? '',
-      auctionId: json['auctionId'] as String? ?? '',
-      bidderId: json['bidderId'] as String? ?? '',
-      bidderName: json['bidderName'] as String? ?? 'Anonymous Buyer',
+      auctionId: (json['auction_id'] ?? json['auctionId']) as String? ?? '',
+      bidderId: (json['bidder_id'] ?? json['bidderId']) as String? ?? '',
+      bidderName: (json['bidder_name'] ?? json['bidderName']) as String? ?? 'Anonymous Buyer',
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+      createdAt: json['created_at'] != null || json['createdAt'] != null
+          ? DateTime.tryParse((json['created_at'] ?? json['createdAt']) as String) ?? DateTime.now()
           : DateTime.now(),
-      isWinning: json['isWinning'] as bool? ?? false,
+      isWinning: (json['is_winning'] ?? json['isWinning']) as bool? ?? false,
       notes: json['notes'] as String? ?? '',
     );
   }

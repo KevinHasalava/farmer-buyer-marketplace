@@ -526,6 +526,8 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
         ],
       ),
       actions: [
+        const Center(child: AppLanguagePill()),
+        const SizedBox(width: 4),
         IconButton(
           icon: const Icon(
             Icons.close_rounded,

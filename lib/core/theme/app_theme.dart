@@ -53,13 +53,20 @@ abstract final class AppTheme {
     double? height,
     TextDecoration? decoration,
   }) {
+    // For Indic/Brahmic scripts (Sinhala and Tamil), artificial letter spacing breaks
+    // vowel modifiers, kombuwa, and conjunct ligatures in mobile text engines.
+    final effectiveLetterSpacing =
+        (lang == AppLanguage.sinhala || lang == AppLanguage.tamil)
+            ? null
+            : letterSpacing;
+
     return TextStyle(
       fontFamily: fontFamily(lang),
       fontFamilyFallback: fontFamilyFallbacks(lang),
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
-      letterSpacing: letterSpacing,
+      letterSpacing: effectiveLetterSpacing,
       height: height,
       decoration: decoration,
     );
@@ -80,13 +87,18 @@ abstract final class AppTheme {
       double? height,
       Color? overrideColor,
     }) {
+      final effectiveLetterSpacing =
+          (language == AppLanguage.sinhala || language == AppLanguage.tamil)
+              ? null
+              : letterSpacing;
+
       return TextStyle(
         fontFamily: family,
         fontFamilyFallback: fallbacks,
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: overrideColor ?? baseColor,
-        letterSpacing: letterSpacing,
+        letterSpacing: effectiveLetterSpacing,
         height: height,
       );
     }

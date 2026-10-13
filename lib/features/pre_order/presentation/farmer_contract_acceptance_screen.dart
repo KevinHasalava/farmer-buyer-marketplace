@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/constants/constants.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 import '../services/pre_order_manager.dart';
 
 class FarmerContractAcceptanceScreen extends StatefulWidget {
@@ -73,14 +75,25 @@ class _FarmerContractAcceptanceScreenState extends State<FarmerContractAcceptanc
     setState(() => _isSubmitting = true);
 
     try {
+      final farmer = FarmerProfileManager.instance.profile;
+      final user = SupabaseConfig.auth.currentUser;
+      final farmerId = farmer.id.isNotEmpty
+          ? farmer.id
+          : (user?.id ?? 'farmer_${DateTime.now().millisecondsSinceEpoch}');
+      final farmerName = farmer.name.trim().isNotEmpty
+          ? farmer.name.trim()
+          : (user?.userMetadata?['full_name'] as String? ?? 'Registered Farmer');
+
       await PreOrderManager.instance.updatePreOrderStatus(
         widget.preOrderId,
         'In Progress',
-        farmerId: 'farmer_123', // Hardcoded for demo
-        farmerName: 'Sunil Silva',
+        farmerId: farmerId,
+        farmerName: farmerName,
         farmerExpectedHarvestDate: _harvestDate,
         farmerEstimatedYieldKg: double.parse(_yieldController.text),
-        farmerLocation: _locationController.text,
+        farmerLocation: _locationController.text.trim().isNotEmpty
+            ? _locationController.text.trim()
+            : farmer.location,
         farmerNotes: _notesController.text,
       );
 

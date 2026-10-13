@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,7 +6,6 @@ import '../../models/auction_model.dart';
 import '../../services/auction_manager.dart';
 import 'create_edit_auction_screen.dart';
 import '../../../../core/localization/app_settings.dart';
-import '../../../../core/theme/app_theme.dart';
 
 class FarmerAuctionDetailScreen extends StatefulWidget {
   final String auctionId;
@@ -79,7 +78,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('🎉 Congratulations! Crop lot sold to $highestBidder!'),
+            content: Text('🎉 ${"Congratulations! Crop lot sold to".trAuto(context)} $highestBidder!'),
             backgroundColor: const Color(0xFF1E5E3A),
             behavior: SnackBarBehavior.floating,
           ),
@@ -99,9 +98,9 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
             Text(context.tr.deleteAuction, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to permanently delete this crop auction? This action cannot be undone.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+        content: Text(
+          'Are you sure you want to permanently delete this crop auction? This action cannot be undone.'.trAuto(context),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
         ),
         actions: [
           TextButton(
@@ -145,7 +144,7 @@ class _FarmerAuctionDetailScreenState extends State<FarmerAuctionDetailScreen> {
         if (auction == null) {
           return Scaffold(
             appBar: AppBar(title: Text(context.tr.auctionDetails)),
-            body: const Center(child: Text('Auction not found or deleted.')),
+            body: Center(child: Text('Auction not found or deleted.'.trAuto(context))),
           );
         }
 

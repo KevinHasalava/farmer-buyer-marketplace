@@ -135,6 +135,20 @@ class PreOrderModel {
   }
 
   factory PreOrderModel.fromJson(Map<String, dynamic> map) {
+    final rawStatus = (map['status'] as String? ?? 'Pending').trim();
+    String normStatus;
+    if (rawStatus.toUpperCase() == 'ACCEPTED') {
+      normStatus = 'Accepted';
+    } else if (rawStatus.toUpperCase() == 'IN PROGRESS') {
+      normStatus = 'In Progress';
+    } else if (rawStatus.toUpperCase() == 'COMPLETED') {
+      normStatus = 'Completed';
+    } else if (rawStatus.toUpperCase() == 'CANCELLED') {
+      normStatus = 'Cancelled';
+    } else {
+      normStatus = 'Pending';
+    }
+
     return PreOrderModel(
       id: map['id'] as String? ?? 'po_${DateTime.now().millisecondsSinceEpoch}',
       buyerId: map['buyer_id'] as String? ?? 'buyer_1',
@@ -142,8 +156,12 @@ class PreOrderModel {
       farmerId: map['farmer_id'] as String?,
       farmerName: map['farmer_name'] as String?,
       cropName: map['crop_name'] as String? ?? 'Crop Name',
-      requiredQuantityKg: (map['required_quantity_kg'] as num?)?.toDouble() ?? 0.0,
-      offeredPricePerKg: (map['offered_price_per_kg'] as num?)?.toDouble() ?? 0.0,
+      requiredQuantityKg: (map['required_quantity_kg'] as num?)?.toDouble() ??
+          (map['required_quantity'] as num?)?.toDouble() ??
+          0.0,
+      offeredPricePerKg: (map['offered_price_per_kg'] as num?)?.toDouble() ??
+          (map['offered_price'] as num?)?.toDouble() ??
+          0.0,
       expectedDeliveryDate: map['expected_delivery_date'] != null
           ? DateTime.tryParse(map['expected_delivery_date'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -152,7 +170,7 @@ class PreOrderModel {
       paymentTerms: map['payment_terms'] as String? ?? 'Negotiable',
       packagingRequirements: map['packaging_requirements'] as String? ?? 'Standard Packaging',
       advancePaymentRs: (map['advance_payment_rs'] as num?)?.toDouble() ?? 0.0,
-      status: map['status'] as String? ?? 'Pending',
+      status: normStatus,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -168,32 +186,5 @@ class PreOrderModel {
     );
   }
 
-  static List<PreOrderModel> get samplePreOrders => [
-    PreOrderModel(
-      id: 'po_sample_1',
-      buyerId: 'buyer_primary',
-      buyerName: 'Nadeesha Supermarkets',
-      farmerId: 'farmer_01',
-      farmerName: 'Kamal Perera',
-      cropName: 'Premium Carrots',
-      requiredQuantityKg: 500.0,
-      offeredPricePerKg: 350.0,
-      expectedDeliveryDate: DateTime.now().add(const Duration(days: 45)),
-      qualityRequirements: 'Must be large and clean without damages. Organic preferred.',
-      status: 'In Progress',
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-    ),
-    PreOrderModel(
-      id: 'po_sample_2',
-      buyerId: 'buyer_primary',
-      buyerName: 'Nadeesha Supermarkets',
-      cropName: 'Red Onions',
-      requiredQuantityKg: 1000.0,
-      offeredPricePerKg: 280.0,
-      expectedDeliveryDate: DateTime.now().add(const Duration(days: 90)),
-      qualityRequirements: 'Dry and well-cured red onions.',
-      status: 'Pending',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-  ];
+  static List<PreOrderModel> get samplePreOrders => const [];
 }

@@ -12,6 +12,7 @@ enum BuyerNotificationType {
   dispatched,
   delivered,
   priceDrop,
+  general,
 }
 
 @immutable
@@ -149,6 +150,15 @@ class BuyerNotificationItem {
     );
   }
 
+  static String _timeAgoFrom(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 1) return 'Just now';
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    if (d.inDays == 1) return 'Yesterday';
+    return '${d.inDays} days ago';
+  }
+
   factory BuyerNotificationItem.fromJson(Map<String, dynamic> json) {
     BuyerNotificationType type = BuyerNotificationType.driverAlert;
     final typeStr = json['type'] as String? ?? '';
@@ -162,24 +172,36 @@ class BuyerNotificationItem {
       type = BuyerNotificationType.delivered;
     } else if (typeStr == 'priceDrop') {
       type = BuyerNotificationType.priceDrop;
+    } else if (typeStr.isNotEmpty) {
+      // Admin / system notifications: 'Order Updates', 'Offers', 'Harvest Alerts', ...
+      type = BuyerNotificationType.general;
     }
 
     BuyerNotificationCategory category = BuyerNotificationCategory.orders;
+    final lowerType = typeStr.toLowerCase();
     if (type == BuyerNotificationType.harvestAlert ||
-        type == BuyerNotificationType.priceDrop) {
+        type == BuyerNotificationType.priceDrop ||
+        (type == BuyerNotificationType.general &&
+            (lowerType.contains('harvest') || lowerType.contains('offer')))) {
       category = BuyerNotificationCategory.harvestAlerts;
     }
 
+    final created = json['created_at'] != null
+        ? DateTime.tryParse(json['created_at'].toString())?.toLocal() ??
+            DateTime.now()
+        : DateTime.now();
+
     return BuyerNotificationItem(
-      id: json['id'] as String? ?? 'notif-${DateTime.now().millisecondsSinceEpoch}',
+      id: json['id']?.toString() ?? 'notif-${DateTime.now().millisecondsSinceEpoch}',
       type: type,
       title: json['title'] as String? ?? 'Notification',
       message: json['message'] as String? ?? '',
-      tag: json['tag'] as String? ?? 'Farm2Home',
-      timeAgo: json['time_ago'] as String? ?? 'Just now',
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      tag: json['tag'] as String? ??
+          (type == BuyerNotificationType.general && typeStr.isNotEmpty
+              ? typeStr
+              : 'Farm2Home'),
+      timeAgo: json['time_ago'] as String? ?? _timeAgoFrom(created),
+      createdAt: created,
       isRead: json['is_read'] as bool? ?? false,
       category: category,
       driverName: json['driver_name'] as String?,

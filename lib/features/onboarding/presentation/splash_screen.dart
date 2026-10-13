@@ -6,7 +6,9 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../admin/services/admin_auth_service.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
 class SplashScreen extends StatefulWidget {
@@ -17,53 +19,82 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  bool _navigated = false;
+
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: const Duration(milliseconds: 1000),
   )..forward();
+
+  late final AnimationController _progressController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  );
+
+  late final Animation<double> _progressAnimation = CurvedAnimation(
+    parent: _progressController,
+    curve: Curves.easeInOut,
+  );
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2200), _routeNext);
+    _progressController.forward();
+    _progressController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 280), _routeNext);
+      }
+    });
   }
 
   Future<void> _routeNext() async {
-    if (!mounted) return;
+    if (!mounted || _navigated) return;
+    _navigated = true;
     final s = context.settings;
 
-    // Check if user is authenticated via Supabase (e.g., returned from Google OAuth)
+    // If master admin is authenticated, route directly to Admin Panel:
+    if (AdminAuthService.instance.isAuthenticated) {
+      context.go(AppRoutes.adminPanel);
+      return;
+    }
+
+    // A returning user with a valid Supabase session goes straight home,
+    // using the role stored in the database (never a locally cached guess).
     if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
-      final sbUser = SupabaseConfig.auth.currentUser!;
-      final metadata = sbUser.userMetadata ?? {};
-      final roleStr = (metadata['role'] as String?)?.toLowerCase();
-      final isFarmer = (metadata['is_farmer'] as bool? ?? false) || roleStr == 'farmer';
-      final role = isFarmer
-          ? UserRole.farmer
-          : (roleStr == 'driver' ? UserRole.driver : (s.role ?? UserRole.buyer));
-      await s.setRole(role);
-      if (!mounted) return;
-      context.go(AppRoutes.homeFor(role));
-      return;
+      try {
+        final roleStr = await const AuthService().fetchRole();
+        if (!mounted) return;
+        if (roleStr == 'admin') {
+          final ok = await AdminAuthService.instance.adoptCurrentSession();
+          if (!mounted) return;
+          if (ok) {
+            context.go(AppRoutes.adminPanel);
+            return;
+          }
+        } else {
+          final role = UserRole.fromName(roleStr) ?? UserRole.buyer;
+          await s.setRole(role);
+          if (!mounted) return;
+          context.go(AppRoutes.homeFor(role));
+          return;
+        }
+      } catch (_) {
+        // Profile missing / suspended / offline: fall through to sign-in.
+        await const AuthService().signOut();
+      }
     }
+    if (!mounted) return;
 
-    if (!s.hasLanguage) {
-      context.go(AppRoutes.language);
-      return;
-    }
-
-    if (s.role != null) {
-      context.go(AppRoutes.homeFor(s.role!));
-      return;
-    }
-
-    context.go(s.onboardingSeen ? AppRoutes.roleSelection : AppRoutes.onboarding);
+    // Sequential onboarding flow for unauthenticated users:
+    // Splash -> Language -> Onboarding (1,2,3) -> Role Selection -> Login
+    context.go(AppRoutes.language);
   }
 
   @override
   void dispose() {
     _anim.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -263,40 +294,138 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
 
-                    // ── Bottom Section (Grounded & Balanced) ─────────────────
+                    // ── Bottom Section (Grounded & Balanced with Live Progress) ─────────────────
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 36, left: 24, right: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Sleek Glowing Progress Bar
-                          SizedBox(
-                            width: 120,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: LinearProgressIndicator(
-                                minHeight: 4,
-                                backgroundColor: Colors.white.withValues(alpha: 0.15),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF34D399),
+                      padding: const EdgeInsets.only(bottom: 34, left: 24, right: 24),
+                      child: AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, _) {
+                          final p = _progressAnimation.value;
+                          final pct = (p * 100).toInt().clamp(0, 100);
+
+                          final currentLang = context.currentLanguage;
+                          String statusMsg = switch (currentLang) {
+                            AppLanguage.sinhala => p > 0.30 && p <= 0.70
+                                ? '🚜 දේශීය ගොවි ජාලය සමමුහුර්ත වෙමින්...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% නැවුම් අස්වැන්න තහවුරුයි...'
+                                    : p >= 1.0
+                                        ? 'සම්පූර්ණයි ✓'
+                                        : '🌱 Farm2Home පද්ධතිය සූදානම් වෙමින්...',
+                            AppLanguage.tamil => p > 0.30 && p <= 0.70
+                                ? '🚜 உள்ளூர் விவசாயிகள் இணைக்கப்படுகிறார்கள்...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% புதிய விளைச்சல் உறுதி...'
+                                    : p >= 1.0
+                                        ? 'முடிந்தது ✓'
+                                        : '🌱 Farm2Home அமைப்பு தயாராகிறது...',
+                            AppLanguage.english => p > 0.30 && p <= 0.70
+                                ? '🚜 Syncing local farmer network...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% fresh harvest guaranteed...'
+                                    : p >= 1.0
+                                        ? 'Ready ✓'
+                                        : '🌱 Preparing Farm2Home system...',
+                          };
+
+                          final noteMsg = switch (currentLang) {
+                            AppLanguage.sinhala => 'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                            AppLanguage.tamil => 'இலங்கை விவசாய சமூகத்தை மேம்படுத்துகிறது 🇱🇰',
+                            AppLanguage.english => 'Empowering Sri Lankan Farming Community 🇱🇰',
+                          };
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Progress bar container with subtle glow
+                              Container(
+                                width: 200,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    FractionallySizedBox(
+                                      widthFactor: p.clamp(0.02, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF34D399),
+                                              Color(0xFF10B981),
+                                              Color(0xFFFBBF24),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          // Empowering Note
-                          Text(
-                            'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
-                            textAlign: TextAlign.center,
-                            style: AppTheme.fontStyle(
-                              context.currentLanguage,
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
+                              const SizedBox(height: 12),
+
+                              // Realtime Stage Text & Percent
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    statusMsg,
+                                    style: AppTheme.fontStyle(
+                                      context.currentLanguage,
+                                      color: const Color(0xFFD1FAE5).withValues(alpha: 0.85),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '$pct%',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFBBF24),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Empowering Note
+                              Text(
+                                noteMsg,
+                                textAlign: TextAlign.center,
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],

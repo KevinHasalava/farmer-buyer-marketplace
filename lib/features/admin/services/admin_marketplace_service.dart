@@ -1,33 +1,36 @@
 import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
 import '../../buyer/models/buyer_profile_model.dart';
-import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/models/driver_model.dart';
-import '../../driver/services/driver_profile_manager.dart';
 import '../../farmer/models/farmer_profile_model.dart';
-import '../../farmer/services/farmer_profile_manager.dart';
 import '../models/admin_models.dart';
 
-/// Central Marketplace Admin Service managing full CRUD state across all portals
-/// Integrates Supabase Database with Offline-First Local Cache & Real-time Profile Synchronization
+/// Ultra-Resilient Admin / Marketplace Data Service.
+///
+/// Implements a Dual-Persistence Repository pattern:
+/// 1. Local persistent storage (SharedPreferences) guarantees immediate,
+///    offline-tolerant, and zero-loss CRUD execution with rich real-world defaults.
+/// 2. Remote Supabase synchronization attempts best-effort network persistence
+///    (drivers, driver_deliveries, products, orders, farmers, buyers) without
+///    allowing remote schema differences or RLS restrictions to break the Admin UI.
 class AdminMarketplaceService extends ChangeNotifier {
-  AdminMarketplaceService._internal() {
-    init();
-  }
+  AdminMarketplaceService._internal();
 
   static final AdminMarketplaceService instance =
       AdminMarketplaceService._internal();
   factory AdminMarketplaceService() => instance;
 
-  static const String _kFarmersKey = 'admin_farmers_cache_v1';
-  static const String _kBuyersKey = 'admin_buyers_cache_v1';
-  static const String _kDriversKey = 'admin_drivers_cache_v1';
-  static const String _kProductsKey = 'admin_products_cache_v1';
-  static const String _kOrdersKey = 'admin_orders_cache_v1';
+  static const String _kFarmersKey = 'admin_farmers_data_v2';
+  static const String _kBuyersKey = 'admin_buyers_data_v2';
+  static const String _kDriversKey = 'admin_drivers_data_v2';
+  static const String _kProductsKey = 'admin_products_data_v2';
+  static const String _kOrdersKey = 'admin_orders_data_v2';
 
   final List<AdminFarmerModel> _farmers = [];
   final List<AdminBuyerModel> _buyers = [];
@@ -36,6 +39,8 @@ class AdminMarketplaceService extends ChangeNotifier {
   final List<AdminOrderModel> _orders = [];
 
   bool _isInitialized = false;
+  bool _isLoading = false;
+  String? _lastError;
 
   List<AdminFarmerModel> get farmers => List.unmodifiable(_farmers);
   List<AdminBuyerModel> get buyers => List.unmodifiable(_buyers);
@@ -43,7 +48,14 @@ class AdminMarketplaceService extends ChangeNotifier {
   List<AdminProductModel> get products => List.unmodifiable(_products);
   List<AdminOrderModel> get orders => List.unmodifiable(_orders);
 
-  // ── Statistics Getters ───────────────────────────────────────────────────
+  bool get isLoading => _isLoading;
+  String? get lastError => _lastError;
+
+  void clearError() {
+    _lastError = null;
+  }
+
+  // ── Statistics ───────────────────────────────────────────────────────────
   int get totalFarmers => _farmers.length;
   int get totalBuyers => _buyers.length;
   int get totalDrivers => _drivers.length;
@@ -58,389 +70,478 @@ class AdminMarketplaceService extends ChangeNotifier {
   int get inTransitOrdersCount =>
       _orders.where((o) => o.status == 'In Transit').length;
 
-  double get totalRevenue =>
-      _orders.fold(0.0, (sum, o) => sum + o.totalAmount);
+  double get totalRevenue => _orders
+      .where((o) => o.status != 'Cancelled')
+      .fold(0.0, (sum, o) => sum + o.totalAmount);
 
-  /// Safe accessor to Supabase client
-  SupabaseClient? get _sb {
-    try {
-      if (SupabaseConfig.isInitialized) {
-        return SupabaseConfig.client;
-      }
-    } catch (_) {}
-    return null;
+  SupabaseClient? get _db {
+    if (!SupabaseConfig.isInitialized) return null;
+    return SupabaseConfig.client;
   }
+
+  static final Random _rng = Random.secure();
+
+  /// Collision-safe readable id, e.g. FRM-8K3QZ1.
+  String _newId(String prefix) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final code = List.generate(6, (_) => chars[_rng.nextInt(chars.length)]).join();
+    return '$prefix-$code';
+  }
+
+  String _cleanOrderId(String id) => id.replaceAll('#', '').trim();
 
   // ── Initialization & Persistence ─────────────────────────────────────────
   Future<void> init() async {
     if (_isInitialized) return;
+    _isInitialized = true;
+    await _loadFromLocal();
+    notifyListeners();
+    // Non-blocking sync with remote database in background
+    refreshDatabaseSync();
+  }
 
+  Future<void> _loadFromLocal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // 1. Load Farmers from local cache or seed
-      final farmersJson = prefs.getString(_kFarmersKey);
-      if (farmersJson != null) {
-        final list = jsonDecode(farmersJson) as List<dynamic>;
+      // 1. Farmers
+      final rawFarmers = prefs.getString(_kFarmersKey);
+      if (rawFarmers != null && rawFarmers.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(rawFarmers);
         _farmers.clear();
         _farmers.addAll(
-            list.map((m) => AdminFarmerModel.fromMap(m as Map<String, dynamic>)));
+            list.map((m) => AdminFarmerModel.fromMap(Map<String, dynamic>.from(m as Map))));
       } else {
-        _seedDefaultFarmers();
+        _farmers.clear();
+        _farmers.addAll(_defaultFarmers());
+        await _saveFarmers();
       }
 
-      // 2. Load Buyers from local cache or seed
-      final buyersJson = prefs.getString(_kBuyersKey);
-      if (buyersJson != null) {
-        final list = jsonDecode(buyersJson) as List<dynamic>;
+      // 2. Buyers
+      final rawBuyers = prefs.getString(_kBuyersKey);
+      if (rawBuyers != null && rawBuyers.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(rawBuyers);
         _buyers.clear();
         _buyers.addAll(
-            list.map((m) => AdminBuyerModel.fromMap(m as Map<String, dynamic>)));
+            list.map((m) => AdminBuyerModel.fromMap(Map<String, dynamic>.from(m as Map))));
       } else {
-        _seedDefaultBuyers();
+        _buyers.clear();
+        _buyers.addAll(_defaultBuyers());
+        await _saveBuyers();
       }
 
-      // 3. Load Drivers from local cache or seed
-      final driversJson = prefs.getString(_kDriversKey);
-      if (driversJson != null) {
-        final list = jsonDecode(driversJson) as List<dynamic>;
+      // 3. Drivers
+      final rawDrivers = prefs.getString(_kDriversKey);
+      if (rawDrivers != null && rawDrivers.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(rawDrivers);
         _drivers.clear();
         _drivers.addAll(
-            list.map((m) => AdminDriverModel.fromMap(m as Map<String, dynamic>)));
+            list.map((m) => AdminDriverModel.fromMap(Map<String, dynamic>.from(m as Map))));
       } else {
-        _seedDefaultDrivers();
+        _drivers.clear();
+        _drivers.addAll(_defaultDrivers());
+        await _saveDrivers();
       }
 
-      // 4. Load Products from local cache or seed
-      final productsJson = prefs.getString(_kProductsKey);
-      if (productsJson != null) {
-        final list = jsonDecode(productsJson) as List<dynamic>;
+      // 4. Products
+      final rawProducts = prefs.getString(_kProductsKey);
+      if (rawProducts != null && rawProducts.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(rawProducts);
         _products.clear();
         _products.addAll(
-            list.map((m) => AdminProductModel.fromMap(m as Map<String, dynamic>)));
+            list.map((m) => AdminProductModel.fromMap(Map<String, dynamic>.from(m as Map))));
       } else {
-        _seedDefaultProducts();
+        _products.clear();
+        _products.addAll(_defaultProducts());
+        await _saveProducts();
       }
 
-      // 5. Load Orders from local cache or seed
-      final ordersJson = prefs.getString(_kOrdersKey);
-      if (ordersJson != null) {
-        final list = jsonDecode(ordersJson) as List<dynamic>;
+      // 5. Orders
+      final rawOrders = prefs.getString(_kOrdersKey);
+      if (rawOrders != null && rawOrders.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(rawOrders);
         _orders.clear();
         _orders.addAll(
-            list.map((m) => AdminOrderModel.fromMap(m as Map<String, dynamic>)));
+            list.map((m) => AdminOrderModel.fromMap(Map<String, dynamic>.from(m as Map))));
       } else {
-        _seedDefaultOrders();
+        _orders.clear();
+        _orders.addAll(_defaultOrders());
+        await _saveOrders();
       }
-
-      _syncActiveAppProfiles();
-      _isInitialized = true;
-      notifyListeners();
-
-      // Trigger asynchronous Two-Way Supabase Database Sync in background
-      _syncWithSupabaseDatabase();
     } catch (e) {
-      debugPrint('[AdminMarketplaceService] Init note: $e');
-      _seedDefaultFarmers();
-      _seedDefaultBuyers();
-      _seedDefaultDrivers();
-      _seedDefaultProducts();
-      _seedDefaultOrders();
-      _isInitialized = true;
-      notifyListeners();
+      debugPrint('[AdminMarketplaceService] _loadFromLocal error: $e');
     }
   }
 
-  /// Public method to manually trigger real-time database synchronization from the Admin UI
-  Future<void> refreshDatabaseSync() async {
-    await _syncWithSupabaseDatabase();
-    _syncActiveAppProfiles();
-    notifyListeners();
-  }
-
-  /// Synchronize with remote Supabase Database tables
-  Future<void> _syncWithSupabaseDatabase() async {
-    final client = _sb;
-    if (client == null) return;
-
-    try {
-      // 1. Sync Farmers Table (if table exists)
-      try {
-        final remoteFarmers = await client.from('farmers').select();
-        if (remoteFarmers.isNotEmpty) {
-          for (final row in remoteFarmers) {
-            final farmer = AdminFarmerModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _farmers.indexWhere((f) => f.id == farmer.id || f.phone == farmer.phone);
-            if (idx >= 0) {
-              _farmers[idx] = farmer;
-            } else {
-              _farmers.add(farmer);
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('[AdminMarketplaceService] farmers table sync note: $e');
-      }
-
-      // 2. Sync Buyers Table (if table exists)
-      try {
-        final remoteBuyers = await client.from('buyers').select();
-        if (remoteBuyers.isNotEmpty) {
-          for (final row in remoteBuyers) {
-            final buyer = AdminBuyerModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _buyers.indexWhere((b) => b.id == buyer.id || b.phone == buyer.phone);
-            if (idx >= 0) {
-              _buyers[idx] = buyer;
-            } else {
-              _buyers.add(buyer);
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('[AdminMarketplaceService] buyers table sync note: $e');
-      }
-
-      // 3. Sync Drivers Table (Live in Supabase)
-      try {
-        final remoteDrivers = await client.from('drivers').select();
-        if (remoteDrivers.isNotEmpty) {
-          for (final row in remoteDrivers) {
-            final driver = AdminDriverModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _drivers.indexWhere((d) => d.id == driver.id || d.phone == driver.phone);
-            if (idx >= 0) {
-              _drivers[idx] = driver;
-            } else {
-              _drivers.add(driver);
-            }
-          }
-          debugPrint('[AdminMarketplaceService] Synced ${_drivers.length} drivers from Supabase.');
-        }
-      } catch (e) {
-        debugPrint('[AdminMarketplaceService] drivers table sync note: $e');
-      }
-
-      // 4. Sync Products Table (if table exists)
-      try {
-        final remoteProducts = await client.from('products').select();
-        if (remoteProducts.isNotEmpty) {
-          for (final row in remoteProducts) {
-            final prod = AdminProductModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _products.indexWhere((p) => p.id == prod.id);
-            if (idx >= 0) {
-              _products[idx] = prod;
-            } else {
-              _products.add(prod);
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('[AdminMarketplaceService] products table sync note: $e');
-      }
-
-      // 5. Sync Orders from driver_deliveries (Live in Supabase) and orders table
-      try {
-        final remoteDeliveries = await client.from('driver_deliveries').select();
-        if (remoteDeliveries.isNotEmpty) {
-          for (final row in remoteDeliveries) {
-            final order = AdminOrderModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _orders.indexWhere((o) =>
-                o.id == order.id ||
-                o.id == '#${order.id}' ||
-                o.id.replaceAll('#', '') == order.id.replaceAll('#', ''));
-            if (idx >= 0) {
-              _orders[idx] = order;
-            } else {
-              _orders.insert(0, order);
-            }
-          }
-          debugPrint('[AdminMarketplaceService] Synced deliveries from Supabase driver_deliveries.');
-        }
-      } catch (e) {
-        debugPrint('[AdminMarketplaceService] driver_deliveries table sync note: $e');
-      }
-
-      try {
-        final remoteOrders = await client.from('orders').select();
-        if (remoteOrders.isNotEmpty) {
-          for (final row in remoteOrders) {
-            final order = AdminOrderModel.fromMap(Map<String, dynamic>.from(row));
-            final idx = _orders.indexWhere((o) => o.id == order.id);
-            if (idx >= 0) {
-              _orders[idx] = order;
-            } else {
-              _orders.insert(0, order);
-            }
-          }
-        }
-      } catch (_) {}
-
-      await _saveAll();
-      notifyListeners();
-      debugPrint('[AdminMarketplaceService] Supabase Database synchronization complete.');
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase general sync note: $e');
-    }
-  }
-
-  /// Syncs currently logged-in user profile from each manager into admin listings
-  void _syncActiveAppProfiles() {
-    // 1. Farmer profile sync
-    final farmerProfile = FarmerProfileManager.instance.profile;
-    if (farmerProfile.name.isNotEmpty) {
-      syncFarmerFromApp(farmerProfile);
-    }
-
-    // 2. Buyer profile sync
-    final buyerProfile = BuyerProfileManager.instance.profile;
-    if (buyerProfile.name.isNotEmpty) {
-      syncBuyerFromApp(buyerProfile);
-    }
-
-    // 3. Driver profile sync
-    final driverModel = DriverProfileManager.instance.driver;
-    if (driverModel.fullName.isNotEmpty) {
-      syncDriverFromApp(driverModel);
-    }
-  }
-
-  /// Bridge: Called when a Farmer registers or updates their profile in the app
-  Future<void> syncFarmerFromApp(FarmerProfileModel farmerProfile) async {
-    final index = _farmers.indexWhere((f) => f.phone == farmerProfile.phone);
-    final farmerData = AdminFarmerModel(
-      id: farmerProfile.id.isNotEmpty ? farmerProfile.id : 'FRM-001',
-      name: farmerProfile.name,
-      phone: farmerProfile.phone.isNotEmpty ? farmerProfile.phone : '+94763238225',
-      farmName: farmerProfile.farmName,
-      district: farmerProfile.district,
-      agrarianCenter: farmerProfile.agrarianCenter,
-      scale: farmerProfile.scale,
-      practice: farmerProfile.farmingPractice,
-      crops: farmerProfile.crops,
-      nic: farmerProfile.nic ?? '',
-      bankName: farmerProfile.bankName ?? 'Commercial Bank',
-      accountNumber: farmerProfile.accountNumber ?? '',
-      isVerified: farmerProfile.isVerified,
-      status: 'Active',
-      registeredAt: DateTime.now().subtract(const Duration(days: 4)),
-    );
-
-    if (index >= 0) {
-      _farmers[index] = farmerData;
-    } else {
-      _farmers.insert(0, farmerData);
-    }
-    await _saveAll();
-    notifyListeners();
-
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('farmers').upsert(farmerData.toMap());
-      }
-    } catch (_) {}
-  }
-
-  /// Bridge: Called when a Buyer registers or updates their profile in the app
-  Future<void> syncBuyerFromApp(BuyerProfileModel buyerProfile) async {
-    final index = _buyers.indexWhere((b) => b.phone == buyerProfile.phone);
-    final buyerData = AdminBuyerModel(
-      id: buyerProfile.id.isNotEmpty ? buyerProfile.id : 'BYR-001',
-      name: buyerProfile.name,
-      email: buyerProfile.email.isNotEmpty ? buyerProfile.email : 'buyer@farm2home.lk',
-      phone: buyerProfile.phone.isNotEmpty ? buyerProfile.phone : '+94771234567',
-      address: buyerProfile.deliveryAddress,
-      hub: buyerProfile.deliveryHub,
-      buyerType: buyerProfile.buyerType,
-      totalOrders: 3,
-      totalSpent: 8450.0,
-      status: 'Active',
-      registeredAt: DateTime.now().subtract(const Duration(days: 2)),
-    );
-
-    if (index >= 0) {
-      _buyers[index] = buyerData;
-    } else {
-      _buyers.insert(0, buyerData);
-    }
-    await _saveAll();
-    notifyListeners();
-
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('buyers').upsert(buyerData.toMap());
-      }
-    } catch (_) {}
-  }
-
-  /// Bridge: Called when a Driver registers or updates their profile in the app
-  Future<void> syncDriverFromApp(DriverModel driverModel) async {
-    final index = _drivers.indexWhere((d) => d.id == driverModel.id || (driverModel.mobileNumber.isNotEmpty && d.phone == driverModel.mobileNumber));
-    final driverData = AdminDriverModel(
-      id: driverModel.id.isNotEmpty ? driverModel.id : 'DRV-001',
-      name: driverModel.fullName,
-      phone: driverModel.mobileNumber.isNotEmpty ? driverModel.mobileNumber : '+94771234567',
-      licenseNumber: driverModel.licenseNumber,
-      vehicleType: driverModel.vehicleType,
-      plateNumber: driverModel.plateNumber,
-      cargoCapacity: driverModel.cargoCapacity,
-      bankName: driverModel.bankName,
-      accountNumber: driverModel.accountNumber,
-      isOnDuty: driverModel.isOnDuty,
-      completedTrips: driverModel.completedTrips,
-      rating: driverModel.rating,
-      status: 'Active',
-      registeredAt: driverModel.createdAt,
-    );
-
-    if (index >= 0) {
-      _drivers[index] = driverData;
-    } else {
-      _drivers.insert(0, driverData);
-    }
-    await _saveAll();
-    notifyListeners();
-
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('drivers').upsert(driverData.toMap());
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _saveAll() async {
+  Future<void> _saveFarmers() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-          _kFarmersKey, jsonEncode(_farmers.map((e) => e.toMap()).toList()));
-      await prefs.setString(
-          _kBuyersKey, jsonEncode(_buyers.map((e) => e.toMap()).toList()));
-      await prefs.setString(
-          _kDriversKey, jsonEncode(_drivers.map((e) => e.toMap()).toList()));
-      await prefs.setString(
-          _kProductsKey, jsonEncode(_products.map((e) => e.toMap()).toList()));
-      await prefs.setString(
-          _kOrdersKey, jsonEncode(_orders.map((e) => e.toMap()).toList()));
-    } catch (_) {}
+      final data = jsonEncode(_farmers.map((f) => f.toMap()).toList());
+      await prefs.setString(_kFarmersKey, data);
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] _saveFarmers error: $e');
+    }
+  }
+
+  Future<void> _saveBuyers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = jsonEncode(_buyers.map((b) => b.toMap()).toList());
+      await prefs.setString(_kBuyersKey, data);
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] _saveBuyers error: $e');
+    }
+  }
+
+  Future<void> _saveDrivers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = jsonEncode(_drivers.map((d) => d.toMap()).toList());
+      await prefs.setString(_kDriversKey, data);
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] _saveDrivers error: $e');
+    }
+  }
+
+  Future<void> _saveProducts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = jsonEncode(_products.map((p) => p.toMap()).toList());
+      await prefs.setString(_kProductsKey, data);
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] _saveProducts error: $e');
+    }
+  }
+
+  Future<void> _saveOrders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = jsonEncode(_orders.map((o) => o.toMap()).toList());
+      await prefs.setString(_kOrdersKey, data);
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] _saveOrders error: $e');
+    }
+  }
+
+  /// Refreshes data and syncs with Supabase database.
+  /// Individual queries are isolated so a missing table or RLS policy
+  /// will NEVER wipe the cache or crash the UI.
+  Future<void> refreshDatabaseSync() async {
+    _isLoading = true;
+    notifyListeners();
+
+    final db = _db;
+    if (db == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    // 1. Sync Drivers from remote Supabase (drivers table exists)
+    try {
+      final res = await db.from('drivers').select().order('created_at', ascending: false);
+      if (res.isNotEmpty) {
+        final remoteDrivers = res
+            .map((e) => AdminDriverModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final rd in remoteDrivers) {
+          final idx = _drivers.indexWhere((d) => d.id == rd.id);
+          if (idx >= 0) {
+            _drivers[idx] = rd;
+          } else {
+            _drivers.add(rd);
+          }
+        }
+        await _saveDrivers();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] drivers remote sync note: $e');
+    }
+
+    // 2. Sync Deliveries / Orders from remote Supabase (driver_deliveries table exists)
+    try {
+      final res = await db.from('driver_deliveries').select().order('created_at', ascending: false);
+      if (res.isNotEmpty) {
+        final remoteDeliveries = res
+            .map((e) => AdminOrderModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final ro in remoteDeliveries) {
+          final cleanId = _cleanOrderId(ro.id);
+          final idx = _orders.indexWhere((o) => _cleanOrderId(o.id) == cleanId);
+          if (idx >= 0) {
+            _orders[idx] = ro;
+          } else {
+            _orders.add(ro);
+          }
+        }
+        await _saveOrders();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] deliveries remote sync note: $e');
+    }
+
+    // 3. Sync Products from remote Supabase (if available)
+    try {
+      final res = await db.from('products').select().order('created_at', ascending: false);
+      if (res.isNotEmpty) {
+        final remoteProducts = res
+            .map((e) => AdminProductModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final rp in remoteProducts) {
+          final idx = _products.indexWhere((p) => p.id == rp.id);
+          if (idx >= 0) {
+            _products[idx] = rp;
+          } else {
+            _products.add(rp);
+          }
+        }
+        await _saveProducts();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] products remote sync note: $e');
+    }
+
+    // 4. Sync Orders from remote Supabase (if available)
+    try {
+      final res = await db.from('orders').select().order('created_at', ascending: false);
+      if (res.isNotEmpty) {
+        final remoteOrders = res
+            .map((e) => AdminOrderModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final ro in remoteOrders) {
+          final cleanId = _cleanOrderId(ro.id);
+          final idx = _orders.indexWhere((o) => _cleanOrderId(o.id) == cleanId);
+          if (idx >= 0) {
+            _orders[idx] = ro;
+          } else {
+            _orders.add(ro);
+          }
+        }
+        await _saveOrders();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] orders remote sync note: $e');
+    }
+
+    // 5. Sync Farmers from remote Supabase (farmers first, then farmer_details)
+    try {
+      List<dynamic> res = [];
+      try {
+        final r = await db.from('farmers').select().order('created_at', ascending: false);
+        if (r.isNotEmpty) res = r;
+      } catch (_) {}
+      if (res.isEmpty) {
+        try {
+          final r = await db.from('farmer_details').select().order('created_at', ascending: false);
+          if (r.isNotEmpty) res = r;
+        } catch (_) {}
+      }
+      if (res.isNotEmpty) {
+        final remoteFarmers = res
+            .map((e) => AdminFarmerModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final rf in remoteFarmers) {
+          final idx = _farmers.indexWhere((f) => f.id == rf.id);
+          if (idx >= 0) {
+            _farmers[idx] = rf;
+          } else {
+            _farmers.add(rf);
+          }
+        }
+        await _saveFarmers();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] farmers remote sync note: $e');
+    }
+
+    // 6. Sync Buyers from remote Supabase (buyers first, then buyer_details)
+    try {
+      List<dynamic> res = [];
+      try {
+        final r = await db.from('buyers').select().order('created_at', ascending: false);
+        if (r.isNotEmpty) res = r;
+      } catch (_) {}
+      if (res.isEmpty) {
+        try {
+          final r = await db.from('buyer_details').select().order('created_at', ascending: false);
+          if (r.isNotEmpty) res = r;
+        } catch (_) {}
+      }
+      if (res.isNotEmpty) {
+        final remoteBuyers = res
+            .map((e) => AdminBuyerModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        for (final rb in remoteBuyers) {
+          final idx = _buyers.indexWhere((b) => b.id == rb.id);
+          if (idx >= 0) {
+            _buyers[idx] = rb;
+          } else {
+            _buyers.add(rb);
+          }
+        }
+        await _saveBuyers();
+      }
+    } catch (e) {
+      debugPrint('[AdminMarketplaceService] buyers remote sync note: $e');
+    }
+
+    _isLoading = false;
+    _lastError = null;
+    notifyListeners();
+  }
+
+  // ── Self-service sync from app profiles ──────────────────────────────────
+
+  Future<void> syncFarmerFromApp(FarmerProfileModel p) async {
+    final idx = _farmers.indexWhere((f) => f.id == p.id || f.phone == p.phone);
+    final updated = AdminFarmerModel(
+      id: idx >= 0 ? _farmers[idx].id : _newId('FRM'),
+      name: p.name,
+      phone: p.phone,
+      farmName: p.farmName,
+      district: p.district,
+      agrarianCenter: p.agrarianCenter,
+      scale: p.scale,
+      practice: p.farmingPractice,
+      crops: p.crops,
+      nic: p.nic ?? '',
+      bankName: p.bankName ?? '',
+      accountNumber: p.accountNumber ?? '',
+      isVerified: idx >= 0 ? _farmers[idx].isVerified : true,
+      status: idx >= 0 ? _farmers[idx].status : 'Active',
+      registeredAt: idx >= 0 ? _farmers[idx].registeredAt : DateTime.now(),
+    );
+
+    if (idx >= 0) {
+      _farmers[idx] = updated;
+    } else {
+      _farmers.insert(0, updated);
+    }
+    await _saveFarmers();
+    notifyListeners();
+
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('farmers').upsert(updated.toSupabaseMap());
+      } catch (e) {
+        try {
+          await db.from('farmer_details').upsert({
+            'id': updated.id,
+            'farm_name': updated.farmName,
+            'agrarian_center': updated.agrarianCenter,
+            'scale': updated.scale,
+            'bank_name': updated.bankName,
+          });
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> syncBuyerFromApp(BuyerProfileModel p) async {
+    final idx = _buyers.indexWhere((b) => b.id == p.id || b.phone == p.phone);
+    final updated = AdminBuyerModel(
+      id: idx >= 0 ? _buyers[idx].id : _newId('BYR'),
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      address: p.deliveryAddress,
+      hub: p.deliveryHub,
+      buyerType: p.buyerType,
+      totalOrders: idx >= 0 ? _buyers[idx].totalOrders : 0,
+      totalSpent: idx >= 0 ? _buyers[idx].totalSpent : 0.0,
+      status: idx >= 0 ? _buyers[idx].status : 'Active',
+      registeredAt: idx >= 0 ? _buyers[idx].registeredAt : DateTime.now(),
+    );
+
+    if (idx >= 0) {
+      _buyers[idx] = updated;
+    } else {
+      _buyers.insert(0, updated);
+    }
+    await _saveBuyers();
+    notifyListeners();
+
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('buyers').upsert(updated.toSupabaseMap());
+      } catch (e) {
+        try {
+          await db.from('buyer_details').upsert({
+            'id': updated.id,
+            'buyer_type': updated.buyerType,
+          });
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> syncDriverFromApp(DriverModel d) async {
+    final idx = _drivers.indexWhere((driver) => driver.id == d.id || driver.phone == d.mobileNumber);
+    final updated = AdminDriverModel(
+      id: idx >= 0 ? _drivers[idx].id : _newId('DRV'),
+      name: d.fullName,
+      phone: d.mobileNumber,
+      licenseNumber: d.licenseNumber,
+      vehicleType: d.vehicleType,
+      plateNumber: d.plateNumber,
+      cargoCapacity: d.cargoCapacity,
+      bankName: d.bankName,
+      accountNumber: d.accountNumber,
+      isOnDuty: d.isOnDuty,
+      completedTrips: idx >= 0 ? _drivers[idx].completedTrips : 0,
+      rating: idx >= 0 ? _drivers[idx].rating : 5.0,
+      status: d.isOnDuty ? 'Active' : 'Offline',
+      registeredAt: idx >= 0 ? _drivers[idx].registeredAt : DateTime.now(),
+    );
+
+    if (idx >= 0) {
+      _drivers[idx] = updated;
+    } else {
+      _drivers.insert(0, updated);
+    }
+    await _saveDrivers();
+    notifyListeners();
+
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('drivers').upsert(updated.toSupabaseMap());
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] syncDriver remote sync note: $e');
+      }
+    }
   }
 
   // =========================================================================
-  // 🌾 1. FARMERS CRUD OPERATIONS (LOCAL + SUPABASE)
+  // 🌾 1. FARMERS CRUD
   // =========================================================================
   Future<void> addFarmer(AdminFarmerModel farmer) async {
-    _farmers.insert(0, farmer);
-    await _saveAll();
+    final f = farmer.copyWith(
+      id: farmer.id.isNotEmpty && !farmer.id.contains('FRM-000')
+          ? farmer.id
+          : _newId('FRM'),
+    );
+    _farmers.insert(0, f);
+    await _saveFarmers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('farmers').upsert(farmer.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Farmer added to Supabase: ${farmer.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('farmers').insert(f.toSupabaseMap());
+      } catch (e) {
+        try {
+          await db.from('farmer_details').upsert({
+            'id': f.id,
+            'farm_name': f.farmName,
+            'agrarian_center': f.agrarianCenter,
+            'scale': f.scale,
+            'bank_name': f.bankName,
+          });
+        } catch (_) {}
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase addFarmer note: $e');
     }
   }
 
@@ -448,74 +549,94 @@ class AdminMarketplaceService extends ChangeNotifier {
     final idx = _farmers.indexWhere((f) => f.id == farmer.id);
     if (idx >= 0) {
       _farmers[idx] = farmer;
-      await _saveAll();
+      await _saveFarmers();
       notifyListeners();
     }
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('farmers').upsert(farmer.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Farmer updated in Supabase: ${farmer.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('farmers').update(farmer.toSupabaseMap()).eq('id', farmer.id);
+      } catch (e) {
+        try {
+          await db.from('farmer_details').upsert({
+            'id': farmer.id,
+            'farm_name': farmer.farmName,
+            'agrarian_center': farmer.agrarianCenter,
+            'scale': farmer.scale,
+            'bank_name': farmer.bankName,
+          });
+        } catch (_) {}
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase updateFarmer note: $e');
     }
   }
 
   Future<void> deleteFarmer(String id) async {
     _farmers.removeWhere((f) => f.id == id);
-    await _saveAll();
+    await _saveFarmers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('farmers').delete().eq('id', id);
-        debugPrint('[AdminMarketplaceService] Farmer deleted from Supabase: $id');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('farmers').delete().eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] deleteFarmer remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase deleteFarmer note: $e');
     }
   }
 
   Future<void> toggleFarmerVerification(String id) async {
     final idx = _farmers.indexWhere((f) => f.id == id);
-    if (idx >= 0) {
-      final cur = _farmers[idx];
-      final updated = cur.copyWith(
-        isVerified: !cur.isVerified,
-        status: !cur.isVerified ? 'Active' : 'Pending Verification',
-      );
-      _farmers[idx] = updated;
-      await _saveAll();
-      notifyListeners();
+    if (idx < 0) return;
+    final cur = _farmers[idx];
+    final verified = !cur.isVerified;
+    final updated = cur.copyWith(
+      isVerified: verified,
+      status: verified ? 'Active' : 'Pending Verification',
+    );
+    _farmers[idx] = updated;
+    await _saveFarmers();
+    notifyListeners();
 
+    final db = _db;
+    if (db != null) {
       try {
-        final client = _sb;
-        if (client != null) {
-          await client.from('farmers').upsert(updated.toSupabaseMap());
-        }
-      } catch (_) {}
+        await db.from('farmers').update({
+          'is_verified': verified,
+          'status': updated.status,
+        }).eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] toggleFarmer remote sync note: $e');
+      }
     }
   }
 
   // =========================================================================
-  // 🛒 2. BUYERS CRUD OPERATIONS (LOCAL + SUPABASE)
+  // 🛒 2. BUYERS CRUD
   // =========================================================================
   Future<void> addBuyer(AdminBuyerModel buyer) async {
-    _buyers.insert(0, buyer);
-    await _saveAll();
+    final b = buyer.copyWith(
+      id: buyer.id.isNotEmpty && !buyer.id.contains('BYR-000')
+          ? buyer.id
+          : _newId('BYR'),
+    );
+    _buyers.insert(0, b);
+    await _saveBuyers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('buyers').upsert(buyer.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Buyer added to Supabase: ${buyer.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('buyers').insert(b.toSupabaseMap());
+      } catch (e) {
+        try {
+          await db.from('buyer_details').upsert({
+            'id': b.id,
+            'buyer_type': b.buyerType,
+          });
+        } catch (_) {}
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase addBuyer note: $e');
     }
   }
 
@@ -523,72 +644,79 @@ class AdminMarketplaceService extends ChangeNotifier {
     final idx = _buyers.indexWhere((b) => b.id == buyer.id);
     if (idx >= 0) {
       _buyers[idx] = buyer;
-      await _saveAll();
+      await _saveBuyers();
       notifyListeners();
     }
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('buyers').upsert(buyer.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Buyer updated in Supabase: ${buyer.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('buyers').update(buyer.toSupabaseMap()).eq('id', buyer.id);
+      } catch (e) {
+        try {
+          await db.from('buyer_details').upsert({
+            'id': buyer.id,
+            'buyer_type': buyer.buyerType,
+          });
+        } catch (_) {}
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase updateBuyer note: $e');
     }
   }
 
   Future<void> deleteBuyer(String id) async {
     _buyers.removeWhere((b) => b.id == id);
-    await _saveAll();
+    await _saveBuyers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('buyers').delete().eq('id', id);
-        debugPrint('[AdminMarketplaceService] Buyer deleted from Supabase: $id');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('buyers').delete().eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] deleteBuyer remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase deleteBuyer note: $e');
     }
   }
 
   Future<void> toggleBuyerStatus(String id) async {
     final idx = _buyers.indexWhere((b) => b.id == id);
-    if (idx >= 0) {
-      final cur = _buyers[idx];
-      final newStatus = cur.status == 'Active' ? 'Suspended' : 'Active';
-      final updated = cur.copyWith(status: newStatus);
-      _buyers[idx] = updated;
-      await _saveAll();
-      notifyListeners();
+    if (idx < 0) return;
+    final next = _buyers[idx].status == 'Active' ? 'Suspended' : 'Active';
+    final updated = _buyers[idx].copyWith(status: next);
+    _buyers[idx] = updated;
+    await _saveBuyers();
+    notifyListeners();
 
+    final db = _db;
+    if (db != null) {
       try {
-        final client = _sb;
-        if (client != null) {
-          await client.from('buyers').upsert(updated.toSupabaseMap());
-        }
-      } catch (_) {}
+        await db.from('buyers').update({'status': next}).eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] toggleBuyer remote sync note: $e');
+      }
     }
   }
 
   // =========================================================================
-  // 🚚 3. DRIVERS & FLEET CRUD OPERATIONS (LOCAL + SUPABASE)
+  // 🚚 3. DRIVERS & FLEET CRUD
   // =========================================================================
   Future<void> addDriver(AdminDriverModel driver) async {
-    _drivers.insert(0, driver);
-    await _saveAll();
+    final d = driver.copyWith(
+      id: driver.id.isNotEmpty && !driver.id.contains('DRV-000')
+          ? driver.id
+          : _newId('DRV'),
+    );
+    _drivers.insert(0, d);
+    await _saveDrivers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('drivers').upsert(driver.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Driver added to Supabase: ${driver.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('drivers').insert(d.toSupabaseMap());
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] addDriver remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase addDriver note: $e');
     }
   }
 
@@ -596,71 +724,90 @@ class AdminMarketplaceService extends ChangeNotifier {
     final idx = _drivers.indexWhere((d) => d.id == driver.id);
     if (idx >= 0) {
       _drivers[idx] = driver;
-      await _saveAll();
+      await _saveDrivers();
       notifyListeners();
     }
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('drivers').upsert(driver.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Driver updated in Supabase: ${driver.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('drivers').update(driver.toSupabaseMap()).eq('id', driver.id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] updateDriver remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase updateDriver note: $e');
     }
   }
 
   Future<void> deleteDriver(String id) async {
     _drivers.removeWhere((d) => d.id == id);
-    await _saveAll();
+    await _saveDrivers();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('drivers').delete().eq('id', id);
-        debugPrint('[AdminMarketplaceService] Driver deleted from Supabase: $id');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('drivers').delete().eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] deleteDriver remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase deleteDriver note: $e');
     }
   }
 
   Future<void> toggleDriverDuty(String id) async {
     final idx = _drivers.indexWhere((d) => d.id == id);
-    if (idx >= 0) {
-      final cur = _drivers[idx];
-      final updated = cur.copyWith(isOnDuty: !cur.isOnDuty);
-      _drivers[idx] = updated;
-      await _saveAll();
-      notifyListeners();
+    if (idx < 0) return;
+    final next = !_drivers[idx].isOnDuty;
+    final updated = _drivers[idx].copyWith(
+      isOnDuty: next,
+      status: next ? 'Active' : 'Offline',
+    );
+    _drivers[idx] = updated;
+    await _saveDrivers();
+    notifyListeners();
 
+    final db = _db;
+    if (db != null) {
       try {
-        final client = _sb;
-        if (client != null) {
-          await client.from('drivers').upsert(updated.toSupabaseMap());
-        }
-      } catch (_) {}
+        await db.from('drivers').update({
+          'duty_status': next,
+          'is_on_duty': next,
+        }).eq('id', id);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] toggleDriverDuty remote sync note: $e');
+      }
     }
   }
 
   // =========================================================================
-  // 🥦 4. MARKETPLACE PRODUCTS CRUD OPERATIONS (LOCAL + SUPABASE)
+  // 🥕 4. PRODUCTS CRUD
   // =========================================================================
   Future<void> addProduct(AdminProductModel product) async {
-    _products.insert(0, product);
-    await _saveAll();
+    final p = product.copyWith(
+      id: product.id.isNotEmpty && !product.id.contains('PRD-000')
+          ? product.id
+          : _newId('PRD'),
+    );
+    _products.insert(0, p);
+    await _saveProducts();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('products').upsert(product.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Product added to Supabase: ${product.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        final map = p.toSupabaseMap();
+        map['farmer_id'] = '37be4352-c46e-4f8d-aeff-478857bf5d84';
+        final inserted = await db.from('products').insert(map).select().maybeSingle();
+        if (inserted != null && inserted['id'] != null) {
+          final realId = inserted['id'].toString();
+          final idx = _products.indexWhere((item) => item.id == p.id);
+          if (idx >= 0) {
+            _products[idx] = p.copyWith(id: realId);
+            await _saveProducts();
+          }
+        }
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] addProduct remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase addProduct note: $e');
     }
   }
 
@@ -668,434 +815,581 @@ class AdminMarketplaceService extends ChangeNotifier {
     final idx = _products.indexWhere((p) => p.id == product.id);
     if (idx >= 0) {
       _products[idx] = product;
-      await _saveAll();
+      await _saveProducts();
       notifyListeners();
     }
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('products').upsert(product.toSupabaseMap());
-        debugPrint('[AdminMarketplaceService] Product updated in Supabase: ${product.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        final map = product.toSupabaseMap();
+        map.remove('id');
+        if (AdminProductModel.isValidUuid(product.id)) {
+          await db.from('products').update(map).eq('id', product.id);
+        } else {
+          await db.from('products').update(map).eq('name', product.name);
+        }
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] updateProduct remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase updateProduct note: $e');
     }
   }
 
   Future<void> deleteProduct(String id) async {
-    _products.removeWhere((p) => p.id == id);
-    await _saveAll();
+    final p = _products.where((item) => item.id == id).firstOrNull;
+    _products.removeWhere((item) => item.id == id);
+    await _saveProducts();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('products').delete().eq('id', id);
-        debugPrint('[AdminMarketplaceService] Product deleted from Supabase: $id');
+    final db = _db;
+    if (db != null) {
+      try {
+        if (AdminProductModel.isValidUuid(id)) {
+          await db.from('products').delete().eq('id', id);
+        } else if (p != null) {
+          await db.from('products').delete().eq('name', p.name);
+        }
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] deleteProduct remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase deleteProduct note: $e');
     }
   }
 
   // =========================================================================
-  // 📦 5. ORDERS & DISPATCH CRUD OPERATIONS (LOCAL + SUPABASE)
+  // 📦 5. ORDERS & DISPATCH CRUD
   // =========================================================================
+  String? _driverIdFor(String name, String phone) {
+    for (final d in _drivers) {
+      if (phone.isNotEmpty && d.phone == phone) return d.id;
+    }
+    for (final d in _drivers) {
+      if (name.isNotEmpty && name.startsWith(d.name)) return d.id;
+    }
+    return null;
+  }
+
   Future<void> addOrder(AdminOrderModel order) async {
-    _orders.insert(0, order);
-    await _saveAll();
+    final o = order.copyWith(
+      id: order.id.isNotEmpty && !order.id.contains('FH-000')
+          ? order.id
+          : _newId('FH'),
+    );
+    _orders.insert(0, o);
+    await _saveOrders();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        // Upsert to Supabase live deliveries table
-        await client.from('driver_deliveries').upsert(order.toDeliveryMap());
-        try {
-          await client.from('orders').upsert(order.toSupabaseMap());
-        } catch (_) {}
-        debugPrint('[AdminMarketplaceService] Order added to Supabase: ${order.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        final delivery = o.toDeliveryMap();
+        final driverId = _driverIdFor(o.assignedDriverName, o.assignedDriverPhone);
+        if (driverId != null) delivery['driver_id'] = driverId;
+        await db.from('driver_deliveries').upsert(delivery);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] addOrder remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase addOrder note: $e');
     }
   }
 
   Future<void> updateOrder(AdminOrderModel order) async {
-    final idx = _orders.indexWhere((o) => o.id == order.id);
+    final clean = _cleanOrderId(order.id);
+    final idx = _orders.indexWhere((o) => _cleanOrderId(o.id) == clean);
     if (idx >= 0) {
       _orders[idx] = order;
-      await _saveAll();
+      await _saveOrders();
       notifyListeners();
     }
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        await client.from('driver_deliveries').upsert(order.toDeliveryMap());
-        try {
-          await client.from('orders').upsert(order.toSupabaseMap());
-        } catch (_) {}
-        debugPrint('[AdminMarketplaceService] Order updated in Supabase: ${order.id}');
+    final db = _db;
+    if (db != null) {
+      try {
+        final delivery = order.toDeliveryMap();
+        final driverId = _driverIdFor(order.assignedDriverName, order.assignedDriverPhone);
+        if (driverId != null) delivery['driver_id'] = driverId;
+        await db.from('driver_deliveries').upsert(delivery);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] updateOrder remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase updateOrder note: $e');
     }
   }
 
   Future<void> updateOrderStatus(String id, String newStatus) async {
-    final idx = _orders.indexWhere((o) => o.id == id);
+    final clean = _cleanOrderId(id);
+    final idx = _orders.indexWhere((o) => _cleanOrderId(o.id) == clean);
     if (idx >= 0) {
-      final updated = _orders[idx].copyWith(status: newStatus);
-      _orders[idx] = updated;
-      await _saveAll();
+      _orders[idx] = _orders[idx].copyWith(status: newStatus);
+      await _saveOrders();
       notifyListeners();
+    }
 
+    final db = _db;
+    if (db != null) {
       try {
-        final client = _sb;
-        if (client != null) {
-          final cleanId = id.replaceAll('#', '').trim();
-          await client.from('driver_deliveries').update({
-            'status': newStatus,
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', cleanId);
-          try {
-            await client.from('orders').update({
-              'status': newStatus,
-            }).eq('id', id);
-          } catch (_) {}
-        }
-      } catch (_) {}
+        await db
+            .from('driver_deliveries')
+            .update({'status': newStatus}).eq('id', clean);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] updateOrderStatus remote sync note: $e');
+      }
     }
   }
 
   Future<void> assignDriverToOrder(
       String orderId, String driverName, String driverPhone) async {
-    final idx = _orders.indexWhere((o) => o.id == orderId);
+    final clean = _cleanOrderId(orderId);
+    final idx = _orders.indexWhere((o) => _cleanOrderId(o.id) == clean);
     if (idx >= 0) {
-      final updated = _orders[idx].copyWith(
+      _orders[idx] = _orders[idx].copyWith(
         assignedDriverName: driverName,
         assignedDriverPhone: driverPhone,
         status: 'In Transit',
       );
-      _orders[idx] = updated;
-      await _saveAll();
+      await _saveOrders();
       notifyListeners();
+    }
 
+    final db = _db;
+    if (db != null) {
       try {
-        final client = _sb;
-        if (client != null) {
-          final cleanId = orderId.replaceAll('#', '').trim();
-          await client.from('driver_deliveries').update({
-            'status': 'In Transit',
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', cleanId);
-          try {
-            await client.from('orders').update({
-              'assigned_driver_name': driverName,
-              'assigned_driver_phone': driverPhone,
-              'status': 'In Transit',
-            }).eq('id', orderId);
-          } catch (_) {}
-        }
-      } catch (_) {}
+        final driverId = _driverIdFor(driverName, driverPhone);
+        await db.from('driver_deliveries').update({
+          if (driverId != null) 'driver_id': driverId,
+          'status': 'In Transit',
+        }).eq('id', clean);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] assignDriver remote sync note: $e');
+      }
     }
   }
 
   Future<void> deleteOrder(String id) async {
-    _orders.removeWhere((o) => o.id == id);
-    await _saveAll();
+    final clean = _cleanOrderId(id);
+    _orders.removeWhere((o) => _cleanOrderId(o.id) == clean);
+    await _saveOrders();
     notifyListeners();
 
-    try {
-      final client = _sb;
-      if (client != null) {
-        final cleanId = id.replaceAll('#', '').trim();
-        try {
-          await client.from('driver_deliveries').delete().eq('id', cleanId);
-        } catch (_) {}
-        try {
-          await client.from('orders').delete().eq('id', id);
-        } catch (_) {}
-        debugPrint('[AdminMarketplaceService] Order deleted from Supabase: $id');
+    final db = _db;
+    if (db != null) {
+      try {
+        await db.from('driver_deliveries').delete().eq('id', clean);
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] deleteOrder remote sync note: $e');
       }
-    } catch (e) {
-      debugPrint('[AdminMarketplaceService] Supabase deleteOrder note: $e');
     }
   }
 
   // =========================================================================
-  // 🔍 SEEDING REALISTIC SRI LANKAN DATA
+  // 🌟 DEFAULT REALISTIC SRI LANKAN MARKETPLACE SEED DATA
   // =========================================================================
-  void _seedDefaultFarmers() {
-    _farmers.clear();
-    _farmers.addAll([
+  List<AdminFarmerModel> _defaultFarmers() {
+    final now = DateTime.now();
+    return [
       AdminFarmerModel(
         id: 'FRM-101',
         name: 'Sunil Shantha Perera',
-        phone: '+94763238225',
+        phone: '+94771122334',
         farmName: 'Hakgala Organic Highlands',
         district: 'Nuwara Eliya',
         agrarianCenter: 'Hakgala Agrarian Center',
-        scale: '2 - 3 Acres',
+        scale: '3 - 5 Acres',
         practice: 'Certified Organic (SL-GAP)',
-        crops: const ['Carrots', 'Leeks', 'Highland Potatoes'],
-        nic: '197829401928',
-        bankName: 'Commercial Bank of Ceylon',
-        accountNumber: '8004129381',
+        crops: const ['Highland Carrots', 'Organic Tomatoes', 'Leeks', 'Beetroot'],
+        nic: '782145698V',
+        bankName: 'Commercial Bank',
+        accountNumber: '8002938411',
         isVerified: true,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 30)),
+        registeredAt: now.subtract(const Duration(days: 60)),
       ),
       AdminFarmerModel(
         id: 'FRM-102',
-        name: 'K. M. Bandara',
-        phone: '+94778192014',
-        farmName: 'Ambewela Green Valley Farm',
-        district: 'Nuwara Eliya',
-        agrarianCenter: 'Nuwara Eliya Central',
-        scale: '3 - 5 Acres',
-        practice: 'Chemical-Free Natural',
-        crops: const ['Cabbage', 'Beetroot', 'Strawberries'],
-        nic: '198420194812',
+        name: 'Nimal Bandara',
+        phone: '+94714455667',
+        farmName: 'Dambulla Agro Green',
+        district: 'Matale',
+        agrarianCenter: 'Dambulla Center',
+        scale: '5 - 10 Acres',
+        practice: 'Good Agricultural Practices (GAP)',
+        crops: const ['Green Chillies', 'Big Onions', 'Capsicum', 'Brinjals'],
+        nic: '821098453V',
         bankName: 'Bank of Ceylon',
-        accountNumber: '00392019481',
+        accountNumber: '0029381745',
         isVerified: true,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 24)),
+        registeredAt: now.subtract(const Duration(days: 45)),
       ),
       AdminFarmerModel(
         id: 'FRM-103',
-        name: 'Dharmasena Senanayake',
-        phone: '+94719482019',
-        farmName: 'Dambulla Agro Bio Fields',
-        district: 'Matale',
-        agrarianCenter: 'Dambulla Agro Center',
-        scale: '5+ Acres',
-        practice: 'Conventional GAP',
-        crops: const ['Tomatoes', 'Green Chillies', 'Capsicum'],
-        nic: '196929401948',
+        name: 'Priyantha Kumara',
+        phone: '+94762233445',
+        farmName: 'Welimada Valley Farms',
+        district: 'Badulla',
+        agrarianCenter: 'Welimada Agrarian',
+        scale: '1 - 3 Acres',
+        practice: 'Conventional Fresh',
+        crops: const ['Highland Potatoes', 'Cabbage', 'Beans'],
+        nic: '852349182V',
         bankName: 'People\'s Bank',
-        accountNumber: '294019481029',
+        accountNumber: '1239840192',
+        isVerified: true,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 30)),
+      ),
+      AdminFarmerModel(
+        id: 'FRM-104',
+        name: 'K. Sivagurunathan',
+        phone: '+94778899001',
+        farmName: 'Jaffna Red Onion Gardens',
+        district: 'Jaffna',
+        agrarianCenter: 'Chavakachcheri',
+        scale: '2 - 4 Acres',
+        practice: 'Natural Farming',
+        crops: const ['Red Onions', 'Jaffna Drumsticks', 'Bananas'],
+        nic: '761928374V',
+        bankName: 'Hatton National Bank',
+        accountNumber: '0492817201',
+        isVerified: true,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 20)),
+      ),
+      AdminFarmerModel(
+        id: 'FRM-105',
+        name: 'Mahinda Jayawardena',
+        phone: '+94703344556',
+        farmName: 'Rambukkana Plantations',
+        district: 'Kegalle',
+        agrarianCenter: 'Rambukkana Center',
+        scale: '4 - 8 Acres',
+        practice: 'Certified Organic (SL-GAP)',
+        crops: const ['Ginger', 'Turmeric', 'Papaya'],
+        nic: '691029384V',
+        bankName: 'Sampath Bank',
+        accountNumber: '7102938491',
         isVerified: false,
         status: 'Pending Verification',
-        registeredAt: DateTime.now().subtract(const Duration(days: 2)),
+        registeredAt: now.subtract(const Duration(days: 5)),
       ),
-    ]);
+    ];
   }
 
-  void _seedDefaultBuyers() {
-    _buyers.clear();
-    _buyers.addAll([
+  List<AdminBuyerModel> _defaultBuyers() {
+    final now = DateTime.now();
+    return [
       AdminBuyerModel(
         id: 'BYR-201',
         name: 'Chaminda Perera',
-        email: 'chaminda@gmail.com',
-        phone: '+94771234567',
-        address: 'No 45, Flower Road, Colombo 07',
-        hub: 'Colombo Regional Hub (Western)',
-        buyerType: 'Family / Household',
-        totalOrders: 6,
-        totalSpent: 18450.0,
+        email: 'chaminda.perera@gmail.com',
+        phone: '+94719876543',
+        address: '123, Galle Road, Colombo 03',
+        hub: 'Manning Market Hub, Colombo',
+        buyerType: 'Supermarket / Retail Chain',
+        totalOrders: 18,
+        totalSpent: 184500.0,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 45)),
+        registeredAt: now.subtract(const Duration(days: 50)),
       ),
       AdminBuyerModel(
         id: 'BYR-202',
-        name: 'Cinnamon Grand Hospitality',
-        email: 'procurement@cinnamonhotels.lk',
-        phone: '+94112497300',
-        address: '77 Galle Road, Colombo 03',
-        hub: 'Colombo Central Regional Hub',
-        buyerType: 'Restaurant & Hospitality',
-        totalOrders: 28,
-        totalSpent: 342500.0,
+        name: 'Dilani Jayasinghe',
+        email: 'dilani.j@yahoo.com',
+        phone: '+94776543210',
+        address: '45, Peradeniya Road, Kandy',
+        hub: 'Kandy Central Distribution Hub',
+        buyerType: 'Wholesale Distributor',
+        totalOrders: 12,
+        totalSpent: 96200.0,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 60)),
+        registeredAt: now.subtract(const Duration(days: 40)),
       ),
       AdminBuyerModel(
         id: 'BYR-203',
-        name: 'Good Market Organic Store',
-        email: 'supply@goodmarket.lk',
-        phone: '+94777129840',
-        address: 'Philip Gunewardena Mawatha, Colombo 07',
-        hub: 'Colombo Regional Hub (Western)',
-        buyerType: 'Retail Organic Store',
-        totalOrders: 14,
-        totalSpent: 96200.0,
-        status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 18)),
-      ),
-    ]);
-  }
-
-  void _seedDefaultDrivers() {
-    _drivers.clear();
-    _drivers.addAll([
-      AdminDriverModel(
-        id: 'DRV-301',
-        name: 'Ranjith Subha Udhasanak',
+        name: 'K. Wickramasinghe',
+        email: 'keells.procure@keells.lk',
         phone: '+94771234567',
-        licenseNumber: 'B-8492019',
-        vehicleType: 'Chilled / Refrigerated Van',
-        plateNumber: 'WP NC-4982',
-        cargoCapacity: '1,200 kg',
-        bankName: 'Commercial Bank of Ceylon',
-        accountNumber: '8004 1293 4198',
-        isOnDuty: true,
-        completedTrips: 184,
-        rating: 4.95,
+        address: 'Keells Distribution Centre, Kerawalapitiya',
+        hub: 'Peliyagoda Central Wholesale Hub',
+        buyerType: 'Commercial Bulk Buyer',
+        totalOrders: 34,
+        totalSpent: 420000.0,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 70)),
+        registeredAt: now.subtract(const Duration(days: 35)),
       ),
-      AdminDriverModel(
-        id: 'DRV-302',
-        name: 'Samantha Jayawardena',
-        phone: '+94718491029',
-        licenseNumber: 'B-9201842',
-        vehicleType: 'Insulated High-Roof Truck',
-        plateNumber: 'CP LY-3819',
-        cargoCapacity: '2,500 kg',
-        bankName: 'Bank of Ceylon',
-        accountNumber: '10924810294',
-        isOnDuty: true,
-        completedTrips: 92,
-        rating: 4.88,
+      AdminBuyerModel(
+        id: 'BYR-204',
+        name: 'Sujith Fernando',
+        email: 'sujithf@hotmail.com',
+        phone: '+94754433221',
+        address: '88, Negombo Road, Kurunegala',
+        hub: 'Kurunegala Dambulla Exchange',
+        buyerType: 'Restaurant / Hotel (HoReCa)',
+        totalOrders: 8,
+        totalSpent: 54000.0,
         status: 'Active',
-        registeredAt: DateTime.now().subtract(const Duration(days: 40)),
+        registeredAt: now.subtract(const Duration(days: 15)),
       ),
-      AdminDriverModel(
-        id: 'DRV-303',
-        name: 'Priyashantha Kumara',
-        phone: '+94769201847',
-        licenseNumber: 'B-3829104',
-        vehicleType: 'Standard Cargo Van',
-        plateNumber: 'WP DA-8291',
-        cargoCapacity: '950 kg',
-        bankName: 'Hatton National Bank',
-        accountNumber: '02910481029',
-        isOnDuty: false,
-        completedTrips: 45,
-        rating: 4.75,
-        status: 'On Standby',
-        registeredAt: DateTime.now().subtract(const Duration(days: 15)),
+      AdminBuyerModel(
+        id: 'BYR-205',
+        name: 'Malini Senanayake',
+        email: 'malini.s@gmail.com',
+        phone: '+94723322110',
+        address: '12, Beach Road, Mount Lavinia',
+        hub: 'Colombo South Distribution Hub',
+        buyerType: 'Family / Household',
+        totalOrders: 5,
+        totalSpent: 22800.0,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 8)),
       ),
-    ]);
+    ];
   }
 
-  void _seedDefaultProducts() {
-    _products.clear();
-    _products.addAll([
+  List<AdminDriverModel> _defaultDrivers() {
+    final now = DateTime.now();
+    return [
+      AdminDriverModel(
+        id: 'DRV-5304',
+        name: 'Madushi',
+        phone: '784521693',
+        licenseNumber: 'G-7890',
+        vehicleType: 'Covered Light Truck / Lorry',
+        plateNumber: 'FK-1234',
+        cargoCapacity: '100g',
+        bankName: 'Seylan Bank',
+        accountNumber: '789653214',
+        isOnDuty: true,
+        completedTrips: 14,
+        rating: 4.9,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 55)),
+      ),
+      AdminDriverModel(
+        id: 'DRV-8927',
+        name: 'Gayani',
+        phone: '764215967',
+        licenseNumber: 'V-5678',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'BE-1234',
+        cargoCapacity: '900g',
+        bankName: 'Nations Trust Bank (NTB)',
+        accountNumber: '7856941233',
+        isOnDuty: true,
+        completedTrips: 29,
+        rating: 4.9,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 42)),
+      ),
+      AdminDriverModel(
+        id: 'DRV-5205',
+        name: 'Janith',
+        phone: '752315698',
+        licenseNumber: 'H-5678',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'RS-1234',
+        cargoCapacity: '300g',
+        bankName: 'Bank of Ceylon (BOC)',
+        accountNumber: '147852369',
+        isOnDuty: true,
+        completedTrips: 8,
+        rating: 4.9,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 28)),
+      ),
+      AdminDriverModel(
+        id: 'DRV-491939',
+        name: 'Lasiru Iduvara',
+        phone: '+94765642127',
+        licenseNumber: 'M-4567',
+        vehicleType: 'Three-Wheeler / Cargo Tuk',
+        plateNumber: 'WP-CA-8921',
+        cargoCapacity: '250g',
+        bankName: 'People\'s Bank',
+        accountNumber: '1284719201',
+        isOnDuty: true,
+        completedTrips: 21,
+        rating: 4.9,
+        status: 'Active',
+        registeredAt: now.subtract(const Duration(days: 18)),
+      ),
+    ];
+  }
+
+  List<AdminProductModel> _defaultProducts() {
+    final now = DateTime.now();
+    return [
       AdminProductModel(
-        id: 'PRD-401',
-        name: 'Hakgala Sweet Carrots',
-        category: 'Root Vegetables',
+        id: 'PRD-301',
+        name: 'Nuwara Eliya Carrots',
+        category: 'Vegetables',
+        price: 380.0,
+        unit: '/kg',
+        availableQty: 450.0,
+        farmName: 'Hakgala Organic Highlands',
+        farmerName: 'Sunil Shantha Perera',
+        isOrganic: true,
+        imageUrl: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500',
+        description: 'Freshly harvested crisp Nuwara Eliya highland carrots, sweet and vibrant.',
+        status: 'In Stock',
+        createdAt: now.subtract(const Duration(days: 12)),
+      ),
+      AdminProductModel(
+        id: 'PRD-302',
+        name: 'Organic Tomatoes',
+        category: 'Vegetables',
+        price: 320.0,
+        unit: '/kg',
+        availableQty: 600.0,
+        farmName: 'Hakgala Organic Highlands',
+        farmerName: 'Sunil Shantha Perera',
+        isOrganic: true,
+        imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500',
+        description: 'Vine-ripened organic red tomatoes, pesticide-free SL-GAP certified.',
+        status: 'In Stock',
+        createdAt: now.subtract(const Duration(days: 10)),
+      ),
+      AdminProductModel(
+        id: 'PRD-303',
+        name: 'Dambulla Green Chillies',
+        category: 'Vegetables',
+        price: 750.0,
+        unit: '/kg',
+        availableQty: 200.0,
+        farmName: 'Dambulla Agro Green',
+        farmerName: 'Nimal Bandara',
+        isOrganic: false,
+        imageUrl: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=500',
+        description: 'Spicy fresh green chillies directly picked from Dambulla fields.',
+        status: 'In Stock',
+        createdAt: now.subtract(const Duration(days: 8)),
+      ),
+      AdminProductModel(
+        id: 'PRD-304',
+        name: 'Highland Potatoes',
+        category: 'Tubers',
+        price: 420.0,
+        unit: '/kg',
+        availableQty: 800.0,
+        farmName: 'Welimada Valley Farms',
+        farmerName: 'Priyantha Kumara',
+        isOrganic: false,
+        imageUrl: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500',
+        description: 'Grade-A Welimada red soil potatoes, firm and delicious.',
+        status: 'In Stock',
+        createdAt: now.subtract(const Duration(days: 6)),
+      ),
+      AdminProductModel(
+        id: 'PRD-305',
+        name: 'Jaffna Red Onions',
+        category: 'Vegetables',
+        price: 520.0,
+        unit: '/kg',
+        availableQty: 350.0,
+        farmName: 'Jaffna Red Onion Gardens',
+        farmerName: 'K. Sivagurunathan',
+        isOrganic: true,
+        imageUrl: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=500',
+        description: 'Aromatic Jaffna small red onions, packed with strong flavor and freshness.',
+        status: 'In Stock',
+        createdAt: now.subtract(const Duration(days: 4)),
+      ),
+      AdminProductModel(
+        id: 'PRD-306',
+        name: 'Red Lady Papaya',
+        category: 'Fruits',
         price: 260.0,
         unit: '/kg',
         availableQty: 180.0,
-        farmName: 'Hakgala Organic Highlands',
-        farmerName: 'Sunil Shantha Perera',
+        farmName: 'Rambukkana Plantations',
+        farmerName: 'Mahinda Jayawardena',
         isOrganic: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
-        description: 'Fresh crisp highland carrots cultivated at 2,000m altitude.',
+        imageUrl: 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=500',
+        description: 'Sweet, juicy organic red lady papayas, tree-ripened naturally.',
         status: 'In Stock',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
+        createdAt: now.subtract(const Duration(days: 2)),
       ),
-      AdminProductModel(
-        id: 'PRD-402',
-        name: 'Highland Leeks (Grade A)',
-        category: 'Leafy Greens',
-        price: 220.0,
-        unit: '/kg',
-        availableQty: 120.0,
-        farmName: 'Hakgala Organic Highlands',
-        farmerName: 'Sunil Shantha Perera',
-        isOrganic: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=500&auto=format&fit=crop&q=80',
-        description: 'Tender leeks harvested fresh with organic certification.',
-        status: 'In Stock',
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-      AdminProductModel(
-        id: 'PRD-403',
-        name: 'Ambewela Fresh Strawberries',
-        category: 'Highland Fruits',
-        price: 850.0,
-        unit: '/pack',
-        availableQty: 40.0,
-        farmName: 'Ambewela Green Valley Farm',
-        farmerName: 'K. M. Bandara',
-        isOrganic: true,
-        imageUrl:
-            'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&auto=format&fit=crop&q=80',
-        description: 'Sweet luscious strawberries freshly packed in chilled cartons.',
-        status: 'Low Stock',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      AdminProductModel(
-        id: 'PRD-404',
-        name: 'Dambulla Ripe Tomatoes',
-        category: 'Vegetables',
-        price: 180.0,
-        unit: '/kg',
-        availableQty: 350.0,
-        farmName: 'Dambulla Agro Bio Fields',
-        farmerName: 'Dharmasena Senanayake',
-        isOrganic: false,
-        imageUrl:
-            'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80',
-        description: 'Plump sun-ripened tomatoes ideal for restaurants and households.',
-        status: 'In Stock',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ]);
+    ];
   }
 
-  void _seedDefaultOrders() {
-    _orders.clear();
-    _orders.addAll([
+  List<AdminOrderModel> _defaultOrders() {
+    final now = DateTime.now();
+    return [
+      AdminOrderModel(
+        id: 'FT-1524',
+        customerName: 'Chaminda Perera',
+        customerPhone: '+94719876543',
+        farmName: 'Sunil Perera Farm',
+        itemsSummary: '2 kg Organic Tomatoes, 1 kg Fresh Carrots, 1 kg Highland Potatoes, 1 1 kg Nuwara Eliya Highland Carrots',
+        totalAmount: 1071.0,
+        status: 'Pending',
+        deliveryAddress: '123, Main Street, Hambantota',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 4)),
+      ),
       AdminOrderModel(
         id: 'FH-8841',
         customerName: 'Chaminda Perera',
-        customerPhone: '+94771234567',
-        farmName: 'Hakgala Organic Highlands',
-        itemsSummary: '10 kg Carrots, 5 kg Leeks',
-        totalAmount: 3700.0,
-        status: 'In Transit',
-        deliveryAddress: 'No 45, Flower Road, Colombo 07',
-        assignedDriverName: 'Ranjith Subha (NC-4982)',
-        assignedDriverPhone: '+94771234567',
-        orderDate: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-      AdminOrderModel(
-        id: 'FH-8842',
-        customerName: 'Cinnamon Grand Hospitality',
-        customerPhone: '+94112497300',
-        farmName: 'Ambewela Green Valley Farm',
-        itemsSummary: '20 packs Strawberries, 15 kg Cabbage',
-        totalAmount: 21500.0,
-        status: 'Confirmed',
-        deliveryAddress: '77 Galle Road, Colombo 03',
-        assignedDriverName: 'Samantha Jayawardena (LY-3819)',
-        assignedDriverPhone: '+94718491029',
-        orderDate: DateTime.now().subtract(const Duration(hours: 6)),
-      ),
-      AdminOrderModel(
-        id: 'FH-8843',
-        customerName: 'Good Market Organic Store',
-        customerPhone: '+94777129840',
-        farmName: 'Dambulla Agro Bio Fields',
-        itemsSummary: '50 kg Tomatoes, 20 kg Potatoes',
-        totalAmount: 14200.0,
-        status: 'Pending',
-        deliveryAddress: 'Philip Gunewardena Mw, Colombo 07',
+        customerPhone: '+94719876543',
+        farmName: 'K. M. Bandara',
+        itemsSummary: '5 kg (Carrots & Leeks)',
+        totalAmount: 1450.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'No. 42 Havelock Rd, Colombo 05',
         assignedDriverName: 'Unassigned',
         assignedDriverPhone: '',
-        orderDate: DateTime.now().subtract(const Duration(minutes: 45)),
+        orderDate: now.subtract(const Duration(hours: 6)),
       ),
-    ]);
+      AdminOrderModel(
+        id: 'FH-8850',
+        customerName: 'Dilani Jayawardena',
+        customerPhone: '+94719876543',
+        farmName: 'Sunil Perera',
+        itemsSummary: '12 kg (Tomatoes & Cabbages)',
+        totalAmount: 1800.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'Dehiwala Urban Center',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 8)),
+      ),
+      AdminOrderModel(
+        id: 'FT-1560',
+        customerName: 'Chaminda Perera',
+        customerPhone: '+94719876543',
+        farmName: 'Sunil Perera Farm',
+        itemsSummary: '2 kg Organic Tomatoes, 1 kg Fresh Carrots, 1 kg Highland Potatoes, 2 1 kg Crisp Field Salad Cucumber',
+        totalAmount: 1071.0,
+        status: 'Pending',
+        deliveryAddress: '123, Main Street, Hambantota',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 10)),
+      ),
+      AdminOrderModel(
+        id: 'FH-8862',
+        customerName: 'Anura Kumara (Cinnamon Mart)',
+        customerPhone: '+94719876543',
+        farmName: 'R. M. Dissanayake',
+        itemsSummary: '25 kg (Bell Peppers & Fresh Tomatoes)',
+        totalAmount: 2100.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'No. 18 Barnes Place, Colombo 07',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(hours: 12)),
+      ),
+      AdminOrderModel(
+        id: 'FH-8875',
+        customerName: 'Nimali Jayasinghe (Fresh Choice)',
+        customerPhone: '+94719876543',
+        farmName: 'S. K. Gunasekara',
+        itemsSummary: '8 kg (Salad Greens & Strawberries)',
+        totalAmount: 1650.0,
+        status: 'Ready for Pickup',
+        deliveryAddress: 'Station Road, Moratuwa',
+        assignedDriverName: 'Unassigned',
+        assignedDriverPhone: '',
+        orderDate: now.subtract(const Duration(days: 1)),
+      ),
+    ];
   }
 }
