@@ -1172,11 +1172,31 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     onTap: () => _switchTab(5),
                   ),
                   _buildExecutiveKpiCard(
-                    title: 'Gross Payouts Volume',
-                    value: 'Rs. ${_service.totalRevenue.toInt()}',
-                    badge: 'Direct Farmer Pay',
-                    subText: 'Cumulative Marketplace Trade',
-                    icon: Icons.payments_rounded,
+                    title: 'Pre-Order Contracts',
+                    value: '${PreOrderManager.instance.preOrders.length}',
+                    badge: 'Direct Farming',
+                    subText: 'Forward Contracts & Proposals',
+                    icon: Icons.handshake_rounded,
+                    accentColor: const Color(0xFF0284C7),
+                    gradientStart: const Color(0xFFF0F9FF),
+                    onTap: () => _switchTab(6),
+                  ),
+                  _buildExecutiveKpiCard(
+                    title: 'Live Crop Auctions',
+                    value: '${AuctionManager.instance.auctions.length}',
+                    badge: '${AuctionManager.instance.activeAuctionsCount} Live Now',
+                    subText: 'Live Bidding & Lot Tracking',
+                    icon: Icons.gavel_rounded,
+                    accentColor: const Color(0xFFEA580C),
+                    gradientStart: const Color(0xFFFFF7ED),
+                    onTap: () => _switchTab(7),
+                  ),
+                  _buildExecutiveKpiCard(
+                    title: 'Active Fleet Dispatches',
+                    value: '${_service.inTransitOrdersCount}',
+                    badge: 'Live GPS',
+                    subText: 'Real-time Pickup & Transit',
+                    icon: Icons.alt_route_rounded,
                     accentColor: const Color(0xFF0D9488),
                     gradientStart: const Color(0xFFF0FDFA),
                     onTap: () => _switchTab(5),
@@ -1187,6 +1207,109 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           ),
 
           const SizedBox(height: 22),
+
+          // ── Encrypted Payments & PCI-DSS Financial Audit Card ─────────────
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.security_rounded, color: Color(0xFF2563EB), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Text(
+                                'Financial Gateways & Encrypted Settlements',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textDark,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.lock_rounded, color: Color(0xFF059669), size: 14),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Gross Revenue: Rs. ${_service.totalRevenue.toInt()} • Zero-Trust Card Tokenization active',
+                            style: const TextStyle(fontSize: 11.5, color: _textMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_rounded, size: 12, color: Color(0xFF059669)),
+                          SizedBox(width: 4),
+                          Text(
+                            'PCI-DSS SAFE',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _borderLight),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Direct card entry is disabled in Admin Console to protect cardholder data. All buyer cards are masked & encrypted (e.g. Visa •••• 4242, Mastercard •••• 8819).'.trAuto(context),
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF475569), height: 1.35),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
 
           // ── SMS Gateway Telemetry Health Card ─────────────────────────────
           Container(
@@ -1269,9 +1392,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
           const SizedBox(height: 22),
 
-          // ── Quick Management Controls Tiles ──────────────────────────────
+          // ── Quick Management Controls Tiles: ALL 8 CRUD OPERATIONS ────────
           const Text(
-            'FAST CONFIGURATION SHORTCUTS',
+            'ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION)',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -1281,17 +1404,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           ),
           const SizedBox(height: 10),
 
+          // 1. Farmers CRUD
           _buildQuickActionTile(
-            title: 'Farmers Registry & Certification',
-            subtitle: 'Add farmers, modify bank information, or toggle Verified status badges',
+            title: '1. Farmers Registry & Verification (Member 2)',
+            subtitle: 'Add farmers, modify bank information, toggle Verified Agri-Partner badges',
             icon: Icons.agriculture_rounded,
             iconBg: const Color(0xFFDCFCE7),
             iconColor: const Color(0xFF047857),
             onTap: () => _switchTab(1),
           ),
           const SizedBox(height: 8),
+
+          // 2. Buyers CRUD
           _buildQuickActionTile(
-            title: 'Buyer Accounts & Regional Hubs',
+            title: '2. Buyer Accounts & Regional Hubs (Member 3)',
             subtitle: 'Inspect wholesale tiers, regional fulfillment hubs, and order frequencies',
             icon: Icons.shopping_bag_outlined,
             iconBg: const Color(0xFFEFF6FF),
@@ -1299,8 +1425,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             onTap: () => _switchTab(2),
           ),
           const SizedBox(height: 8),
+
+          // 3. Drivers CRUD
           _buildQuickActionTile(
-            title: 'Transit Logistics & Fleet Dispatch',
+            title: '3. Transit Logistics & Fleet Drivers (Member 4)',
             subtitle: 'Manage chilled vans, license plate registration, and driver on-duty shifts',
             icon: Icons.local_shipping_rounded,
             iconBg: const Color(0xFFFEF3C7),
@@ -1308,13 +1436,59 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             onTap: () => _switchTab(3),
           ),
           const SizedBox(height: 8),
+
+          // 4. Products CRUD
           _buildQuickActionTile(
-            title: 'Marketplace Inventory & Pricing',
+            title: '4. Produce Catalog & Pricing SKUs (Member 2)',
             subtitle: 'Add produce listings, set LKR prices, packaging units and harvest dates',
             icon: Icons.inventory_2_outlined,
             iconBg: const Color(0xFFDCFCE7),
             iconColor: const Color(0xFF059669),
             onTap: () => _switchTab(4),
+          ),
+          const SizedBox(height: 8),
+
+          // 5. Orders & Dispatch CRUD
+          _buildQuickActionTile(
+            title: '5. Marketplace Orders & Dispatch Lifecycle (Member 3)',
+            subtitle: 'Track order statuses, assign transit delivery drivers, and process dispatches',
+            icon: Icons.receipt_long_rounded,
+            iconBg: const Color(0xFFFAF5FF),
+            iconColor: const Color(0xFF7E22CE),
+            onTap: () => _switchTab(5),
+          ),
+          const SizedBox(height: 8),
+
+          // 6. Pre-Orders CRUD
+          _buildQuickActionTile(
+            title: '6. Pre-Orders & Contract Farming Agreements (Member 4)',
+            subtitle: 'Forward contracts, farmer proposals, harvest dates, and contract timelines',
+            icon: Icons.handshake_rounded,
+            iconBg: const Color(0xFFF0F9FF),
+            iconColor: const Color(0xFF0284C7),
+            onTap: () => _switchTab(6),
+          ),
+          const SizedBox(height: 8),
+
+          // 7. Auctions & Bidding CRUD
+          _buildQuickActionTile(
+            title: '7. Live Crop Auctions & Bidding System (Member 1)',
+            subtitle: 'Auction harvest lots, track live bids, and update lot status (Sold/Ended/Cancel)',
+            icon: Icons.gavel_rounded,
+            iconBg: const Color(0xFFFFF7ED),
+            iconColor: const Color(0xFFEA580C),
+            onTap: () => _switchTab(7),
+          ),
+          const SizedBox(height: 8),
+
+          // 8. Deliveries & Pickup Verification CRUD
+          _buildQuickActionTile(
+            title: '8. Fleet Deliveries & Pickup Tracking (Member 4)',
+            subtitle: 'Monitor active van routes, cold-chain temperature telemetry, and arrival audits',
+            icon: Icons.alt_route_rounded,
+            iconBg: const Color(0xFFF0FDFA),
+            iconColor: const Color(0xFF0D9488),
+            onTap: () => _switchTab(5),
           ),
         ],
       ),

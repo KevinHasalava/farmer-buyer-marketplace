@@ -135,6 +135,20 @@ class PreOrderModel {
   }
 
   factory PreOrderModel.fromJson(Map<String, dynamic> map) {
+    final rawStatus = (map['status'] as String? ?? 'Pending').trim();
+    String normStatus;
+    if (rawStatus.toUpperCase() == 'ACCEPTED') {
+      normStatus = 'Accepted';
+    } else if (rawStatus.toUpperCase() == 'IN PROGRESS') {
+      normStatus = 'In Progress';
+    } else if (rawStatus.toUpperCase() == 'COMPLETED') {
+      normStatus = 'Completed';
+    } else if (rawStatus.toUpperCase() == 'CANCELLED') {
+      normStatus = 'Cancelled';
+    } else {
+      normStatus = 'Pending';
+    }
+
     return PreOrderModel(
       id: map['id'] as String? ?? 'po_${DateTime.now().millisecondsSinceEpoch}',
       buyerId: map['buyer_id'] as String? ?? 'buyer_1',
@@ -142,8 +156,12 @@ class PreOrderModel {
       farmerId: map['farmer_id'] as String?,
       farmerName: map['farmer_name'] as String?,
       cropName: map['crop_name'] as String? ?? 'Crop Name',
-      requiredQuantityKg: (map['required_quantity_kg'] as num?)?.toDouble() ?? 0.0,
-      offeredPricePerKg: (map['offered_price_per_kg'] as num?)?.toDouble() ?? 0.0,
+      requiredQuantityKg: (map['required_quantity_kg'] as num?)?.toDouble() ??
+          (map['required_quantity'] as num?)?.toDouble() ??
+          0.0,
+      offeredPricePerKg: (map['offered_price_per_kg'] as num?)?.toDouble() ??
+          (map['offered_price'] as num?)?.toDouble() ??
+          0.0,
       expectedDeliveryDate: map['expected_delivery_date'] != null
           ? DateTime.tryParse(map['expected_delivery_date'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -152,7 +170,7 @@ class PreOrderModel {
       paymentTerms: map['payment_terms'] as String? ?? 'Negotiable',
       packagingRequirements: map['packaging_requirements'] as String? ?? 'Standard Packaging',
       advancePaymentRs: (map['advance_payment_rs'] as num?)?.toDouble() ?? 0.0,
-      status: map['status'] as String? ?? 'Pending',
+      status: normStatus,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),

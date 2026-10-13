@@ -239,6 +239,24 @@ class AuctionModel {
   }
 
   factory AuctionModel.fromJson(Map<String, dynamic> json) {
+    final titleOrCrop = (json['crop_name'] ?? json['cropName'] ?? json['title']) as String? ?? '';
+    final catOrType = (json['category'] ?? json['crop_type']) as String? ?? 'Vegetables';
+    
+    // Parse quantity from numeric quantity or string lot_size ("850 kg")
+    double parsedQty = (json['quantity'] as num?)?.toDouble() ?? 0.0;
+    if (parsedQty <= 0 && json['lot_size'] != null) {
+      final str = json['lot_size'].toString();
+      final numMatch = RegExp(r'([0-9]+(\.[0-9]+)?)').firstMatch(str);
+      if (numMatch != null) {
+        parsedQty = double.tryParse(numMatch.group(1)!) ?? 100.0;
+      }
+    }
+    if (parsedQty <= 0) parsedQty = 100.0;
+
+    final currBid = ((json['current_highest_bid'] ?? json['currentHighestBid'] ?? json['current_bid']) as num?)?.toDouble() ?? 0.0;
+    final bidsCount = ((json['total_bids'] ?? json['totalBids'] ?? json['bid_count']) as num?)?.toInt() ?? 0;
+    final bidderName = (json['highest_bidder_name'] ?? json['highestBidderName'] ?? json['leader_name']) as String?;
+
     return AuctionModel(
       id: json['id'] as String? ?? '',
       farmerId: (json['farmer_id'] ?? json['farmerId']) as String? ?? '',
@@ -246,18 +264,18 @@ class AuctionModel {
       farmerPhone: (json['farmer_phone'] ?? json['farmerPhone']) as String? ?? '',
       farmerLocation: (json['farmer_location'] ?? json['farmerLocation']) as String? ?? '',
       farmerAvatar: (json['farmer_avatar'] ?? json['farmerAvatar']) as String? ?? '',
-      cropName: (json['crop_name'] ?? json['cropName']) as String? ?? '',
-      category: (json['category'] as String?) ?? 'Vegetables',
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
+      cropName: titleOrCrop,
+      category: catOrType,
+      quantity: parsedQty,
       unit: json['unit'] as String? ?? 'kg',
       startingPrice: ((json['starting_price'] ?? json['startingPrice']) as num?)?.toDouble() ?? 0.0,
       minBidIncrement: ((json['min_bid_increment'] ?? json['minBidIncrement']) as num?)?.toDouble() ?? 5.0,
       reservePrice: ((json['reserve_price'] ?? json['reservePrice']) as num?)?.toDouble(),
       buyNowPrice: ((json['buy_now_price'] ?? json['buyNowPrice']) as num?)?.toDouble(),
-      currentHighestBid: ((json['current_highest_bid'] ?? json['currentHighestBid']) as num?)?.toDouble() ?? 0.0,
+      currentHighestBid: currBid,
       highestBidderId: (json['highest_bidder_id'] ?? json['highestBidderId']) as String?,
-      highestBidderName: (json['highest_bidder_name'] ?? json['highestBidderName']) as String?,
-      totalBids: ((json['total_bids'] ?? json['totalBids']) as num?)?.toInt() ?? 0,
+      highestBidderName: bidderName,
+      totalBids: bidsCount,
       description: json['description'] as String? ?? '',
       harvestDate: (json['harvest_date'] ?? json['harvestDate']) != null
           ? DateTime.tryParse((json['harvest_date'] ?? json['harvestDate']) as String)
@@ -271,7 +289,7 @@ class AuctionModel {
       endTime: (json['end_time'] ?? json['endTime']) != null
           ? DateTime.tryParse((json['end_time'] ?? json['endTime']) as String) ?? DateTime.now().add(const Duration(days: 1))
           : DateTime.now().add(const Duration(days: 1)),
-      status: json['status'] as String? ?? 'active',
+      status: (json['status'] as String? ?? 'active').toLowerCase(),
       createdAt: (json['created_at'] ?? json['createdAt']) != null
           ? DateTime.tryParse((json['created_at'] ?? json['createdAt']) as String) ?? DateTime.now()
           : DateTime.now(),
