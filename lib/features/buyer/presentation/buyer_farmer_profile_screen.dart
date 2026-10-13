@@ -9,8 +9,10 @@ import '../../../services/chat_service.dart';
 import '../data/buyer_mock_data.dart';
 import '../models/buyer_models.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
+import '../services/buyer_review_service.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_product_detail_screen.dart';
+import 'buyer_reviews_screen.dart';
 
 /// 15. Farmer Profile Screen — matching Screenshot 15
 class BuyerFarmerProfileScreen extends StatefulWidget {
@@ -27,6 +29,7 @@ class BuyerFarmerProfileScreen extends StatefulWidget {
 
 class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
   final MarketplaceState _cartState = MarketplaceState.instance;
+  final BuyerReviewService _reviewService = BuyerReviewService.instance;
 
   static const Color _forestGreen = Color(0xFF1B5E38);
   static const Color _bgSoft = Color(0xFFF8FAFC);
@@ -37,11 +40,13 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
   void initState() {
     super.initState();
     _cartState.addListener(_onCartChanged);
+    _reviewService.addListener(_onCartChanged);
   }
 
   @override
   void dispose() {
     _cartState.removeListener(_onCartChanged);
+    _reviewService.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -279,7 +284,7 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                       _buildFarmerStatItem(
                         icon: Icons.star_rounded,
                         iconColor: const Color(0xFFF59E0B),
-                        value: '${farmer.rating} (${farmer.reviewsCount}+)',
+                        value: '${_reviewService.getAverageRatingForFarmer(farmer.name, farmer.rating)} (${_reviewService.getReviewCountForFarmer(farmer.name, farmer.reviewsCount)}+)',
                         label: context.tr.topRatedProducer,
                       ),
                       const SizedBox(width: 16),
@@ -559,8 +564,242 @@ class _BuyerFarmerProfileScreenState extends State<BuyerFarmerProfileScreen> {
                 );
               },
             ),
+            const SizedBox(height: 20),
+
+            // 🌟 Customer Reviews & Farmer Ratings Section
+            _buildFarmerReviewsSection(farmer),
+            const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFarmerReviewsSection(BuyerFarmer farmer) {
+    final reviews = _reviewService.reviewsForFarmer(farmer.name);
+    final avgRating = _reviewService.getAverageRatingForFarmer(farmer.name, farmer.rating);
+    final count = _reviewService.getReviewCountForFarmer(farmer.name, farmer.reviewsCount);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row: Title + "Write Review" button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Buyer Feedback & Ratings'.trAuto(context),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: _textDark,
+                        ),
+                      ),
+                      Text(
+                        'Verified farm direct purchases'.trAuto(context),
+                        style: const TextStyle(fontSize: 11, color: _textMuted),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BuyerReviewsScreen(
+                        initialFarmerName: farmer.name,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.rate_review_rounded, size: 14),
+                label: Text('Write Review'.trAuto(context), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _forestGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Rating summary banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  avgRating.toStringAsFixed(1),
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _textDark),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: List.generate(5, (_) => const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 15)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text('$count Verified Reviews', style: const TextStyle(fontSize: 11, color: _textMuted, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.verified_rounded, size: 12, color: Color(0xFF15803D)),
+                      SizedBox(width: 4),
+                      Text('99% Freshness', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF15803D))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Reviews preview (up to 3)
+          if (reviews.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: Text('No reviews yet for this farmer. Be the first to review!'.trAuto(context),
+                  style: const TextStyle(fontSize: 12, color: _textMuted)),
+              ),
+            ),
+          ] else ...[
+            ...reviews.take(3).map((r) => Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text(r.buyerName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark)),
+                          const SizedBox(width: 5),
+                          const Icon(Icons.verified_rounded, size: 12, color: Color(0xFF16A34A)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 2),
+                          Text('${r.rating}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _textDark)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(r.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark)),
+                  const SizedBox(height: 2),
+                  Text(r.comment, style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                  if (r.hasFarmerReply) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.reply_rounded, size: 13, color: Color(0xFF15803D)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Farmer: "${r.farmerReply}"',
+                              style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFF166534)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            )),
+          ],
+
+          const SizedBox(height: 6),
+          // "View All Reviews" button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BuyerReviewsScreen(
+                      initialFarmerName: farmer.name,
+                    ),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _forestGreen,
+                side: const BorderSide(color: _forestGreen, width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              child: Text(
+                'View All Reviews for ${farmer.name}'.trAuto(context),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

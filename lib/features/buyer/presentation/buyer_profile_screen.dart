@@ -12,6 +12,8 @@ import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
 import 'buyer_notifications_screen.dart';
+import 'buyer_reviews_screen.dart';
+import '../services/buyer_review_service.dart';
 import 'widgets/buyer_bottom_nav.dart';
 import '../../payment/presentation/saved_payment_methods_screen.dart';
 import '../../payment/services/payment_method_manager.dart';
@@ -1055,6 +1057,29 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                             MaterialPageRoute(
                               builder: (_) => const OrdersChatScreen(initialTab: 0),
                             ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                      ListenableBuilder(
+                        listenable: BuyerReviewService.instance,
+                        builder: (ctx, _) {
+                          final myCount = BuyerReviewService.instance.myReviews(profile.id).length;
+                          return _buildMenuItem(
+                            icon: Icons.star_rate_rounded,
+                            iconBg: const Color(0xFFFEF3C7),
+                            iconColor: const Color(0xFFD97706),
+                            title: 'My Reviews & Farmer Ratings'.trAuto(context),
+                            subtitle: 'Manage feedback, star ratings & farmer responses'.trAuto(context),
+                            trailingPill: '$myCount ${myCount == 1 ? "Review" : "Reviews"}',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const BuyerReviewsScreen(initialFilterIndex: 1),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
