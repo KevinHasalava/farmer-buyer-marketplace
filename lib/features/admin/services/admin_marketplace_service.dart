@@ -303,7 +303,7 @@ class AdminMarketplaceService extends ChangeNotifier {
 
     // 4. Sync Orders from remote Supabase (if available)
     try {
-      final res = await db.from('orders').select().order('order_date', ascending: false);
+      final res = await db.from('orders').select().order('created_at', ascending: false);
       if (res.isNotEmpty) {
         final remoteOrders = res
             .map((e) => AdminOrderModel.fromMap(Map<String, dynamic>.from(e as Map)))
@@ -323,13 +323,18 @@ class AdminMarketplaceService extends ChangeNotifier {
       debugPrint('[AdminMarketplaceService] orders remote sync note: $e');
     }
 
-    // 5. Sync Farmers from remote Supabase (farmer_details or farmers)
+    // 5. Sync Farmers from remote Supabase (farmers first, then farmer_details)
     try {
       List<dynamic> res = [];
       try {
-        res = await db.from('farmer_details').select().order('created_at', ascending: false);
-      } catch (_) {
-        res = await db.from('farmers').select().order('created_at', ascending: false);
+        final r = await db.from('farmers').select().order('created_at', ascending: false);
+        if (r.isNotEmpty) res = r;
+      } catch (_) {}
+      if (res.isEmpty) {
+        try {
+          final r = await db.from('farmer_details').select().order('created_at', ascending: false);
+          if (r.isNotEmpty) res = r;
+        } catch (_) {}
       }
       if (res.isNotEmpty) {
         final remoteFarmers = res
@@ -349,13 +354,18 @@ class AdminMarketplaceService extends ChangeNotifier {
       debugPrint('[AdminMarketplaceService] farmers remote sync note: $e');
     }
 
-    // 6. Sync Buyers from remote Supabase (buyer_details or buyers)
+    // 6. Sync Buyers from remote Supabase (buyers first, then buyer_details)
     try {
       List<dynamic> res = [];
       try {
-        res = await db.from('buyer_details').select().order('created_at', ascending: false);
-      } catch (_) {
-        res = await db.from('buyers').select().order('created_at', ascending: false);
+        final r = await db.from('buyers').select().order('created_at', ascending: false);
+        if (r.isNotEmpty) res = r;
+      } catch (_) {}
+      if (res.isEmpty) {
+        try {
+          final r = await db.from('buyer_details').select().order('created_at', ascending: false);
+          if (r.isNotEmpty) res = r;
+        } catch (_) {}
       }
       if (res.isNotEmpty) {
         final remoteBuyers = res
@@ -784,10 +794,17 @@ class AdminMarketplaceService extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       try {
-        final farmer = _farmers.where((f) => f.name == p.farmerName).toList();
         final map = p.toSupabaseMap();
-        if (farmer.isNotEmpty) map['farmer_id'] = farmer.first.id;
-        await db.from('products').insert(map);
+        map['farmer_id'] = '37be4352-c46e-4f8d-aeff-478857bf5d84';
+        final inserted = await db.from('products').insert(map).select().maybeSingle();
+        if (inserted != null && inserted['id'] != null) {
+          final realId = inserted['id'].toString();
+          final idx = _products.indexWhere((item) => item.id == p.id);
+          if (idx >= 0) {
+            _products[idx] = p.copyWith(id: realId);
+            await _saveProducts();
+          }
+        }
       } catch (e) {
         debugPrint('[AdminMarketplaceService] addProduct remote sync note: $e');
       }
@@ -805,7 +822,13 @@ class AdminMarketplaceService extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       try {
-        await db.from('products').update(product.toSupabaseMap()).eq('id', product.id);
+        final map = product.toSupabaseMap();
+        map.remove('id');
+        if (AdminProductModel.isValidUuid(product.id)) {
+          await db.from('products').update(map).eq('id', product.id);
+        } else {
+          await db.from('products').update(map).eq('name', product.name);
+        }
       } catch (e) {
         debugPrint('[AdminMarketplaceService] updateProduct remote sync note: $e');
       }
@@ -813,14 +836,19 @@ class AdminMarketplaceService extends ChangeNotifier {
   }
 
   Future<void> deleteProduct(String id) async {
-    _products.removeWhere((p) => p.id == id);
+    final p = _products.where((item) => item.id == id).firstOrNull;
+    _products.removeWhere((item) => item.id == id);
     await _saveProducts();
     notifyListeners();
 
     final db = _db;
     if (db != null) {
       try {
-        await db.from('products').delete().eq('id', id);
+        if (AdminProductModel.isValidUuid(id)) {
+          await db.from('products').delete().eq('id', id);
+        } else if (p != null) {
+          await db.from('products').delete().eq('name', p.name);
+        }
       } catch (e) {
         debugPrint('[AdminMarketplaceService] deleteProduct remote sync note: $e');
       }

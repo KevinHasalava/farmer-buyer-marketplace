@@ -460,9 +460,13 @@ class AdminProductModel {
     };
   }
 
+  static bool isValidUuid(String s) => RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  ).hasMatch(s);
+
   Map<String, dynamic> toSupabaseMap() {
     return {
-      if (id.isNotEmpty) 'id': id,
+      if (id.isNotEmpty && isValidUuid(id)) 'id': id,
       'name': name,
       'category': category,
       'price': price,
