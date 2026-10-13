@@ -4,6 +4,7 @@ import '../../buyer/presentation/buyer_cart_screen.dart';
 import '../../buyer/presentation/buyer_categories_screen.dart';
 import '../../buyer/presentation/buyer_home_screen.dart';
 import '../../buyer/presentation/buyer_profile_screen.dart';
+import '../../buyer/presentation/buyer_reviews_screen.dart';
 import '../../buyer/presentation/widgets/buyer_bottom_nav.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
@@ -159,27 +160,36 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${context.tr.orderId} #${order.id}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.id.length > 8
+                            ? '${context.tr.orderId} #${order.id.substring(0, 8).toUpperCase()}'
+                            : '${context.tr.orderId} #${order.id}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: _textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      order.preferredDateTime,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: _textMuted,
+                      const SizedBox(height: 3),
+                      Text(
+                        order.preferredDateTime,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 _buildStatusBadge(order.status),
               ],
             ),
@@ -374,6 +384,46 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                     ),
                   ),
                 ] else ...[
+                  if (order.status == OrderStatus.delivered) ...[
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F3D24),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.star_rate_rounded, color: Color(0xFFF59E0B), size: 18),
+                        label: Text(
+                          'Rate & Review'.trAuto(context),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BuyerReviewsScreen(
+                                initialProductId: order.items.isNotEmpty
+                                    ? 'prod_${order.items.first.name.hashCode.abs() % 10}'
+                                    : null,
+                                initialProductName: order.items.isNotEmpty ? order.items.first.name : null,
+                                initialFarmerName: 'K. M. Bandara',
+                                initialProductImage: '',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -1008,47 +1058,56 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAF5EF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.eco_rounded,
-                            color: _forestGreen,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '#${order.id}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: _textDark,
-                                letterSpacing: -0.2,
-                              ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF5EF),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              order.preferredDateTime,
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                color: _textMuted,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: const Icon(
+                              Icons.eco_rounded,
+                              color: _forestGreen,
+                              size: 20,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.id.length > 8 ? '#${order.id.substring(0, 8).toUpperCase()}' : '#${order.id}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textDark,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  order.preferredDateTime,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: _textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
 
                     // Status Badge
                     _buildStatusBadge(order.status),
@@ -1222,7 +1281,47 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                               );
                             },
                           )
-                        else
+                        else ...[
+                          if (order.status == OrderStatus.delivered) ...[
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F3D24),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 13,
+                                  vertical: 9,
+                                ),
+                              ),
+                              icon: const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                              label: Text(
+                                'Rate & Review'.trAuto(context),
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BuyerReviewsScreen(
+                                      initialProductId: order.items.isNotEmpty
+                                          ? 'prod_${order.items.first.name.hashCode.abs() % 10}'
+                                          : null,
+                                      initialProductName: order.items.isNotEmpty ? order.items.first.name : null,
+                                      initialFarmerName: 'K. M. Bandara',
+                                      initialProductImage: '',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: _forestGreen,
@@ -1231,7 +1330,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 15,
+                                horizontal: 14,
                                 vertical: 9,
                               ),
                             ),
@@ -1243,13 +1342,14 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             label: Text(
                               context.tr.reorder,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
                                 color: _forestGreen,
                               ),
                             ),
                             onPressed: () => _reorderItems(order),
                           ),
+                        ],
                       ],
                     ),
                   ],

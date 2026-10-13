@@ -32,6 +32,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   final BuyerProfileManager _profileManager = BuyerProfileManager.instance;
 
   late int _selectedFilterIndex; // 0: All, 1: My Reviews, 2: 5 Stars, 3: Farmer Replies
+  String? _activeFarmerFilter;
 
   static const Color _forestGreen = Color(0xFF0F3D24);
   static const Color _emerald = Color(0xFF059669);
@@ -45,6 +46,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   void initState() {
     super.initState();
     _selectedFilterIndex = widget.initialFilterIndex;
+    _activeFarmerFilter = widget.initialFarmerName;
     _service.addListener(_onServiceChanged);
     _service.loadReviews();
 
@@ -76,7 +78,10 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
       _profileManager.profile.name.isNotEmpty ? _profileManager.profile.name : 'Chamara Perera';
 
   List<BuyerReview> _getFilteredReviews() {
-    final list = _service.allReviews;
+    var list = _service.allReviews;
+    if (_activeFarmerFilter != null && _activeFarmerFilter!.isNotEmpty) {
+      list = _service.reviewsForFarmer(_activeFarmerFilter!);
+    }
     return switch (_selectedFilterIndex) {
       1 => list.where((r) => r.isOwnedBy(_currentBuyerId)).toList(),
       2 => list.where((r) => r.rating >= 4.9).toList(),
@@ -88,11 +93,13 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     final reviews = _getFilteredReviews();
-    final allList = _service.allReviews;
+    final allList = _activeFarmerFilter != null && _activeFarmerFilter!.isNotEmpty
+        ? _service.reviewsForFarmer(_activeFarmerFilter!)
+        : _service.allReviews;
     final avgRating = allList.isEmpty
         ? 4.9
         : (allList.fold<double>(0.0, (acc, r) => acc + r.rating) / allList.length);
-    final myCount = _service.myReviews(_currentBuyerId).length;
+    final myCount = allList.where((r) => r.isOwnedBy(_currentBuyerId)).length;
 
     return Scaffold(
       backgroundColor: _workspaceBg,
@@ -107,9 +114,9 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Ratings & Buyer Reviews',
-              style: TextStyle(
+            Text(
+              _activeFarmerFilter != null ? '$_activeFarmerFilter Reviews' : 'Ratings & Buyer Reviews',
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: _textDark,
@@ -117,8 +124,10 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
               ),
             ),
             Text(
-              'Verified Farm Produce & Farmer Feedback',
-              style: TextStyle(fontSize: 11, color: _emerald, fontWeight: FontWeight.w600),
+              _activeFarmerFilter != null
+                  ? 'Farmer Feedback & Ratings'
+                  : 'Verified Farm Produce & Farmer Feedback',
+              style: const TextStyle(fontSize: 11, color: _emerald, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -128,9 +137,9 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             icon: const Icon(Icons.sync_rounded, color: _emerald, size: 21),
             onPressed: () async {
               HapticFeedback.lightImpact();
+              final messenger = ScaffoldMessenger.of(context);
               await _service.loadReviews();
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
+              messenger.showSnackBar(
                 const SnackBar(
                   content: Text('✓ Reviews synchronized with cloud.'),
                   backgroundColor: _emerald,
@@ -164,7 +173,55 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             children: [
               // ── 1. Top Summary Rating Analytics Card ────────────────────────
               _buildRatingSummaryCard(avgRating, allList.length, myCount),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Farmer filter pill if active
+              if (_activeFarmerFilter != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_pin_circle_rounded, size: 16, color: _emerald),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Filtered by: $_activeFarmerFilter',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _forestGreen,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _activeFarmerFilter = null),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.close_rounded, size: 12, color: _textMuted),
+                              SizedBox(width: 4),
+                              Text('All Farmers', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // ── 2. Filter Pills ─────────────────────────────────────────────
               _buildFilterPills(allList.length, myCount),

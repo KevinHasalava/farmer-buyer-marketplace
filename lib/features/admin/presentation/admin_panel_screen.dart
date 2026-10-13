@@ -3161,21 +3161,25 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      o.id,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        o.id.length > 8 ? '#${o.id.substring(0, 8).toUpperCase()}' : '#${o.id}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Rs. ${o.totalAmount.toInt()}',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF047857)),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF047857)),
                   ),
                   const Spacer(),
                   Container(
@@ -3196,13 +3200,24 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               Text(
                 o.itemsSummary,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
                   const Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
                   const SizedBox(width: 4),
-                  Text('${o.customerName} (${o.customerPhone})', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                  Expanded(
+                    child: Text(
+                      o.customerName.isNotEmpty
+                          ? (o.customerPhone.isNotEmpty ? '${o.customerName} (${o.customerPhone})' : o.customerName)
+                          : (o.customerPhone.isNotEmpty ? o.customerPhone : 'Direct Marketplace Buyer'),
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -3210,7 +3225,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 children: [
                   const Icon(Icons.local_shipping_outlined, size: 14, color: Color(0xFFD97706)),
                   const SizedBox(width: 4),
-                  Text('Transit Driver: ${o.assignedDriverName}', style: const TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: Text(
+                      'Transit Driver: ${o.assignedDriverName.isNotEmpty ? o.assignedDriverName : "Unassigned"}',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -3220,7 +3242,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      o.deliveryAddress,
+                      o.deliveryAddress.isNotEmpty ? o.deliveryAddress : 'Standard Delivery Hub',
                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -3368,15 +3390,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          o.id,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            o.id.length > 8 ? '#${o.id.substring(0, 8).toUpperCase()}' : '#${o.id}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -3693,13 +3719,17 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             // Top Row: ID, Badges, Timer
                             Row(
                               children: [
-                                Text(
-                                  '#${a.id.toUpperCase()}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: _textMuted,
-                                    letterSpacing: 0.5,
+                                Flexible(
+                                  child: Text(
+                                    a.id.length > 8 ? '#${a.id.substring(0, 8).toUpperCase()}' : '#${a.id.toUpperCase()}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: _textMuted,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
