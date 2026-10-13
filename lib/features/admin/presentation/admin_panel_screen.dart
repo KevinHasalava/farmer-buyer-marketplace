@@ -4060,6 +4060,346 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   // ═══════════════════════════════════════════════════════════════════════════
   // 🛠️ 11. HELPERS & BADGES
   // ═══════════════════════════════════════════════════════════════════════════
+  // ⭐ TAB 9: BUYER REVIEWS & FARMER RATINGS (live Supabase CRUD)
+  Widget _buildReviewsTab() {
+    return ListenableBuilder(
+      listenable: BuyerReviewService.instance,
+      builder: (context, _) {
+        final svc = BuyerReviewService.instance;
+        var list = svc.allReviews;
+        if (_searchQuery.isNotEmpty) {
+          list = list
+              .where((r) =>
+                  r.farmerName.toLowerCase().contains(_searchQuery) ||
+                  r.buyerName.toLowerCase().contains(_searchQuery) ||
+                  r.productName.toLowerCase().contains(_searchQuery) ||
+                  r.title.toLowerCase().contains(_searchQuery) ||
+                  r.comment.toLowerCase().contains(_searchQuery))
+              .toList();
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => svc.loadReviews(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildExecutiveKpiCard(
+                              title: 'Total Reviews',
+                              value: '${svc.allReviews.length}',
+                              badge: 'Live Data',
+                              subText: 'Submitted by real buyers',
+                              icon: Icons.rate_review_rounded,
+                              accentColor: const Color(0xFF059669),
+                              gradientStart: const Color(0xFFECFDF5),
+                              onTap: () {},
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildExecutiveKpiCard(
+                              title: 'Average Rating',
+                              value: svc.allReviews.isEmpty
+                                  ? '—'
+                                  : '${svc.overallAverage.toStringAsFixed(1)} ★',
+                              badge: 'Marketplace',
+                              subText: 'Across all farmers',
+                              icon: Icons.star_rounded,
+                              accentColor: const Color(0xFFD97706),
+                              gradientStart: const Color(0xFFFFFBEB),
+                              onTap: () {},
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildExecutiveKpiCard(
+                              title: 'Top Rated (5★)',
+                              value: '${svc.fiveStarCount}',
+                              badge: 'Excellent',
+                              subText: 'Reviews rated 4.5+',
+                              icon: Icons.emoji_events_rounded,
+                              accentColor: const Color(0xFF2563EB),
+                              gradientStart: const Color(0xFFEFF6FF),
+                              onTap: () {},
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildExecutiveKpiCard(
+                              title: 'Farmers Rated',
+                              value: '${svc.ratedFarmersCount}',
+                              badge: '${svc.repliedCount} replied',
+                              subText: 'Farmers with feedback',
+                              icon: Icons.agriculture_rounded,
+                              accentColor: const Color(0xFF7E22CE),
+                              gradientStart: const Color(0xFFFAF5FF),
+                              onTap: () {},
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (list.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _buildEmptyState(
+                    title: 'No Reviews Yet',
+                    message: _searchQuery.isNotEmpty
+                        ? 'No reviews match "$_searchQuery".'
+                        : 'Buyers have not rated any registered farmer yet. Ratings appear here live.',
+                    onAction: () => BuyerReviewService.instance.loadReviews(),
+                    actionLabel: 'Sync From Cloud',
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, idx) => _buildAdminReviewCard(list[idx]),
+                      childCount: list.length,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAdminReviewCard(BuyerReview r) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ...List.generate(5, (i) {
+                final filled = i < r.rating.round();
+                return Icon(
+                  filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                  size: 17,
+                  color: filled ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                );
+              }),
+              const SizedBox(width: 6),
+              Text(
+                r.rating.toStringAsFixed(1),
+                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: _textDark),
+              ),
+              const Spacer(),
+              Text(r.timeAgo, style: const TextStyle(fontSize: 11, color: _textMuted)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildMetaPill(Icons.agriculture_rounded, 'Farmer: ${r.farmerName}'),
+              _buildMetaPill(Icons.person_rounded, 'Buyer: ${r.buyerName}'),
+              if (r.productName.isNotEmpty) _buildMetaPill(Icons.eco_rounded, r.productName),
+              _buildMetaPill(Icons.verified_rounded, r.qualityTag),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (r.title.isNotEmpty)
+            Text(
+              r.title,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+            ),
+          if (r.comment.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              r.comment,
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.4),
+            ),
+          ],
+          if (r.hasFarmerReply) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Text(
+                'Farmer reply: ${r.farmerReply}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _showAdminReviewEditDialog(r),
+                icon: const Icon(Icons.edit_note_rounded, size: 15),
+                label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF475569),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                tooltip: 'Delete Review',
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  showDeleteConfirmDialog(
+                    context,
+                    title: 'Delete Review',
+                    message:
+                        'Remove ${r.buyerName}\'s review of ${r.farmerName}? This also removes it from the database.',
+                    onConfirmed: () => BuyerReviewService.instance.deleteReview(r.id),
+                  );
+                },
+                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAdminReviewEditDialog(BuyerReview r) {
+    final titleCtrl = TextEditingController(text: r.title);
+    final commentCtrl = TextEditingController(text: r.comment);
+    final replyCtrl = TextEditingController(text: r.farmerReply ?? '');
+    double rating = r.rating;
+
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Edit Review • ${r.farmerName}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'By ${r.buyerName}',
+                  style: const TextStyle(fontSize: 12, color: _textMuted),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(5, (i) {
+                    final v = (i + 1).toDouble();
+                    return GestureDetector(
+                      onTap: () => setDlg(() => rating = v),
+                      child: Icon(
+                        v <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 30,
+                        color: v <= rating ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Headline', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: commentCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Comment', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: replyCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Farmer reply (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _emerald,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final svc = BuyerReviewService.instance;
+                Navigator.pop(dlgCtx);
+                await svc.updateReview(
+                  reviewId: r.id,
+                  rating: rating,
+                  title: titleCtrl.text,
+                  comment: commentCtrl.text,
+                );
+                final newReply = replyCtrl.text.trim();
+                if (newReply.isNotEmpty && newReply != (r.farmerReply ?? '')) {
+                  await svc.addFarmerReply(reviewId: r.id, replyText: newReply);
+                }
+                if (!mounted) return;
+                final err = svc.lastError;
+                svc.clearError();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(err == null ? '✓ Review updated in database' : '⚠ $err'),
+                    backgroundColor: err == null ? _emerald : const Color(0xFFD97706),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMetaPill(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
