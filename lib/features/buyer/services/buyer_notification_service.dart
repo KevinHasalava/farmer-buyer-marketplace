@@ -179,6 +179,76 @@ class BuyerNotificationService extends ChangeNotifier {
     }
   }
 
+  /// CREATE: add a new notification or custom alert (persists locally + Supabase)
+  Future<BuyerNotificationItem> createNotification({
+    required String title,
+    required String message,
+    BuyerNotificationType type = BuyerNotificationType.general,
+    BuyerNotificationCategory category = BuyerNotificationCategory.orders,
+    String tag = 'Alert',
+    String? imageUrl,
+    String? produceName,
+    String? priceText,
+    String? productId,
+  }) async {
+    final now = DateTime.now();
+    final id = 'notif-${now.millisecondsSinceEpoch}';
+    final item = BuyerNotificationItem(
+      id: id,
+      type: type,
+      title: title,
+      message: message,
+      tag: tag,
+      timeAgo: 'Just now',
+      createdAt: now,
+      isRead: false,
+      category: category,
+      imageUrl: imageUrl,
+      produceName: produceName,
+      priceText: priceText,
+      productId: productId,
+    );
+    _items.insert(0, item);
+    notifyListeners();
+    await _saveToCache();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('notifications').insert({
+          'buyer_id': _buyerId,
+          'title': title,
+          'message': message,
+          'type': type == BuyerNotificationType.general ? tag : type.name,
+          'is_read': false,
+        });
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] DB create note: $e');
+      }
+    }
+    return item;
+  }
+
+  /// UPDATE: edit an existing notification
+  Future<void> updateNotification(BuyerNotificationItem updated) async {
+    final idx = _items.indexWhere((i) => i.id == updated.id);
+    if (idx == -1) return;
+    _items[idx] = updated;
+    notifyListeners();
+    await _saveToCache();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('notifications').update({
+          'title': updated.title,
+          'message': updated.message,
+          'is_read': updated.isRead,
+        }).eq('id', updated.id);
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] DB update note: $e');
+      }
+    }
+  }
+
   /// DELETE: remove a notification
   Future<void> deleteNotification(String id) async {
     _items.removeWhere((i) => i.id == id);
@@ -190,6 +260,25 @@ class BuyerNotificationService extends ChangeNotifier {
         await SupabaseConfig.client.from('notifications').delete().eq('id', id);
       } catch (e) {
         debugPrint('[BuyerNotificationService] delete note: $e');
+      }
+    }
+  }
+
+  /// DELETE ALL: remove all notifications for this buyer
+  Future<void> deleteAllNotifications() async {
+    _items.clear();
+    notifyListeners();
+    await _saveToCache();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        final id = _buyerId;
+        await SupabaseConfig.client
+            .from('notifications')
+            .delete()
+            .or('buyer_id.eq.$id,buyer_id.is.null');
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] deleteAll db note: $e');
       }
     }
   }
