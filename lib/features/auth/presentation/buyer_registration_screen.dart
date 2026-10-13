@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +9,6 @@ import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
-import '../../../models/user_model.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/notify_sms_service.dart';
 import '../../../widgets/premium/google_brand_button.dart';
@@ -196,27 +195,58 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       final hub = _selectedHub ?? 'Colombo Regional Hub (Western Province)';
       final prefs = _producePreferences.toList();
 
-      UserModel? user;
+      String? userId;
+      bool needsEmailConfirmation = false;
+
       if (email.isNotEmpty && password.isNotEmpty) {
-        user = await _authService.signUp(
-          email: email,
-          password: password,
-          fullName: name.isNotEmpty ? name : 'Chaminda Perera',
-          isFarmer: false,
-          extraData: {
-            'phone': phone,
-            'address': address,
-            'hub': hub,
-            'buyer_type': buyerType,
-            'preferences': prefs,
-            'role': 'buyer',
-          },
-        );
+        try {
+          // signUpWithRole returns true when session is created immediately,
+          // false when email confirmation is required. Does NOT throw on
+          // email-pending case, so we can always proceed to save data.
+          final signedIn = await _authService.signUpWithRole(
+            email: email,
+            password: password,
+            fullName: name.isNotEmpty ? name : 'Buyer',
+            role: 'buyer',
+            phone: phone,
+            details: {
+              'address': address,
+              'delivery_address': address,
+              'hub': hub,
+              'delivery_hub': hub,
+              'buyer_type': buyerType,
+              'preferences': prefs,
+            },
+          );
+          needsEmailConfirmation = !signedIn;
+          userId = _authService.lastCreatedUserId ??
+              (SupabaseConfig.isInitialized
+                  ? SupabaseConfig.auth.currentUser?.id
+                  : null);
+          if (userId == null && SupabaseConfig.isInitialized && email.isNotEmpty) {
+            try {
+              final row = await SupabaseConfig.client
+                  .from('profiles')
+                  .select('id')
+                  .eq('email', email)
+                  .maybeSingle();
+              userId = row?['id'] as String?;
+            } catch (_) {}
+          }
+        } on AuthException catch (e) {
+          final msg = e.message.toLowerCase();
+          if (msg.contains('confirm') || msg.contains('check your inbox')) {
+            needsEmailConfirmation = true;
+          } else {
+            rethrow;
+          }
+        }
       } else {
         await Future.delayed(const Duration(milliseconds: 600));
       }
 
-      // Persist real registration data into profile manager & DB
+      // Always persist registration data: this runs even when email
+      // confirmation is pending so the buyers table gets the row.
       await BuyerProfileManager.instance.saveRegistrationData(
         name: name,
         email: email,
@@ -225,13 +255,16 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         buyerType: buyerType,
         hub: hub,
         preferences: prefs,
-        userId: user?.id,
+        userId: userId,
       );
 
       if (!mounted) return;
       await context.read<AppSettings>().setRole(UserRole.buyer);
 
       if (mounted) {
+        if (needsEmailConfirmation) {
+          _showSnackBar('Account created! Please check your email to confirm before signing in.');
+        }
         _showSuccessDialog();
       }
     } on AuthException catch (e) {
@@ -781,6 +814,51 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                     controller: _addressCtrl,
                     hintText: 'House / Apartment number, Road, Landmark',
                     icon: Icons.home_work_outlined,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildFieldLabel('Preferred Produce & Certifications'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _prefChips.map((chip) {
+                      final isSelected = _producePreferences.contains(chip);
+                      return FilterChip(
+                        label: Text(
+                          chip,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF334155),
+                          ),
+                        ),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFF15803D),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        checkmarkColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: isSelected
+                                ? const Color(0xFF15803D)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        onSelected: (val) {
+                          setState(() {
+                            if (val) {
+                              _producePreferences.add(chip);
+                            } else {
+                              _producePreferences.remove(chip);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
