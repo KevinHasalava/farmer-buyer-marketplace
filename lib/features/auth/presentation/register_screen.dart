@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
 
 /// One simple registration form for Farmers, Buyers and Drivers.
@@ -166,6 +167,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _normalizePhone(_phoneCtrl.text),
         details: _details()..removeWhere((_, v) => v == null),
       );
+
+      // Direct client-side sync backup to guarantee user is in tables
+      try {
+        final uid = const AuthService().lastCreatedUserId ??
+            SupabaseConfig.auth.currentUser?.id;
+        if (uid != null) {
+          final cleanPhone = _normalizePhone(_phoneCtrl.text);
+          await SupabaseConfig.client.from('profiles').upsert({
+            'id': uid,
+            'role': _role.name,
+            'full_name': _nameCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'phone': cleanPhone,
+            'district': _district,
+            'address': _role == UserRole.buyer ? _district : '',
+            'is_active': true,
+          }, onConflict: 'id');
+
+          if (_role == UserRole.buyer) {
+            await SupabaseConfig.client.from('buyers').upsert({
+              'id': uid,
+              'full_name': _nameCtrl.text.trim(),
+              'email': _emailCtrl.text.trim(),
+              'phone': cleanPhone,
+              'district': _district,
+              'delivery_hub': _district,
+              'buyer_type': _buyerType,
+              'status': 'Active',
+            }, onConflict: 'id');
+          } else if (_role == UserRole.farmer) {
+            await SupabaseConfig.client.from('farmers').upsert({
+              'id': uid,
+              'full_name': _nameCtrl.text.trim(),
+              'email': _emailCtrl.text.trim(),
+              'phone': cleanPhone,
+              'farm_name': _farmNameCtrl.text.trim(),
+              'district': _district,
+              'scale': _scale,
+              'practice': _practice,
+              'crops': [_crop],
+              'status': 'Active',
+            }, onConflict: 'id');
+          } else if (_role == UserRole.driver) {
+            await SupabaseConfig.client.from('drivers').upsert({
+              'id': uid,
+              'full_name': _nameCtrl.text.trim(),
+              'phone_number': cleanPhone,
+              'license_number': _licenseCtrl.text.trim().toUpperCase(),
+              'vehicle_type': _vehicleType,
+              'vehicle_number': _plateCtrl.text.trim().toUpperCase(),
+              'cargo_capacity': _capacity,
+              'is_cold_box_equipped': _vehicleType == 'Refrigerated Van',
+              'duty_status': true,
+              'is_on_duty': true,
+            }, onConflict: 'id');
+          }
+        }
+      } catch (e) {
+        debugPrint('[RegisterScreen] Client-side backup upsert note: $e');
+      }
+
       if (!mounted) return;
       await context.read<AppSettings>().setRole(_role);
       if (!mounted) return;

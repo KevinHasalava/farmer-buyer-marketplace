@@ -44,6 +44,9 @@ class AuthService {
     return null;
   }
 
+  static String? _lastCreatedUserId;
+  String? get lastCreatedUserId => _lastCreatedUserId;
+
   Stream<UserModel?> get authStateChanges => _authStateController.stream;
   UserModel? get currentSession => currentUser;
   UserModel? get currentUserModel => currentUser;
@@ -141,6 +144,7 @@ class AuthService {
         throw const AuthException(
             'An account with this email already exists. Please sign in.');
       }
+      _lastCreatedUserId = res.user?.id;
       final signedIn = res.session != null;
       if (signedIn) _authStateController.add(_fromSupabase(res.user!, role: role));
       return signedIn;

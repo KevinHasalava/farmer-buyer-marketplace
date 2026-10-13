@@ -354,25 +354,73 @@ class AdminMarketplaceService extends ChangeNotifier {
       debugPrint('[AdminMarketplaceService] farmers remote sync note: $e');
     }
 
-    // 6. Sync Buyers from remote Supabase (buyers first, then buyer_details)
+    // 6. Sync Buyers from remote Supabase (buyers + profiles sync)
     try {
-      List<dynamic> res = [];
+      final List<Map<String, dynamic>> res = [];
+      // 6a. Fetch from buyers table
       try {
         final r = await db.from('buyers').select().order('created_at', ascending: false);
-        if (r.isNotEmpty) res = r;
+        if (r.isNotEmpty) {
+          res.addAll(r.map((e) => Map<String, dynamic>.from(e as Map)));
+        }
       } catch (_) {}
-      if (res.isEmpty) {
-        try {
-          final r = await db.from('buyer_details').select().order('created_at', ascending: false);
-          if (r.isNotEmpty) res = r;
-        } catch (_) {}
+
+      // 6b. Fetch registered buyers from profiles table (source of truth for auth users)
+      try {
+        final profs = await db
+            .from('profiles')
+            .select()
+            .eq('role', 'buyer')
+            .order('created_at', ascending: false);
+        for (final p in profs) {
+          final pMap = Map<String, dynamic>.from(p as Map);
+          final pid = pMap['id']?.toString() ?? '';
+          if (pid.isNotEmpty) {
+            final existingIdx = res.indexWhere((x) => x['id']?.toString() == pid);
+            if (existingIdx < 0) {
+              final buyerRow = {
+                'id': pid,
+                'full_name': (pMap['full_name'] as String?)?.isNotEmpty == true
+                    ? pMap['full_name']
+                    : 'Buyer',
+                'email': pMap['email'] ?? '',
+                'phone': pMap['phone'] ?? '',
+                'delivery_address': pMap['address'] ?? '',
+                'delivery_hub': pMap['district'] ?? 'Colombo Regional Hub',
+                'buyer_type': 'Family / Household',
+                'total_orders': 0,
+                'total_spent': 0.0,
+                'status': pMap['status'] ?? 'Active',
+                'created_at': pMap['created_at'],
+              };
+              res.add(buyerRow);
+              // Backfill into buyers table so both tables stay in sync
+              try {
+                await db.from('buyers').upsert(buyerRow, onConflict: 'id');
+              } catch (_) {}
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[AdminMarketplaceService] profiles buyers sync note: $e');
       }
+
       if (res.isNotEmpty) {
         final remoteBuyers = res
-            .map((e) => AdminBuyerModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .map((e) => AdminBuyerModel.fromMap(e))
             .toList();
+
+        // When real buyers exist, remove mock dummy buyers (BYR-201, BYR-202...)
+        _buyers.removeWhere((b) =>
+            b.id.startsWith('BYR-20') ||
+            b.email.contains('farm2home.lk') ||
+            b.email.contains('keells.lk'));
+
         for (final rb in remoteBuyers) {
-          final idx = _buyers.indexWhere((b) => b.id == rb.id);
+          final idx = _buyers.indexWhere((b) =>
+              b.id == rb.id ||
+              (b.phone.isNotEmpty && b.phone == rb.phone) ||
+              (b.email.isNotEmpty && b.email == rb.email));
           if (idx >= 0) {
             _buyers[idx] = rb;
           } else {
@@ -439,9 +487,28 @@ class AdminMarketplaceService extends ChangeNotifier {
   }
 
   Future<void> syncBuyerFromApp(BuyerProfileModel p) async {
-    final idx = _buyers.indexWhere((b) => b.id == p.id || b.phone == p.phone);
+    if (!_isInitialized) {
+      await init();
+    }
+
+    final realId = (p.id.isNotEmpty && !p.id.startsWith('b-'))
+        ? p.id
+        : _newId('BYR');
+
+    // Remove dummy mock buyers when real buyers register
+    _buyers.removeWhere((b) =>
+        b.id.startsWith('BYR-20') ||
+        b.email.contains('farm2home.lk') ||
+        b.email.contains('keells.lk'));
+
+    final idx = _buyers.indexWhere((b) =>
+        b.id == realId ||
+        b.id == p.id ||
+        (b.phone.isNotEmpty && b.phone == p.phone) ||
+        (b.email.isNotEmpty && b.email == p.email));
+
     final updated = AdminBuyerModel(
-      id: idx >= 0 ? _buyers[idx].id : _newId('BYR'),
+      id: idx >= 0 ? _buyers[idx].id : realId,
       name: p.name,
       email: p.email,
       phone: p.phone,
@@ -465,15 +532,20 @@ class AdminMarketplaceService extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       try {
-        await db.from('buyers').upsert(updated.toSupabaseMap());
+        await db.from('buyers').upsert(updated.toSupabaseMap(), onConflict: 'id');
       } catch (e) {
-        try {
-          await db.from('buyer_details').upsert({
-            'id': updated.id,
-            'buyer_type': updated.buyerType,
-          });
-        } catch (_) {}
+        debugPrint('[AdminMarketplaceService] syncBuyerFromApp buyers upsert error: $e');
       }
+      try {
+        await db.from('profiles').upsert({
+          'id': updated.id,
+          'role': 'buyer',
+          'full_name': updated.name,
+          'email': updated.email,
+          'phone': updated.phone,
+          'status': updated.status,
+        }, onConflict: 'id');
+      } catch (_) {}
     }
   }
 
@@ -616,6 +688,15 @@ class AdminMarketplaceService extends ChangeNotifier {
   // 🛒 2. BUYERS CRUD
   // =========================================================================
   Future<void> addBuyer(AdminBuyerModel buyer) async {
+    if (!_isInitialized) {
+      await init();
+    }
+    // Remove dummy mock buyers when user adds a real buyer
+    _buyers.removeWhere((b) =>
+        b.id.startsWith('BYR-20') ||
+        b.email.contains('farm2home.lk') ||
+        b.email.contains('keells.lk'));
+
     final b = buyer.copyWith(
       id: buyer.id.isNotEmpty && !buyer.id.contains('BYR-000')
           ? buyer.id
@@ -628,15 +709,20 @@ class AdminMarketplaceService extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       try {
-        await db.from('buyers').insert(b.toSupabaseMap());
+        await db.from('buyers').upsert(b.toSupabaseMap(), onConflict: 'id');
       } catch (e) {
-        try {
-          await db.from('buyer_details').upsert({
-            'id': b.id,
-            'buyer_type': b.buyerType,
-          });
-        } catch (_) {}
+        debugPrint('[AdminMarketplaceService] addBuyer error: $e');
       }
+      try {
+        await db.from('profiles').upsert({
+          'id': b.id,
+          'role': 'buyer',
+          'full_name': b.name,
+          'email': b.email,
+          'phone': b.phone,
+          'status': b.status,
+        }, onConflict: 'id');
+      } catch (_) {}
     }
   }
 
@@ -651,15 +737,20 @@ class AdminMarketplaceService extends ChangeNotifier {
     final db = _db;
     if (db != null) {
       try {
-        await db.from('buyers').update(buyer.toSupabaseMap()).eq('id', buyer.id);
+        await db.from('buyers').upsert(buyer.toSupabaseMap(), onConflict: 'id');
       } catch (e) {
-        try {
-          await db.from('buyer_details').upsert({
-            'id': buyer.id,
-            'buyer_type': buyer.buyerType,
-          });
-        } catch (_) {}
+        debugPrint('[AdminMarketplaceService] updateBuyer error: $e');
       }
+      try {
+        await db.from('profiles').upsert({
+          'id': buyer.id,
+          'role': 'buyer',
+          'full_name': buyer.name,
+          'email': buyer.email,
+          'phone': buyer.phone,
+          'status': buyer.status,
+        }, onConflict: 'id');
+      } catch (_) {}
     }
   }
 
@@ -675,6 +766,9 @@ class AdminMarketplaceService extends ChangeNotifier {
       } catch (e) {
         debugPrint('[AdminMarketplaceService] deleteBuyer remote sync note: $e');
       }
+      try {
+        await db.from('profiles').delete().eq('id', id);
+      } catch (_) {}
     }
   }
 
@@ -694,6 +788,9 @@ class AdminMarketplaceService extends ChangeNotifier {
       } catch (e) {
         debugPrint('[AdminMarketplaceService] toggleBuyer remote sync note: $e');
       }
+      try {
+        await db.from('profiles').update({'status': next}).eq('id', id);
+      } catch (_) {}
     }
   }
 

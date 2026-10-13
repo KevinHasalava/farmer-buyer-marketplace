@@ -9,6 +9,7 @@ import 'core/routes/app_router.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/services/admin_auth_service.dart';
+import 'features/admin/services/admin_marketplace_service.dart';
 
 /// Fallback delegate ensuring that locales without native MaterialLocalizations in Flutter SDK
 /// (like Sinhala 'si') gracefully fall back to DefaultMaterialLocalizations, preventing
@@ -54,8 +55,9 @@ Future<void> main() async {
     // ── Supabase single-database initialization ───────────────────────
     await SupabaseConfig.initialize();
 
-    // ── Initialize Master Admin Auth Session ──────────────────────────
+    // ── Initialize Master Admin Auth Session & Marketplace Service ────
     await AdminAuthService.instance.init();
+    await AdminMarketplaceService.instance.init();
 
     // Persisted language / onboarding / role
     settings = await AppSettings.load();
