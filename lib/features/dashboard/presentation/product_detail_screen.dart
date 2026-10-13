@@ -99,19 +99,16 @@ class ProductData {
     final qtyNum = double.tryParse(cleanQty) ?? 0.0;
     return {
       if (id != null && id!.isNotEmpty) 'id': id,
-      'farmer_id': farmerId,
+      if (farmerId.isNotEmpty) 'farmer_id': farmerId,
       'name': name,
       'category': category,
       'price': priceNum,
       'unit': unit,
-      'available_qty': qtyNum,
-      'farm_name': farmer.role.isNotEmpty ? farmer.name : 'Farm',
-      'farmer_name': farmer.name,
+      'stock_qty': qtyNum,
       'is_organic': tags.any((t) => t.toLowerCase().contains('organic')) ||
           (tag?.toLowerCase().contains('organic') ?? false),
       'image_url': imageUrl ?? '',
       'description': description,
-      'status': isActive ? 'In Stock' : 'Out of Stock',
     };
   }
 
@@ -119,9 +116,11 @@ class ProductData {
     final priceVal = (map['price'] is num)
         ? (map['price'] as num).toDouble()
         : double.tryParse(map['price']?.toString() ?? '0') ?? 0.0;
-    final qtyVal = (map['available_qty'] is num)
-        ? (map['available_qty'] as num).toDouble()
-        : double.tryParse(map['available_qty']?.toString() ?? '0') ?? 0.0;
+    final qtyVal = (map['stock_qty'] is num)
+        ? (map['stock_qty'] as num).toDouble()
+        : (map['available_qty'] is num)
+            ? (map['available_qty'] as num).toDouble()
+            : double.tryParse((map['stock_qty'] ?? map['available_qty'])?.toString() ?? '0') ?? 0.0;
     final isOrganic = map['is_organic'] as bool? ?? false;
     final status = map['status'] as String? ?? 'In Stock';
     final name = map['name'] as String? ?? 'Product';

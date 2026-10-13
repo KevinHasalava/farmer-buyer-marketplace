@@ -61,7 +61,7 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('drivers').upsert(saved.toMap());
+        await client.from('drivers').upsert(saved.toSupabaseMap());
         debugPrint('[DriverService] Driver synced to Supabase: $id');
       }
     } catch (e) {
@@ -138,7 +138,7 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('drivers').update(driver.toMap()).eq('id', driver.id);
+        await client.from('drivers').update(driver.toSupabaseMap()).eq('id', driver.id);
       }
     } catch (_) {}
   }
@@ -153,8 +153,9 @@ class DriverFirestoreService {
       final client = _sb;
       if (client != null) {
         await client.from('drivers').update({
-          'isOnDuty': isOnDuty,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'duty_status': isOnDuty,
+          'is_on_duty': isOnDuty,
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', driverId);
       }
     } catch (_) {}
@@ -174,9 +175,10 @@ class DriverFirestoreService {
       final client = _sb;
       if (client != null) {
         await client.from('drivers').update({
-          'bankName': bankName,
-          'accountNumber': accountNumber,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'bank_name': bankName,
+          'bank_account_number': accountNumber,
+          'account_number': accountNumber,
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', driverId);
       }
     } catch (_) {}
@@ -292,6 +294,15 @@ class DriverFirestoreService {
       _deliveryPins[cleanId] = '4921';
     }
     _broadcastDeliveries();
+
+    try {
+      final client = _sb;
+      if (client != null) {
+        client.from('driver_deliveries').upsert(order.toSupabaseMap()).catchError((e) {
+          debugPrint('[DriverService] addDeliveryOrder Supabase sync note: $e');
+        });
+      }
+    } catch (_) {}
   }
 
   /// Lookup a delivery by its ID or order number
@@ -318,7 +329,7 @@ class DriverFirestoreService {
       if (client != null) {
         await client.from('driver_deliveries').update({
           'status': newStatus,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', cleanId);
       }
     } catch (_) {}
@@ -339,9 +350,11 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('pickup_verifications').upsert(newVer.toMap());
+        await client.from('pickup_verifications').upsert(newVer.toSupabaseMap());
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[DriverService] pickup verification sync note: $e');
+    }
 
     return id;
   }
@@ -471,7 +484,27 @@ class DriverFirestoreService {
     required double vanTemperature,
     required String transitStatus,
   }) async {
-    // Recorded locally & telemetry sync
+    final cleanId = orderId.replaceAll('#', '').trim();
+    try {
+      final client = _sb;
+      if (client != null) {
+        // Telemetry GPS sync to remote driver_locations
+        client.from('driver_locations').upsert({
+          'driver_id': cleanId,
+          'lat': latitude,
+          'lng': longitude,
+          'heading': 45.0,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).catchError((_) {});
+
+        // Van temperature and transit state sync
+        client.from('driver_deliveries').update({
+          'van_temp': '${vanTemperature.toStringAsFixed(1)}°C',
+          'status': transitStatus,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', cleanId).catchError((_) {});
+      }
+    } catch (_) {}
   }
 
   // ── DELIVERY COMPLETION & SETTLEMENT ───────────────────────────────────────
@@ -556,7 +589,7 @@ class DriverFirestoreService {
       try {
         final client = _sb;
         if (client != null) {
-          await client.from('drivers').update(updated.toMap()).eq('id', targetDriver.id);
+          await client.from('drivers').update(updated.toSupabaseMap()).eq('id', targetDriver.id);
         }
       } catch (_) {}
     }

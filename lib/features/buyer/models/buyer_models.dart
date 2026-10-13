@@ -64,9 +64,11 @@ class BuyerProduct {
     final priceVal = (row['price'] is num)
         ? (row['price'] as num).toDouble()
         : double.tryParse(row['price']?.toString() ?? '0') ?? 0.0;
-    final qtyVal = (row['available_qty'] is num)
-        ? (row['available_qty'] as num).toDouble()
-        : double.tryParse(row['available_qty']?.toString() ?? '10') ?? 10.0;
+    final qtyVal = (row['stock_qty'] is num)
+        ? (row['stock_qty'] as num).toDouble()
+        : (row['available_qty'] is num)
+            ? (row['available_qty'] as num).toDouble()
+            : double.tryParse((row['stock_qty'] ?? row['available_qty'])?.toString() ?? '10') ?? 10.0;
     final isOrganic = row['is_organic'] as bool? ?? false;
     final imgUrl = (row['image_url'] as String?)?.isNotEmpty == true
         ? row['image_url'] as String

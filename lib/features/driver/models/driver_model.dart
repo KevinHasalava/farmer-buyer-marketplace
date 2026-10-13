@@ -89,6 +89,32 @@ class DriverModel {
     };
   }
 
+  /// Convert DriverModel into remote Supabase `public.drivers` column format.
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'full_name': fullName,
+      'license_number': licenseNumber,
+      'phone_number': mobileNumber,
+      'vehicle_type': vehicleType,
+      'vehicle_number': plateNumber,
+      'plate_number': plateNumber,
+      'cargo_capacity': cargoCapacity,
+      'is_cold_box_equipped': isColdBoxEquipped,
+      'operating_corridors': operatingCorridors,
+      'bank_name': bankName,
+      'bank_account_number': accountNumber,
+      'account_number': accountNumber,
+      'duty_status': isOnDuty,
+      'is_on_duty': isOnDuty,
+      'rating': rating,
+      'completed_deliveries': completedTrips,
+      'completed_trips': completedTrips,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
   static DateTime _parseDate(dynamic val) {
     if (val is DateTime) return val;
     if (val is String) {
@@ -98,25 +124,51 @@ class DriverModel {
     return DateTime.now();
   }
 
-  /// Create a DriverModel from Document Snapshot or Map.
+  /// Create a DriverModel from Document Snapshot, Supabase row, or Map.
   factory DriverModel.fromMap(Map<String, dynamic> map, String docId) {
+    final dutyVal = map['duty_status'] ?? map['is_on_duty'] ?? map['isOnDuty'];
+    final tripsVal = map['completed_deliveries'] ??
+        map['completed_trips'] ??
+        map['completedTrips'];
+
     return DriverModel(
       id: docId,
-      fullName: map['fullName'] as String? ?? '',
-      licenseNumber: map['licenseNumber'] as String? ?? '',
-      mobileNumber: map['mobileNumber'] as String? ?? '',
-      vehicleType: map['vehicleType'] as String? ?? '',
-      plateNumber: map['plateNumber'] as String? ?? '',
-      cargoCapacity: map['cargoCapacity'] as String? ?? '',
-      isColdBoxEquipped: map['isColdBoxEquipped'] as bool? ?? false,
-      operatingCorridors: List<String>.from(map['operatingCorridors'] ?? []),
-      bankName: map['bankName'] as String? ?? '',
-      accountNumber: map['accountNumber'] as String? ?? '',
-      isOnDuty: map['isOnDuty'] as bool? ?? true,
+      fullName: map['full_name'] as String? ??
+          map['fullName'] as String? ??
+          '',
+      licenseNumber: map['license_number'] as String? ??
+          map['licenseNumber'] as String? ??
+          '',
+      mobileNumber: map['phone_number'] as String? ??
+          map['mobileNumber'] as String? ??
+          '',
+      vehicleType: map['vehicle_type'] as String? ??
+          map['vehicleType'] as String? ??
+          '',
+      plateNumber: map['vehicle_number'] as String? ??
+          map['plate_number'] as String? ??
+          map['plateNumber'] as String? ??
+          '',
+      cargoCapacity: map['cargo_capacity'] as String? ??
+          map['cargoCapacity'] as String? ??
+          '',
+      isColdBoxEquipped: (map['is_cold_box_equipped'] ??
+              map['isColdBoxEquipped']) as bool? ??
+          false,
+      operatingCorridors: List<String>.from(
+          map['operating_corridors'] ?? map['operatingCorridors'] ?? []),
+      bankName: map['bank_name'] as String? ??
+          map['bankName'] as String? ??
+          '',
+      accountNumber: map['bank_account_number'] as String? ??
+          map['account_number'] as String? ??
+          map['accountNumber'] as String? ??
+          '',
+      isOnDuty: dutyVal is bool ? dutyVal : true,
       rating: (map['rating'] as num?)?.toDouble() ?? 4.9,
-      completedTrips: (map['completedTrips'] as num?)?.toInt() ?? 0,
-      createdAt: _parseDate(map['createdAt']),
-      updatedAt: _parseDate(map['updatedAt']),
+      completedTrips: (tripsVal as num?)?.toInt() ?? 0,
+      createdAt: _parseDate(map['created_at'] ?? map['createdAt']),
+      updatedAt: _parseDate(map['updated_at'] ?? map['updatedAt']),
       scheduledDeliveries: (map['scheduledDeliveries'] as num?)?.toInt() ?? 6,
       deliveredToday: (map['deliveredToday'] as num?)?.toInt() ?? 4,
       netEarnings: (map['netEarnings'] as num?)?.toDouble() ?? 7850.0,

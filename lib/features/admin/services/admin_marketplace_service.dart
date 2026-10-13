@@ -415,7 +415,15 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('farmers').upsert(updated.toSupabaseMap());
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] syncFarmer remote sync note: $e');
+        try {
+          await db.from('farmer_details').upsert({
+            'id': updated.id,
+            'farm_name': updated.farmName,
+            'agrarian_center': updated.agrarianCenter,
+            'scale': updated.scale,
+            'bank_name': updated.bankName,
+          });
+        } catch (_) {}
       }
     }
   }
@@ -449,7 +457,12 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('buyers').upsert(updated.toSupabaseMap());
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] syncBuyer remote sync note: $e');
+        try {
+          await db.from('buyer_details').upsert({
+            'id': updated.id,
+            'buyer_type': updated.buyerType,
+          });
+        } catch (_) {}
       }
     }
   }
@@ -509,7 +522,15 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('farmers').insert(f.toSupabaseMap());
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] addFarmer remote sync note: $e');
+        try {
+          await db.from('farmer_details').upsert({
+            'id': f.id,
+            'farm_name': f.farmName,
+            'agrarian_center': f.agrarianCenter,
+            'scale': f.scale,
+            'bank_name': f.bankName,
+          });
+        } catch (_) {}
       }
     }
   }
@@ -527,7 +548,15 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('farmers').update(farmer.toSupabaseMap()).eq('id', farmer.id);
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] updateFarmer remote sync note: $e');
+        try {
+          await db.from('farmer_details').upsert({
+            'id': farmer.id,
+            'farm_name': farmer.farmName,
+            'agrarian_center': farmer.agrarianCenter,
+            'scale': farmer.scale,
+            'bank_name': farmer.bankName,
+          });
+        } catch (_) {}
       }
     }
   }
@@ -591,7 +620,12 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('buyers').insert(b.toSupabaseMap());
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] addBuyer remote sync note: $e');
+        try {
+          await db.from('buyer_details').upsert({
+            'id': b.id,
+            'buyer_type': b.buyerType,
+          });
+        } catch (_) {}
       }
     }
   }
@@ -609,7 +643,12 @@ class AdminMarketplaceService extends ChangeNotifier {
       try {
         await db.from('buyers').update(buyer.toSupabaseMap()).eq('id', buyer.id);
       } catch (e) {
-        debugPrint('[AdminMarketplaceService] updateBuyer remote sync note: $e');
+        try {
+          await db.from('buyer_details').upsert({
+            'id': buyer.id,
+            'buyer_type': buyer.buyerType,
+          });
+        } catch (_) {}
       }
     }
   }

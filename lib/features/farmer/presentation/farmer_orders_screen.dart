@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/services/order_lifecycle_manager.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../../../widgets/premium/premium_widgets.dart';
@@ -102,6 +104,69 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       'readyForPickup': false,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    OrderLifecycleManager.instance.addListener(_onOrdersLifecycleChanged);
+    _syncLiveFarmerOrders();
+  }
+
+  @override
+  void dispose() {
+    OrderLifecycleManager.instance.removeListener(_onOrdersLifecycleChanged);
+    super.dispose();
+  }
+
+  void _onOrdersLifecycleChanged() {
+    if (mounted) {
+      setState(() {
+        _syncLiveFarmerOrders();
+      });
+    }
+  }
+
+  void _syncLiveFarmerOrders() {
+    for (final fo in OrderLifecycleManager.instance.farmerOrders) {
+      final exists = _orders.any((o) => (o['id'] as String).replaceAll('#', '').trim() == fo.id.replaceAll('#', '').trim());
+      if (!exists) {
+        final statusKey = fo.status.toLowerCase().contains('prep')
+            ? 'preparing'
+            : (fo.status.toLowerCase().contains('ready') || fo.status.toLowerCase().contains('transit')
+                ? 'ready'
+                : 'new');
+        _orders.insert(0, {
+          'id': fo.id.startsWith('#') ? fo.id : '#${fo.id}',
+          'tag': fo.status == 'Pending' ? '⚡ Urgent • New' : fo.status,
+          'tagBg': fo.status == 'Pending' ? const Color(0xFFFFEDD5) : const Color(0xFFDCFCE7),
+          'tagText': fo.status == 'Pending' ? const Color(0xFFC2410C) : const Color(0xFF15803D),
+          'time': 'Just now',
+          'initials': fo.customer.isNotEmpty
+              ? fo.customer.substring(0, min(2, fo.customer.length)).toUpperCase()
+              : 'CU',
+          'initialsBg': const Color(0xFFE0E7FF),
+          'initialsText': const Color(0xFF4338CA),
+          'customer': fo.customer,
+          'amount': fo.amount,
+          'location': fo.deliveryAddress.isNotEmpty ? fo.deliveryAddress : 'Colombo',
+          'payment': fo.paymentMethod,
+          'isCod': fo.paymentMethod.toLowerCase().contains('cash'),
+          'itemHeader': 'ORDER ITEMS (${max(1, fo.items.length)})',
+          'itemBadge': 'Packed fresh',
+          'itemTitle': fo.items.isNotEmpty
+              ? '${fo.items.first.quantity} ${fo.items.first.unit} ${fo.items.first.name}'
+              : 'Fresh Farm Basket',
+          'itemSubtitle': fo.items.length > 1
+              ? '${fo.items[1].quantity} ${fo.items[1].unit} ${fo.items[1].name}'
+              : 'Welimada Farm Fresh',
+          'itemImg':
+              'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=200&auto=format&fit=crop&q=80',
+          'status': statusKey,
+          'accepted': statusKey != 'new',
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -848,6 +913,12 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                           ord['tagBg'] = const Color(0xFFFFEDD5);
                           ord['tagText'] = const Color(0xFFC2410C);
                         });
+                        try {
+                          OrderLifecycleManager.instance.onFarmerStatusUpdated(
+                            ord['id'] as String,
+                            'Preparing',
+                          );
+                        } catch (_) {}
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('${ord['id']} accepted! Moved to Preparing.'.trAuto(context)),
@@ -890,6 +961,12 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                     ord['tagBg'] = const Color(0xFFDCFCE7);
                     ord['tagText'] = const Color(0xFF15803D);
                   });
+                  try {
+                    OrderLifecycleManager.instance.onFarmerStatusUpdated(
+                      ord['id'] as String,
+                      'Ready for Pickup',
+                    );
+                  } catch (_) {}
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('${ord['id']} marked Ready for Pickup! Driver notified.'.trAuto(context)),

@@ -53,6 +53,29 @@ class DeliveryOrderModel {
     };
   }
 
+  /// Format matching remote Supabase `public.driver_deliveries` columns.
+  Map<String, dynamic> toSupabaseMap() {
+    final cleanId = id.replaceAll('#', '').trim();
+    return {
+      'id': cleanId,
+      'order_number': orderNumber.startsWith('#') ? orderNumber : '#$orderNumber',
+      'status': status,
+      'crate_count': crateCount,
+      'pickup_due_text': pickupDueText,
+      'farmer_name': farmerName,
+      'farmer_address': farmerAddress,
+      'buyer_name': buyerName,
+      'buyer_address': buyerAddress,
+      'items_summary': produceDescription,
+      'produce_description': produceDescription,
+      'payout_amount': 'Rs. ${driverFee.toStringAsFixed(0)}',
+      'driver_fee': driverFee,
+      'is_priority': isPriority,
+      'created_at': (createdAt ?? DateTime.now()).toIso8601String(),
+      'updated_at': (updatedAt ?? DateTime.now()).toIso8601String(),
+    };
+  }
+
   static DateTime _parseDate(dynamic val) {
     if (val is DateTime) return val;
     if (val is String) {

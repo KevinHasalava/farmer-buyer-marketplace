@@ -462,18 +462,15 @@ class AdminProductModel {
 
   Map<String, dynamic> toSupabaseMap() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'name': name,
       'category': category,
       'price': price,
       'unit': unit,
-      'available_qty': availableQty,
-      'farm_name': farmName,
-      'farmer_name': farmerName,
+      'stock_qty': availableQty,
       'is_organic': isOrganic,
       'image_url': imageUrl,
       'description': description,
-      'status': status,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -485,7 +482,11 @@ class AdminProductModel {
       category: map['category'] ?? 'Vegetables',
       price: (map['price'] as num?)?.toDouble() ?? 0.0,
       unit: map['unit'] ?? '/kg',
-      availableQty: (map['availableQty'] ?? map['available_qty'] as num?)?.toDouble() ?? 0.0,
+      availableQty: (map['stock_qty'] ??
+              map['availableQty'] ??
+              map['available_qty'] as num?)
+          ?.toDouble() ??
+          0.0,
       farmName: map['farmName'] ?? map['farm_name'] ?? '',
       farmerName: map['farmerName'] ?? map['farmer_name'] ?? '',
       isOrganic: (map['isOrganic'] ?? map['is_organic']) as bool? ?? true,
