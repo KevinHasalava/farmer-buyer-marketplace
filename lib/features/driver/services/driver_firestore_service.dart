@@ -335,6 +335,18 @@ class DriverFirestoreService {
     } catch (_) {}
   }
 
+  Future<void> deleteDeliveryOrder(String orderId) async {
+    final cleanId = orderId.replaceAll('#', '').trim();
+    _deliveries.remove(cleanId);
+    _broadcastDeliveries();
+    try {
+      final client = _sb;
+      if (client != null) {
+        await client.from('driver_deliveries').delete().eq('id', cleanId);
+      }
+    } catch (_) {}
+  }
+
   // ── PICKUP VERIFICATION (Supabase `pickup_verifications`) ─────────────────
 
   Future<String> createPickupVerification(PickupVerificationModel verification) async {

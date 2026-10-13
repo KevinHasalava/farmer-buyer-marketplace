@@ -8,6 +8,7 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
+import 'widgets/admin_extra_crud_tabs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
 import '../../pre_order/presentation/pre_order_detail_screen.dart';
 import '../../pre_order/presentation/create_pre_order_screen.dart';
@@ -49,7 +50,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -61,6 +62,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.addListener(_onServiceChanged);
     _auth.addListener(_onServiceChanged);
     AuctionManager.instance.addListener(_onServiceChanged);
+    AdminLogisticsService.instance.addListener(_onLogisticsChanged);
+    AdminLogisticsService.instance.loadAll();
     _service.init();
   }
 
@@ -69,9 +72,26 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.removeListener(_onServiceChanged);
     _auth.removeListener(_onServiceChanged);
     AuctionManager.instance.removeListener(_onServiceChanged);
+    AdminLogisticsService.instance.removeListener(_onLogisticsChanged);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onLogisticsChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final err = AdminLogisticsService.instance.lastError;
+    if (err != null) {
+      AdminLogisticsService.instance.lastError = null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _onServiceChanged() {
@@ -202,6 +222,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildOrdersTab(),
                         _buildContractsTab(),
                         _buildAuctionsTab(),
+                        AdminDeliveriesTab(searchQuery: _searchQuery),
+                        AdminPaymentMethodsTab(searchQuery: _searchQuery),
                       ],
                     ),
                   ),
@@ -237,6 +259,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildOrdersTab(),
                   _buildContractsTab(),
                   _buildAuctionsTab(),
+                  AdminDeliveriesTab(searchQuery: _searchQuery),
+                  AdminPaymentMethodsTab(searchQuery: _searchQuery),
                 ],
               ),
             ),
@@ -388,6 +412,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.gavel_rounded,
                     label: 'Crop Auctions & Bids',
                     badgeCount: '${AuctionManager.instance.activeAuctionsCount}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 8,
+                    icon: Icons.alt_route_rounded,
+                    label: 'Fleet Deliveries & Pickups',
+                    badgeCount: '${AdminLogisticsService.instance.deliveries.length}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 9,
+                    icon: Icons.credit_card_rounded,
+                    label: 'Payment Methods & Wallets',
+                    badgeCount: '${AdminLogisticsService.instance.paymentMethods.length}',
                   ),
                 ],
               ),
@@ -695,6 +731,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                 ),
               );
               await _service.refreshDatabaseSync();
+            await AdminLogisticsService.instance.loadAll();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -771,6 +808,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
             );
             await _service.refreshDatabaseSync();
+            await AdminLogisticsService.instance.loadAll();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -801,6 +839,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Orders (${_service.totalOrders})',
       'Pre-Orders',
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
+      'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
+      'Payments (${AdminLogisticsService.instance.paymentMethods.length})',
     ];
 
     return Container(
@@ -901,6 +941,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       5 => 'Orders & Dispatch',
       6 => 'Pre-Orders (Contracts)',
       7 => 'Crop Auctions & Bids',
+      8 => 'Fleet Deliveries & Pickups',
+      9 => 'Payment Methods & Wallets',
       _ => 'Executive Overview',
     };
     return title.trAuto(context);
@@ -915,6 +957,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       5 => 'Create Order',
       6 => 'New Contract',
       7 => 'Add Auction',
+      8 => 'Dispatch Delivery',
+      9 => 'Add Payment Method',
       _ => 'New Entry',
     };
     return label.trAuto(context);
@@ -949,6 +993,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           context,
           MaterialPageRoute(builder: (_) => const CreateEditAuctionScreen()),
         );
+        break;
+      case 8:
+        showAdminDeliveryDialog(context);
+        break;
+      case 9:
+        showAdminPaymentMethodDialog(context);
         break;
       default:
         _showQuickCreateMenu();
@@ -1488,7 +1538,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             icon: Icons.alt_route_rounded,
             iconBg: const Color(0xFFF0FDFA),
             iconColor: const Color(0xFF0D9488),
-            onTap: () => _switchTab(5),
+            onTap: () => _switchTab(8),
+          ),
+          const SizedBox(height: 8),
+
+          // 9. Payment Methods CRUD
+          _buildQuickActionTile(
+            title: '9. Payment Methods & Wallets (Member 1)',
+            subtitle: 'Tokenized buyer cards: add, edit, set default, delete (no raw card data)',
+            icon: Icons.credit_card_rounded,
+            iconBg: const Color(0xFFEFF6FF),
+            iconColor: const Color(0xFF2563EB),
+            onTap: () => _switchTab(9),
           ),
         ],
       ),
