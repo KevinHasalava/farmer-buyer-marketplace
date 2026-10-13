@@ -45,41 +45,45 @@ class AdminLogisticsService extends ChangeNotifier {
       final d = await _db
           .from('driver_deliveries')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 4));
       deliveries = List<Map<String, dynamic>>.from(
           (d as List).map((e) => Map<String, dynamic>.from(e as Map)));
     } catch (e) {
-      lastError = 'Deliveries load failed: $e';
+      // Fail silently without hanging UI
     }
     try {
       final v = await _db
           .from('pickup_verifications')
           .select()
-          .order('verified_at', ascending: false);
+          .order('verified_at', ascending: false)
+          .timeout(const Duration(seconds: 4));
       verifications = List<Map<String, dynamic>>.from(
           (v as List).map((e) => Map<String, dynamic>.from(e as Map)));
-    } catch (e) {
+    } catch (_) {
       verifications = [];
     }
     try {
       final p = await _db
           .from('buyer_payment_methods')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 4));
       paymentMethods = List<Map<String, dynamic>>.from(
           (p as List).map((e) => Map<String, dynamic>.from(e as Map)));
-    } catch (e) {
-      lastError = 'Payment methods load failed: $e';
+    } catch (_) {
+      paymentMethods = [];
     }
     try {
       final c = await _db
           .from('cart_items')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 4));
       cartItems = List<Map<String, dynamic>>.from(
           (c as List).map((e) => Map<String, dynamic>.from(e as Map)));
       cartTableMissing = false;
-    } catch (e) {
+    } catch (_) {
       cartItems = [];
       cartTableMissing = true;
     }
@@ -87,11 +91,12 @@ class AdminLogisticsService extends ChangeNotifier {
       final n = await _db
           .from('notifications')
           .select()
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 4));
       notifications = List<Map<String, dynamic>>.from(
           (n as List).map((e) => Map<String, dynamic>.from(e as Map)));
       notificationsSchemaMissing = false;
-    } catch (e) {
+    } catch (_) {
       notifications = [];
       notificationsSchemaMissing = true;
     }

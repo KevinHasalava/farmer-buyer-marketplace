@@ -1320,7 +1320,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          const Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6,
                             children: [
                               Text(
                                 'Financial Gateways & Encrypted Settlements',
@@ -1330,7 +1332,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                                   color: _textDark,
                                 ),
                               ),
-                              SizedBox(width: 6),
                               Icon(Icons.lock_rounded, color: Color(0xFF059669), size: 14),
                             ],
                           ),
@@ -1342,6 +1343,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -1423,7 +1425,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
                         children: [
                           Text(
                             'Notify.lk Enterprise SMS Gateway',
@@ -1433,7 +1437,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                               color: _textDark,
                             ),
                           ),
-                          SizedBox(width: 6),
                           Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
                         ],
                       ),
