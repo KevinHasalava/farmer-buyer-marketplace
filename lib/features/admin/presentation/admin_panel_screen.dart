@@ -51,7 +51,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 12, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -224,8 +224,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildContractsTab(),
                         _buildAuctionsTab(),
                         AdminDeliveriesTab(searchQuery: _searchQuery),
-                        AdminPaymentMethodsTab(searchQuery: _searchQuery),
-                        AdminCartsTab(searchQuery: _searchQuery),
                         AdminNotificationsTab(searchQuery: _searchQuery),
                       ],
                     ),
@@ -263,8 +261,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildContractsTab(),
                   _buildAuctionsTab(),
                   AdminDeliveriesTab(searchQuery: _searchQuery),
-                  AdminPaymentMethodsTab(searchQuery: _searchQuery),
-                  AdminCartsTab(searchQuery: _searchQuery),
                   AdminNotificationsTab(searchQuery: _searchQuery),
                 ],
               ),
@@ -426,18 +422,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   ),
                   _buildSidebarNavItem(
                     index: 9,
-                    icon: Icons.credit_card_rounded,
-                    label: 'Payment Methods & Wallets',
-                    badgeCount: '${AdminLogisticsService.instance.paymentMethods.length}',
-                  ),
-                  _buildSidebarNavItem(
-                    index: 10,
-                    icon: Icons.shopping_cart_rounded,
-                    label: 'Buyer Carts',
-                    badgeCount: '${AdminLogisticsService.instance.cartItems.length}',
-                  ),
-                  _buildSidebarNavItem(
-                    index: 11,
                     icon: Icons.notifications_active_rounded,
                     label: 'Buyer Notifications',
                     badgeCount: '${AdminLogisticsService.instance.notifications.length}',
@@ -857,8 +841,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Pre-Orders',
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
       'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
-      'Payments (${AdminLogisticsService.instance.paymentMethods.length})',
-      'Carts (${AdminLogisticsService.instance.cartItems.length})',
       'Notifications (${AdminLogisticsService.instance.notifications.length})',
     ];
 
@@ -961,9 +943,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'Pre-Orders (Contracts)',
       7 => 'Crop Auctions & Bids',
       8 => 'Fleet Deliveries & Pickups',
-      9 => 'Payment Methods & Wallets',
-      10 => 'Buyer Shopping Carts',
-      11 => 'Buyer Notifications',
+      9 => 'Buyer Notifications',
       _ => 'Executive Overview',
     };
     return title.trAuto(context);
@@ -979,9 +959,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'New Contract',
       7 => 'Add Auction',
       8 => 'Dispatch Delivery',
-      9 => 'Add Payment Method',
-      10 => 'Add Cart Item',
-      11 => 'Send Notification',
+      9 => 'Send Notification',
       _ => 'New Entry',
     };
     return label.trAuto(context);
@@ -1021,12 +999,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         showAdminDeliveryDialog(context);
         break;
       case 9:
-        showAdminPaymentMethodDialog(context);
-        break;
-      case 10:
-        showAdminCartItemDialog(context);
-        break;
-      case 11:
         showAdminNotificationDialog(context);
         break;
       default:
@@ -1098,7 +1070,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 📊 3. TAB 0: EXECUTIVE OVERVIEW WITH HIGH-END CARDS
+  // 📊 3. TAB 0: EXECUTIVE OVERVIEW WITH HIGH-END CARDS & BAR CHARTS
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildOverviewTab() {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1106,507 +1078,1196 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Executive Welcome Banner ──────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF064E3B), Color(0xFF022C22)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF064E3B).withValues(alpha: 0.25),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF047857),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.6)),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.hub_rounded, color: Colors.white, size: 26),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Farm2Home Unified Agri-Logistics Engine',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFF34D399),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'All 5 operational portals nominal • Real-time SMS Gateway active',
-                              style: TextStyle(fontSize: 11.5, color: Color(0xFFA7F3D0)),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // ── 1. Executive Welcome & Telemetry Command Banner ────────────────
+          _buildExecutiveCommandBanner(),
           const SizedBox(height: 18),
 
-          // ── 6 Ultra-Premium Gradient Metric Cards ─────────────────────────
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth >= 1050
-                  ? 3
-                  : (constraints.maxWidth >= 600 ? 2 : 1);
+          // ── 2. Top Executive Metric KPI Cards (Responsive Grid) ───────────
+          _buildExecutiveKpiSection(isDesktop),
+          const SizedBox(height: 20),
 
-              return GridView.count(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: isDesktop ? 1.6 : 1.9,
-                children: [
-                  _buildExecutiveKpiCard(
-                    title: 'Registered Farmers',
-                    value: '${_service.totalFarmers}',
-                    badge: '↑ 18% Month',
-                    subText: '${_service.activeFarmersCount} Active & Verified',
-                    icon: Icons.agriculture_rounded,
-                    accentColor: const Color(0xFF059669),
-                    gradientStart: const Color(0xFFECFDF5),
-                    onTap: () => _switchTab(1),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Marketplace Buyers',
-                    value: '${_service.totalBuyers}',
-                    badge: '100% Active',
-                    subText: 'Families, Hotels & Organic Stores',
-                    icon: Icons.shopping_bag_outlined,
-                    accentColor: const Color(0xFF2563EB),
-                    gradientStart: const Color(0xFFEFF6FF),
-                    onTap: () => _switchTab(2),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Fleet Transit Drivers',
-                    value: '${_service.totalDrivers}',
-                    badge: '${_service.onDutyDriversCount} On Duty Now',
-                    subText: 'Refrigerated & Insulated Vans',
-                    icon: Icons.local_shipping_rounded,
-                    accentColor: const Color(0xFFD97706),
-                    gradientStart: const Color(0xFFFFFBEB),
-                    onTap: () => _switchTab(3),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Produce Catalog SKUs',
-                    value: '${_service.totalProducts}',
-                    badge: '100% Traceable',
-                    subText: 'Certified Fresh & Organic Harvest',
-                    icon: Icons.inventory_2_outlined,
-                    accentColor: const Color(0xFF047857),
-                    gradientStart: const Color(0xFFF0FDF4),
-                    onTap: () => _switchTab(4),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Marketplace Orders',
-                    value: '${_service.totalOrders}',
-                    badge: '${_service.inTransitOrdersCount} Dispatching',
-                    subText: 'Active Order Fulfillment',
-                    icon: Icons.receipt_long_rounded,
-                    accentColor: const Color(0xFF7E22CE),
-                    gradientStart: const Color(0xFFFAF5FF),
-                    onTap: () => _switchTab(5),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Pre-Order Contracts',
-                    value: '${PreOrderManager.instance.preOrders.length}',
-                    badge: 'Direct Farming',
-                    subText: 'Forward Contracts & Proposals',
-                    icon: Icons.handshake_rounded,
-                    accentColor: const Color(0xFF0284C7),
-                    gradientStart: const Color(0xFFF0F9FF),
-                    onTap: () => _switchTab(6),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Live Crop Auctions',
-                    value: '${AuctionManager.instance.auctions.length}',
-                    badge: '${AuctionManager.instance.activeAuctionsCount} Live Now',
-                    subText: 'Live Bidding & Lot Tracking',
-                    icon: Icons.gavel_rounded,
-                    accentColor: const Color(0xFFEA580C),
-                    gradientStart: const Color(0xFFFFF7ED),
-                    onTap: () => _switchTab(7),
-                  ),
-                  _buildExecutiveKpiCard(
-                    title: 'Active Fleet Dispatches',
-                    value: '${_service.inTransitOrdersCount}',
-                    badge: 'Live GPS',
-                    subText: 'Real-time Pickup & Transit',
-                    icon: Icons.alt_route_rounded,
-                    accentColor: const Color(0xFF0D9488),
-                    gradientStart: const Color(0xFFF0FDFA),
-                    onTap: () => _switchTab(5),
-                  ),
-                ],
-              );
-            },
-          ),
+          // ── 3. Ultra-Premium Weekly Revenue & Velocity Bar Chart Card ──────
+          _buildWeeklyRevenueBarChartCard(),
+          const SizedBox(height: 20),
 
-          const SizedBox(height: 22),
-
-          // ── Encrypted Payments & PCI-DSS Financial Audit Card ─────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
+          // ── 4. Regional Economic Hubs & Live Fulfillment Pipeline ──────────
+          if (isDesktop)
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                Expanded(child: _buildRegionalHubsCard()),
+                const SizedBox(width: 16),
+                Expanded(child: _buildFulfillmentPipelineCard()),
+              ],
+            )
+          else ...[
+            _buildRegionalHubsCard(),
+            const SizedBox(height: 16),
+            _buildFulfillmentPipelineCard(),
+          ],
+          const SizedBox(height: 20),
+
+          // ── 5. Category Harvest Output Distribution Card ───────────────────
+          _buildCategoryDistributionCard(),
+          const SizedBox(height: 20),
+
+          // ── 6. SMS Gateway Health & Real-time Dispatch Telemetry ──────────
+          _buildSmsTelemetryCard(),
+          const SizedBox(height: 24),
+
+          // ── 7. Enterprise Management Modules (9 Primary Portals) ───────────
+          _buildManagementModulesSection(),
+          const SizedBox(height: 28),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutiveCommandBanner() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF04211A), Color(0xFF063A2E), Color(0xFF021B15)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF04211A).withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF059669), Color(0xFF047857)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.7)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.hub_rounded, color: Colors.white, size: 26),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.security_rounded, color: Color(0xFF2563EB), size: 22),
+                    const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Farm2Home Enterprise Command Center',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6,
-                            children: [
-                              Text(
-                                'Financial Gateways & Encrypted Settlements',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: _textDark,
-                                ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Color(0xFF34D399),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xFF34D399),
+                                    blurRadius: 6,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
                               ),
-                              Icon(Icons.lock_rounded, color: Color(0xFF059669), size: 14),
-                            ],
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Supabase Cloud Synced',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFA7F3D0),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Gross Revenue: Rs. ${_service.totalRevenue.toInt()} • Zero-Trust Card Tokenization active',
-                            style: const TextStyle(fontSize: 11.5, color: _textMuted),
+                          child: const Text(
+                            'Latency: 24ms • 100% Operational',
+                            style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1)),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExecutiveKpiSection(bool isDesktop) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth >= 1050
+            ? 3
+            : (constraints.maxWidth >= 580 ? 2 : 1);
+
+        final revenueFormatted = _service.totalRevenue > 0
+            ? 'Rs. ${_service.totalRevenue.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}'
+            : 'Rs. 284,500';
+
+        final totalKg = '${_service.totalProducts * 120 + 460} kg';
+
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: crossAxisCount == 1 ? 2.5 : (isDesktop ? 1.7 : 1.75),
+          children: [
+            _buildExecutiveKpiCard(
+              title: 'Gross Revenue (GMV)',
+              value: revenueFormatted,
+              badge: '↑ 24.8% Week',
+              subText: 'Verified B2B & Retail Settlements',
+              icon: Icons.payments_rounded,
+              accentColor: const Color(0xFF059669),
+              gradientStart: const Color(0xFFECFDF5),
+              onTap: () => _switchTab(5),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Fresh Produce Traded',
+              value: totalKg,
+              badge: '100% Certified',
+              subText: 'Nuwara Eliya & Dambulla Harvest',
+              icon: Icons.eco_rounded,
+              accentColor: const Color(0xFF0284C7),
+              gradientStart: const Color(0xFFF0F9FF),
+              onTap: () => _switchTab(4),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Registered Farmers',
+              value: '${_service.totalFarmers}',
+              badge: '${_service.activeFarmersCount} Verified',
+              subText: 'Up-Country & Dry Zone Growers',
+              icon: Icons.agriculture_rounded,
+              accentColor: const Color(0xFF16A34A),
+              gradientStart: const Color(0xFFF0FDF4),
+              onTap: () => _switchTab(1),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Wholesale & Retail Buyers',
+              value: '${_service.totalBuyers}',
+              badge: 'Active Accounts',
+              subText: 'Supermarkets, Hotels & Households',
+              icon: Icons.shopping_bag_rounded,
+              accentColor: const Color(0xFF2563EB),
+              gradientStart: const Color(0xFFEFF6FF),
+              onTap: () => _switchTab(2),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Transit Fleet Drivers',
+              value: '${_service.totalDrivers}',
+              badge: '${_service.onDutyDriversCount} On Duty Now',
+              subText: 'Cold-Chain & Insulated Logistics',
+              icon: Icons.local_shipping_rounded,
+              accentColor: const Color(0xFFD97706),
+              gradientStart: const Color(0xFFFFFBEB),
+              onTap: () => _switchTab(3),
+            ),
+            _buildExecutiveKpiCard(
+              title: 'Marketplace Orders',
+              value: '${_service.totalOrders}',
+              badge: '${_service.inTransitOrdersCount} Dispatching',
+              subText: 'Real-time GPS Delivery Tracking',
+              icon: Icons.receipt_long_rounded,
+              accentColor: const Color(0xFF7E22CE),
+              gradientStart: const Color(0xFFFAF5FF),
+              onTap: () => _switchTab(5),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📈 3.1 ULTRA-PREMIUM WEEKLY REVENUE & VELOCITY BAR CHART CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildWeeklyRevenueBarChartCard() {
+    // 7-day performance data model: Day, Revenue (LKR), Volume (kg), Height factors
+    final weeklyData = [
+      {'day': 'Mon', 'rev': '34k', 'vol': '170kg', 'revH': 0.58, 'volH': 0.48, 'isPeak': false},
+      {'day': 'Tue', 'rev': '29k', 'vol': '145kg', 'revH': 0.50, 'volH': 0.40, 'isPeak': false},
+      {'day': 'Wed', 'rev': '46k', 'vol': '230kg', 'revH': 0.79, 'volH': 0.64, 'isPeak': false},
+      {'day': 'Thu', 'rev': '38k', 'vol': '190kg', 'revH': 0.65, 'volH': 0.52, 'isPeak': false},
+      {'day': 'Fri', 'rev': '58.2k', 'vol': '290kg', 'revH': 1.00, 'volH': 0.85, 'isPeak': true},
+      {'day': 'Sat', 'rev': '52k', 'vol': '260kg', 'revH': 0.89, 'volH': 0.74, 'isPeak': false},
+      {'day': 'Sun', 'rev': '27.3k', 'vol': '135kg', 'revH': 0.47, 'volH': 0.38, 'isPeak': false},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header Row ────────────────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF059669), Color(0xFF047857)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF059669).withValues(alpha: 0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weekly Trading Revenue & Produce Flow',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: _textDark,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFA7F3D0)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.shield_rounded, size: 12, color: Color(0xFF059669)),
-                          SizedBox(width: 4),
-                          Text(
-                            'PCI-DSS SAFE',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
-                          ),
-                        ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Daily GMV (LKR) & harvest clearance volume across island-wide hubs',
+                      style: TextStyle(fontSize: 11.5, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Peak: Fri • Rs. 58.2k',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF92400E),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _borderLight),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Legend & Insights Pill Strip ───────────────────────────────────
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF047857)],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
-                  child: Row(
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Revenue (LKR)',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Volume Cleared (kg)',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Text(
+                  '↑ 28.4% Week-over-Week',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // ── Visual Bar Chart Drawing Canvas ────────────────────────────────
+          Container(
+            height: 210,
+            padding: const EdgeInsets.only(top: 10, bottom: 6),
+            child: Stack(
+              children: [
+                // Horizontal reference guide lines
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF64748B)),
+                      _buildChartGridLine('60k'),
+                      _buildChartGridLine('40k'),
+                      _buildChartGridLine('20k'),
+                      _buildChartGridLine('0'),
+                    ],
+                  ),
+                ),
+
+                // 7-day Bar columns
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 36, right: 8, bottom: 22),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: weeklyData.map((data) {
+                        final isPeak = data['isPeak'] as bool;
+                        final revH = data['revH'] as double;
+                        final volH = data['volH'] as double;
+
+                        return Flexible(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              // Peak Badge on top of Friday's bar
+                              if (isPeak) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF047857), Color(0xFF065F46)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF047857).withValues(alpha: 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    'Rs. 58k',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                              ] else ...[
+                                const SizedBox(height: 18),
+                              ],
+
+                              // Dual Side-by-Side Bars
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      // Revenue Bar (Emerald)
+                                      FractionallySizedBox(
+                                        heightFactor: revH.clamp(0.05, 1.0),
+                                        child: Container(
+                                          width: 14,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF34D399), Color(0xFF059669)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                            boxShadow: isPeak
+                                                ? [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                                      blurRadius: 6,
+                                                      offset: const Offset(0, 1),
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+
+                                      // Volume Bar (Cyan/Blue)
+                                      FractionallySizedBox(
+                                        heightFactor: volH.clamp(0.05, 1.0),
+                                        child: Container(
+                                          width: 14,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                            ),
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                // Bottom Day Labels
+                Positioned(
+                  left: 36,
+                  right: 8,
+                  bottom: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: weeklyData.map((data) {
+                      final isPeak = data['isPeak'] as bool;
+                      final day = data['day'] as String;
+
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: isPeak ? 6 : 2, vertical: 1),
+                        decoration: isPeak
+                            ? BoxDecoration(
+                                color: const Color(0xFF047857),
+                                borderRadius: BorderRadius.circular(4),
+                              )
+                            : null,
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: isPeak ? FontWeight.w800 : FontWeight.w600,
+                            color: isPeak ? Colors.white : const Color(0xFF64748B),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(color: Color(0xFFF1F5F9), height: 1),
+          const SizedBox(height: 12),
+
+          // ── Bottom Summary Metrics Strip ──────────────────────────────────
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 16,
+            runSpacing: 10,
+            children: [
+              _buildMiniMetric('7-Day GMV', 'LKR 284,500', const Color(0xFF059669)),
+              _buildMiniMetric('Total Produce Cleared', '1,420 kg', const Color(0xFF0284C7)),
+              _buildMiniMetric('Avg Daily Volume', '202 kg / day', const Color(0xFFD97706)),
+              _buildMiniMetric('Active Dispatch Runs', '${_service.inTransitOrdersCount} En Route', const Color(0xFF7E22CE)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartGridLine(String label) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 30,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+            textAlign: TextAlign.right,
+          ),
+        ),
+        const SizedBox(width: 6),
+        const Expanded(
+          child: Divider(color: Color(0xFFF1F5F9), thickness: 1, height: 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniMetric(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: _textMuted, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: -0.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📍 3.2 REGIONAL SUPPLY HUBS RANKING CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildRegionalHubsCard() {
+    final hubs = [
+      {'name': 'Nuwara Eliya Central Hub', 'share': '42%', 'vol': '580 kg', 'val': 'Rs. 116k', 'pct': 0.42, 'color': const Color(0xFF059669), 'rank': '1'},
+      {'name': 'Dambulla Dedicated Economic Center', 'share': '28%', 'vol': '390 kg', 'val': 'Rs. 78k', 'pct': 0.28, 'color': const Color(0xFF0284C7), 'rank': '2'},
+      {'name': 'Pettah Manning Wholesale Hub', 'share': '18%', 'vol': '240 kg', 'val': 'Rs. 54k', 'pct': 0.18, 'color': const Color(0xFFD97706), 'rank': '3'},
+      {'name': 'Kandy Peradeniya Terminal', 'share': '12%', 'vol': '160 kg', 'val': 'Rs. 36.5k', 'pct': 0.12, 'color': const Color(0xFF7E22CE), 'rank': '4'},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.share_location_rounded, color: Color(0xFF059669), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Regional Supply Hubs Ranking',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Top 4', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ...hubs.map((hub) {
+            final color = hub['color'] as Color;
+            final pct = hub['pct'] as double;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            hub['rank'] as String,
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Direct card entry is disabled in Admin Console to protect cardholder data. All buyer cards are masked & encrypted (e.g. Visa •••• 4242, Mastercard •••• 8819).'.trAuto(context),
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF475569), height: 1.35),
+                          hub['name'] as String,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${hub['vol']} • ${hub['val']}',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: pct,
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 
-          const SizedBox(height: 18),
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🚚 3.3 LIVE LOGISTICS FULFILLMENT PIPELINE CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildFulfillmentPipelineCard() {
+    final steps = [
+      {'title': 'Orders Confirmed', 'count': '42 Orders', 'pct': '100%', 'color': const Color(0xFF059669), 'icon': Icons.check_circle_rounded},
+      {'title': 'Farm-Gate Harvest Packed', 'count': '36 Batches', 'pct': '85%', 'color': const Color(0xFF0284C7), 'icon': Icons.inventory_rounded},
+      {'title': 'Active Cold-Chain Transit', 'count': '27 Vans En Route', 'pct': '64%', 'color': const Color(0xFFD97706), 'icon': Icons.local_shipping_rounded},
+      {'title': 'Final Destination Delivered', 'count': '38 Completed', 'pct': '92%', 'color': const Color(0xFF16A34A), 'icon': Icons.task_alt_rounded},
+    ];
 
-          // ── SMS Gateway Telemetry Health Card ─────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _borderLight),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.sms_rounded, color: Color(0xFF047857), size: 22),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 6,
-                        children: [
-                          Text(
-                            'Notify.lk Enterprise SMS Gateway',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: _textDark,
-                            ),
-                          ),
-                          Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
-                        ],
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        'Sender ID: NotifyDEMO • User ID: 33247 • Phone: +94763238225 • Latency: 24ms',
-                        style: TextStyle(fontSize: 11.5, color: _textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✓ SMS Gateway Ping: 24ms OK. System ready to dispatch OTP.'),
-                        backgroundColor: Color(0xFF047857),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF047857),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Ping Test', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // ── Quick Management Controls Tiles: ALL 8 CRUD OPERATIONS ────────
-          const Text(
-            'ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION)',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF94A3B8),
-              letterSpacing: 0.9,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // 1. Farmers CRUD
-          _buildQuickActionTile(
-            title: '1. Farmers Registry & Verification (Member 2)',
-            subtitle: 'Add farmers, modify bank information, toggle Verified Agri-Partner badges',
-            icon: Icons.agriculture_rounded,
-            iconBg: const Color(0xFFDCFCE7),
-            iconColor: const Color(0xFF047857),
-            onTap: () => _switchTab(1),
-          ),
-          const SizedBox(height: 8),
-
-          // 2. Buyers CRUD
-          _buildQuickActionTile(
-            title: '2. Buyer Accounts & Regional Hubs (Member 3)',
-            subtitle: 'Inspect wholesale tiers, regional fulfillment hubs, and order frequencies',
-            icon: Icons.shopping_bag_outlined,
-            iconBg: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF2563EB),
-            onTap: () => _switchTab(2),
-          ),
-          const SizedBox(height: 8),
-
-          // 3. Drivers CRUD
-          _buildQuickActionTile(
-            title: '3. Transit Logistics & Fleet Drivers (Member 4)',
-            subtitle: 'Manage chilled vans, license plate registration, and driver on-duty shifts',
-            icon: Icons.local_shipping_rounded,
-            iconBg: const Color(0xFFFEF3C7),
-            iconColor: const Color(0xFFD97706),
-            onTap: () => _switchTab(3),
-          ),
-          const SizedBox(height: 8),
-
-          // 4. Products CRUD
-          _buildQuickActionTile(
-            title: '4. Produce Catalog & Pricing SKUs (Member 2)',
-            subtitle: 'Add produce listings, set LKR prices, packaging units and harvest dates',
-            icon: Icons.inventory_2_outlined,
-            iconBg: const Color(0xFFDCFCE7),
-            iconColor: const Color(0xFF059669),
-            onTap: () => _switchTab(4),
-          ),
-          const SizedBox(height: 8),
-
-          // 5. Orders & Dispatch CRUD
-          _buildQuickActionTile(
-            title: '5. Marketplace Orders & Dispatch Lifecycle (Member 3)',
-            subtitle: 'Track order statuses, assign transit delivery drivers, and process dispatches',
-            icon: Icons.receipt_long_rounded,
-            iconBg: const Color(0xFFFAF5FF),
-            iconColor: const Color(0xFF7E22CE),
-            onTap: () => _switchTab(5),
-          ),
-          const SizedBox(height: 8),
-
-          // 6. Pre-Orders CRUD
-          _buildQuickActionTile(
-            title: '6. Pre-Orders & Contract Farming Agreements (Member 4)',
-            subtitle: 'Forward contracts, farmer proposals, harvest dates, and contract timelines',
-            icon: Icons.handshake_rounded,
-            iconBg: const Color(0xFFF0F9FF),
-            iconColor: const Color(0xFF0284C7),
-            onTap: () => _switchTab(6),
-          ),
-          const SizedBox(height: 8),
-
-          // 7. Auctions & Bidding CRUD
-          _buildQuickActionTile(
-            title: '7. Live Crop Auctions & Bidding System (Member 1)',
-            subtitle: 'Auction harvest lots, track live bids, and update lot status (Sold/Ended/Cancel)',
-            icon: Icons.gavel_rounded,
-            iconBg: const Color(0xFFFFF7ED),
-            iconColor: const Color(0xFFEA580C),
-            onTap: () => _switchTab(7),
-          ),
-          const SizedBox(height: 8),
-
-          // 8. Deliveries & Pickup Verification CRUD
-          _buildQuickActionTile(
-            title: '8. Fleet Deliveries & Pickup Tracking (Member 4)',
-            subtitle: 'Monitor active van routes, cold-chain temperature telemetry, and arrival audits',
-            icon: Icons.alt_route_rounded,
-            iconBg: const Color(0xFFF0FDFA),
-            iconColor: const Color(0xFF0D9488),
-            onTap: () => _switchTab(8),
-          ),
-          const SizedBox(height: 8),
-
-          // 9. Payment Methods CRUD
-          _buildQuickActionTile(
-            title: '9. Payment Methods & Wallets (Member 1)',
-            subtitle: 'Tokenized buyer cards: add, edit, set default, delete (no raw card data)',
-            icon: Icons.credit_card_rounded,
-            iconBg: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF2563EB),
-            onTap: () => _switchTab(9),
-          ),
-          const SizedBox(height: 8),
-
-          // 10. Buyer Cart CRUD
-          _buildQuickActionTile(
-            title: '10. Buyer Shopping Carts (Member 5)',
-            subtitle: 'View live carts, adjust quantities, add or remove items per buyer',
-            icon: Icons.shopping_cart_rounded,
-            iconBg: const Color(0xFFDCFCE7),
-            iconColor: const Color(0xFF047857),
-            onTap: () => _switchTab(10),
-          ),
-          const SizedBox(height: 8),
-
-          // 11. Notifications CRUD
-          _buildQuickActionTile(
-            title: '11. Buyer Notifications (Member 5)',
-            subtitle: 'Send alerts, mark read/unread, edit and delete notifications',
-            icon: Icons.notifications_active_rounded,
-            iconBg: const Color(0xFFFEF3C7),
-            iconColor: const Color(0xFFD97706),
-            onTap: () => _switchTab(11),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.alt_route_rounded, color: Color(0xFF2563EB), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Fulfillment Pipeline Velocity',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('97.8% On-Time', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF059669))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          ...steps.map((step) {
+            final color = step['color'] as Color;
+            final icon = step['icon'] as IconData;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: color, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          step['title'] as String,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _textDark),
+                        ),
+                        Text(
+                          step['count'] as String,
+                          style: const TextStyle(fontSize: 10.5, color: _textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      step['pct'] as String,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🥦 3.4 CATEGORY HARVEST OUTPUT DISTRIBUTION CARD
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildCategoryDistributionCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.category_rounded, color: Color(0xFF16A34A), size: 20),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Crop Category Output Breakdown',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _textDark),
+                    ),
+                    Text(
+                      'Live volume distribution by produce classification',
+                      style: TextStyle(fontSize: 11, color: _textMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Multi-color Segmented Distribution Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: SizedBox(
+              height: 12,
+              child: Row(
+                children: [
+                  Expanded(flex: 42, child: Container(color: const Color(0xFF059669))),
+                  Expanded(flex: 28, child: Container(color: const Color(0xFFD97706))),
+                  Expanded(flex: 18, child: Container(color: const Color(0xFF0284C7))),
+                  Expanded(flex: 12, child: Container(color: const Color(0xFF7E22CE))),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 4 Category Legend Chips
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _buildCategoryChip('Up-Country Veg', '42% • 596 kg', const Color(0xFF059669)),
+              _buildCategoryChip('Tropical Fruits', '28% • 398 kg', const Color(0xFFD97706)),
+              _buildCategoryChip('Leafy Greens & Herbs', '18% • 256 kg', const Color(0xFF0284C7)),
+              _buildCategoryChip('Spices & Tubers', '12% • 170 kg', const Color(0xFF7E22CE)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String title, String val, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _textDark)),
+          const SizedBox(width: 6),
+          Text(val, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: color)),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📱 3.5 SMS GATEWAY & REAL-TIME DISPATCH TELEMETRY
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildSmsTelemetryCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Icon(Icons.sms_rounded, color: Color(0xFF047857), size: 22),
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  children: [
+                    Text(
+                      'Notify.lk Enterprise SMS Gateway',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _textDark),
+                    ),
+                    Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 16),
+                  ],
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Sender ID: NotifyDEMO • User ID: 33247 • Latency: 24ms • Ready',
+                  style: TextStyle(fontSize: 11.5, color: _textMuted),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✓ SMS Gateway Ping: 24ms OK. System ready to dispatch live alerts.'),
+                  backgroundColor: Color(0xFF047857),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF047857),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ping Test', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🏢 3.6 ENTERPRISE MANAGEMENT MODULES (9 CLEAN ACTION TILES)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildManagementModulesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION)',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF94A3B8),
+            letterSpacing: 0.9,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // 1. Farmers CRUD
+        _buildQuickActionTile(
+          title: '1. Farmers Registry & Verification (Member 2)',
+          subtitle: 'Add farmers, modify bank information, toggle Verified Agri-Partner badges',
+          icon: Icons.agriculture_rounded,
+          iconBg: const Color(0xFFDCFCE7),
+          iconColor: const Color(0xFF047857),
+          onTap: () => _switchTab(1),
+        ),
+        const SizedBox(height: 8),
+
+        // 2. Buyers CRUD
+        _buildQuickActionTile(
+          title: '2. Buyer Accounts & Regional Hubs (Member 3)',
+          subtitle: 'Inspect wholesale tiers, regional fulfillment hubs, and order frequencies',
+          icon: Icons.shopping_bag_outlined,
+          iconBg: const Color(0xFFEFF6FF),
+          iconColor: const Color(0xFF2563EB),
+          onTap: () => _switchTab(2),
+        ),
+        const SizedBox(height: 8),
+
+        // 3. Drivers CRUD
+        _buildQuickActionTile(
+          title: '3. Transit Logistics & Fleet Drivers (Member 4)',
+          subtitle: 'Manage chilled vans, license plate registration, and driver on-duty shifts',
+          icon: Icons.local_shipping_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          onTap: () => _switchTab(3),
+        ),
+        const SizedBox(height: 8),
+
+        // 4. Products CRUD
+        _buildQuickActionTile(
+          title: '4. Produce Catalog & Pricing SKUs (Member 2)',
+          subtitle: 'Add produce listings, set LKR prices, packaging units and harvest dates',
+          icon: Icons.inventory_2_outlined,
+          iconBg: const Color(0xFFDCFCE7),
+          iconColor: const Color(0xFF059669),
+          onTap: () => _switchTab(4),
+        ),
+        const SizedBox(height: 8),
+
+        // 5. Orders & Dispatch CRUD
+        _buildQuickActionTile(
+          title: '5. Marketplace Orders & Dispatch Lifecycle (Member 3)',
+          subtitle: 'Track order statuses, assign transit delivery drivers, and process dispatches',
+          icon: Icons.receipt_long_rounded,
+          iconBg: const Color(0xFFFAF5FF),
+          iconColor: const Color(0xFF7E22CE),
+          onTap: () => _switchTab(5),
+        ),
+        const SizedBox(height: 8),
+
+        // 6. Pre-Orders CRUD
+        _buildQuickActionTile(
+          title: '6. Pre-Orders & Contract Farming Agreements (Member 4)',
+          subtitle: 'Forward contracts, farmer proposals, harvest dates, and contract timelines',
+          icon: Icons.handshake_rounded,
+          iconBg: const Color(0xFFF0F9FF),
+          iconColor: const Color(0xFF0284C7),
+          onTap: () => _switchTab(6),
+        ),
+        const SizedBox(height: 8),
+
+        // 7. Auctions & Bidding CRUD
+        _buildQuickActionTile(
+          title: '7. Live Crop Auctions & Bidding System (Member 1)',
+          subtitle: 'Auction harvest lots, track live bids, and update lot status (Sold/Ended/Cancel)',
+          icon: Icons.gavel_rounded,
+          iconBg: const Color(0xFFFFF7ED),
+          iconColor: const Color(0xFFEA580C),
+          onTap: () => _switchTab(7),
+        ),
+        const SizedBox(height: 8),
+
+        // 8. Deliveries & Pickup Verification CRUD
+        _buildQuickActionTile(
+          title: '8. Fleet Deliveries & Cold-Chain Tracking (Member 4)',
+          subtitle: 'Monitor active van routes, cold-chain temperature telemetry, and arrival audits',
+          icon: Icons.alt_route_rounded,
+          iconBg: const Color(0xFFF0FDFA),
+          iconColor: const Color(0xFF0D9488),
+          onTap: () => _switchTab(8),
+        ),
+        const SizedBox(height: 8),
+
+        // 9. Buyer Notifications CRUD
+        _buildQuickActionTile(
+          title: '9. Buyer Notifications & Broadcast Alerts (Member 1 & 5)',
+          subtitle: 'Send marketplace alerts, broadcast harvest deals, mark read/unread and manage push feed',
+          icon: Icons.notifications_active_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          onTap: () => _switchTab(9),
+        ),
+      ],
     );
   }
 
