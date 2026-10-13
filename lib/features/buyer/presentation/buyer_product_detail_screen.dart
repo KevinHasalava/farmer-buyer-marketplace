@@ -7,8 +7,11 @@ import '../../cart/services/cart_state.dart';
 import '../../orders_chat/presentation/chat_detail_screen.dart';
 import '../../../services/chat_service.dart';
 import '../models/buyer_models.dart';
+import '../models/buyer_review_model.dart';
+import '../services/buyer_review_service.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_farmer_profile_screen.dart';
+import 'buyer_reviews_screen.dart';
 
 /// 14. Product Details Screen — matching Screenshot 14
 class BuyerProductDetailScreen extends StatefulWidget {
