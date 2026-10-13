@@ -4,10 +4,12 @@ import '../../../core/constants/constants.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
+import '../models/pre_order_model.dart';
 import '../services/pre_order_manager.dart';
 
 class CreatePreOrderScreen extends StatefulWidget {
-  const CreatePreOrderScreen({super.key});
+  final PreOrderModel? editOrder;
+  const CreatePreOrderScreen({super.key, this.editOrder});
 
   @override
   State<CreatePreOrderScreen> createState() => _CreatePreOrderScreenState();
@@ -37,6 +39,27 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.editOrder != null) {
+      final o = widget.editOrder!;
+      _cropNameCtrl.text = o.cropName;
+      _quantityCtrl.text = o.requiredQuantityKg > 0 ? o.requiredQuantityKg.toString() : '';
+      _priceCtrl.text = o.offeredPricePerKg > 0 ? o.offeredPricePerKg.toString() : '';
+      _qualityCtrl.text = o.qualityRequirements;
+      _deliveryLocationCtrl.text = o.deliveryLocation;
+      _packagingCtrl.text = o.packagingRequirements;
+      if (o.advancePaymentRs > 0) {
+        _advancePaymentCtrl.text = o.advancePaymentRs.toString();
+      }
+      if (_paymentTerms.contains(o.paymentTerms)) {
+        _selectedPaymentTerm = o.paymentTerms;
+      }
+      _selectedDate = o.expectedDeliveryDate;
+    }
+  }
+
+  @override
   void dispose() {
     _cropNameCtrl.dispose();
     _quantityCtrl.dispose();
@@ -51,7 +74,7 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
   Future<void> _pickDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 30)),
+      initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -85,30 +108,66 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final user = SupabaseConfig.auth.currentUser;
-      final buyerProfile = BuyerProfileManager.instance.profile;
-      final buyerId = buyerProfile.id.isNotEmpty
-          ? buyerProfile.id
-          : (user?.id ?? 'buyer_${DateTime.now().millisecondsSinceEpoch}');
-      final buyerName = buyerProfile.name.trim().isNotEmpty
-          ? buyerProfile.name.trim()
-          : (user?.userMetadata?['full_name'] as String? ?? 'Wholesale Buyer');
+      if (widget.editOrder != null) {
+        await PreOrderManager.instance.updatePreOrderDetails(
+          preOrderId: widget.editOrder!.id,
+          cropName: _cropNameCtrl.text.trim(),
+          requiredQuantityKg: double.parse(_quantityCtrl.text.trim()),
+          offeredPricePerKg: double.parse(_priceCtrl.text.trim()),
+          expectedDeliveryDate: _selectedDate!,
+          qualityRequirements: _qualityCtrl.text.trim(),
+          deliveryLocation: _deliveryLocationCtrl.text.trim(),
+          packagingRequirements: _packagingCtrl.text.trim().isNotEmpty
+              ? _packagingCtrl.text.trim()
+              : 'Standard Packaging',
+          paymentTerms: _selectedPaymentTerm,
+          advancePaymentRs: _advancePaymentCtrl.text.trim().isNotEmpty
+              ? double.parse(_advancePaymentCtrl.text.trim())
+              : 0.0,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pre-order contract updated successfully!'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      } else {
+        final user = SupabaseConfig.auth.currentUser;
+        final buyerProfile = BuyerProfileManager.instance.profile;
+        final buyerId = buyerProfile.id.isNotEmpty
+            ? buyerProfile.id
+            : (user?.id ?? 'buyer_${DateTime.now().millisecondsSinceEpoch}');
+        final buyerName = buyerProfile.name.trim().isNotEmpty
+            ? buyerProfile.name.trim()
+            : (user?.userMetadata?['full_name'] as String? ?? 'Wholesale Buyer');
 
-      await PreOrderManager.instance.createPreOrder(
-        buyerId: buyerId,
-        buyerName: buyerName,
-        cropName: _cropNameCtrl.text.trim(),
-        requiredQuantityKg: double.parse(_quantityCtrl.text.trim()),
-        offeredPricePerKg: double.parse(_priceCtrl.text.trim()),
-        expectedDeliveryDate: _selectedDate!,
-        qualityRequirements: _qualityCtrl.text.trim(),
-        deliveryLocation: _deliveryLocationCtrl.text.trim(),
-        packagingRequirements: _packagingCtrl.text.trim().isNotEmpty ? _packagingCtrl.text.trim() : 'Standard Packaging',
-        paymentTerms: _selectedPaymentTerm,
-        advancePaymentRs: _advancePaymentCtrl.text.trim().isNotEmpty ? double.parse(_advancePaymentCtrl.text.trim()) : 0.0,
-      );
+        await PreOrderManager.instance.createPreOrder(
+          buyerId: buyerId,
+          buyerName: buyerName,
+          cropName: _cropNameCtrl.text.trim(),
+          requiredQuantityKg: double.parse(_quantityCtrl.text.trim()),
+          offeredPricePerKg: double.parse(_priceCtrl.text.trim()),
+          expectedDeliveryDate: _selectedDate!,
+          qualityRequirements: _qualityCtrl.text.trim(),
+          deliveryLocation: _deliveryLocationCtrl.text.trim(),
+          packagingRequirements: _packagingCtrl.text.trim().isNotEmpty
+              ? _packagingCtrl.text.trim()
+              : 'Standard Packaging',
+          paymentTerms: _selectedPaymentTerm,
+          advancePaymentRs: _advancePaymentCtrl.text.trim().isNotEmpty
+              ? double.parse(_advancePaymentCtrl.text.trim())
+              : 0.0,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pre-order contract published to farmers!'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      }
 
-      if (!mounted) return;
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -117,13 +176,14 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.editOrder != null;
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: Column(
         children: [
           AppHeaderBanner(
-            title: 'Create Pre-Order',
-            subtitle: 'Contract farming for premium crops',
+            title: isEditing ? 'Edit Pre-Order' : 'Create Pre-Order',
+            subtitle: isEditing ? 'Update contract specifications' : 'Contract farming for premium crops',
             showBack: true,
             badgeText: 'BUYER',
           ),
@@ -285,7 +345,7 @@ class _CreatePreOrderScreenState extends State<CreatePreOrderScreen> {
                     const SizedBox(height: 32),
 
                     AppPrimaryButton(
-                      label: 'Create Pre-Order Contract',
+                      label: isEditing ? 'Update Pre-Order Contract' : 'Create Pre-Order Contract',
                       isLoading: _isSubmitting,
                       onPressed: _submit,
                     ),

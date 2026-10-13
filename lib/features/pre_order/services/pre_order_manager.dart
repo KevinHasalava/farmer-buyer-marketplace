@@ -60,6 +60,18 @@ class PreOrderManager extends ChangeNotifier {
             }
           }
 
+          // If Supabase table is empty on first boot, seed default samples into Supabase
+          if (_preOrders.isEmpty) {
+            _preOrders.addAll(PreOrderModel.samplePreOrders);
+            _progressUpdates.addAll(PreOrderProgressModel.sampleProgress);
+            for (final s in PreOrderModel.samplePreOrders) {
+              SupabaseConfig.client.from('pre_orders').insert(s.toJson()).ignore();
+            }
+            for (final p in PreOrderProgressModel.sampleProgress) {
+              SupabaseConfig.client.from('pre_order_progress').insert(p.toJson()).ignore();
+            }
+          }
+
           await _savePreOrdersToLocal();
           await _saveProgressToLocal();
           _isLoading = false;
@@ -94,12 +106,49 @@ class PreOrderManager extends ChangeNotifier {
           }
         }
       }
+
+      // If local cache is also empty, initialize with rich sample data
+      if (_preOrders.isEmpty) {
+        _preOrders.addAll(PreOrderModel.samplePreOrders);
+        await _savePreOrdersToLocal();
+      }
+      if (_progressUpdates.isEmpty) {
+        _progressUpdates.addAll(PreOrderProgressModel.sampleProgress);
+        await _saveProgressToLocal();
+      }
     } catch (e) {
       debugPrint('[PreOrderManager] Load error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Helper Statistics & Filters
+  // ──────────────────────────────────────────────────────────────────────────
+  int get openRequestsCount => _preOrders.where((o) => o.status == 'Pending').length;
+  int get activeContractsCount => _preOrders.where((o) => o.status == 'In Progress').length;
+  int get completedContractsCount => _preOrders.where((o) => o.status == 'Completed').length;
+
+  List<PreOrderModel> get openRequests => _preOrders.where((o) => o.status == 'Pending').toList();
+  List<PreOrderModel> get activeContracts => _preOrders.where((o) => o.status == 'In Progress').toList();
+  List<PreOrderModel> get completedContracts => _preOrders.where((o) => o.status == 'Completed').toList();
+
+  List<PreOrderModel> farmerContracts(String? farmerId, String? farmerName) {
+    return _preOrders.where((o) {
+      if (farmerId != null && farmerId.isNotEmpty && o.farmerId == farmerId) return true;
+      if (farmerName != null && farmerName.isNotEmpty && o.farmerName?.toLowerCase() == farmerName.toLowerCase()) return true;
+      return false;
+    }).toList();
+  }
+
+  List<PreOrderModel> buyerContracts(String? buyerId, String? buyerName) {
+    return _preOrders.where((o) {
+      if (buyerId != null && buyerId.isNotEmpty && o.buyerId == buyerId) return true;
+      if (buyerName != null && buyerName.isNotEmpty && o.buyerName.toLowerCase().contains(buyerName.toLowerCase())) return true;
+      return false;
+    }).toList();
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
@@ -214,6 +263,59 @@ class PreOrderManager extends ChangeNotifier {
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
+  /// 3.2. UPDATE (U): Buyer updates Pre-Order Request details
+  /// ──────────────────────────────────────────────────────────────────────────
+  Future<void> updatePreOrderDetails({
+    required String preOrderId,
+    required String cropName,
+    required double requiredQuantityKg,
+    required double offeredPricePerKg,
+    required DateTime expectedDeliveryDate,
+    required String qualityRequirements,
+    String deliveryLocation = '',
+    String paymentTerms = 'Negotiable',
+    String packagingRequirements = 'Standard Packaging',
+    double advancePaymentRs = 0.0,
+  }) async {
+    final index = _preOrders.indexWhere((o) => o.id == preOrderId);
+    if (index == -1) return;
+
+    final updated = _preOrders[index].copyWith(
+      cropName: cropName,
+      requiredQuantityKg: requiredQuantityKg,
+      offeredPricePerKg: offeredPricePerKg,
+      expectedDeliveryDate: expectedDeliveryDate,
+      qualityRequirements: qualityRequirements,
+      deliveryLocation: deliveryLocation,
+      paymentTerms: paymentTerms,
+      packagingRequirements: packagingRequirements,
+      advancePaymentRs: advancePaymentRs,
+    );
+
+    _preOrders[index] = updated;
+    await _savePreOrdersToLocal();
+    notifyListeners();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('pre_orders').update({
+          'crop_name': cropName,
+          'required_quantity_kg': requiredQuantityKg,
+          'offered_price_per_kg': offeredPricePerKg,
+          'expected_delivery_date': expectedDeliveryDate.toIso8601String(),
+          'quality_requirements': qualityRequirements,
+          'delivery_location': deliveryLocation,
+          'payment_terms': paymentTerms,
+          'packaging_requirements': packagingRequirements,
+          'advance_payment_rs': advancePaymentRs,
+        }).eq('id', preOrderId);
+      } catch (e) {
+        debugPrint('[PreOrderManager] DB update details error: $e');
+      }
+    }
+  }
+
+  /// ──────────────────────────────────────────────────────────────────────────
   /// 3.5. RATE (R): Buyer rates the Farmer
   /// ──────────────────────────────────────────────────────────────────────────
   Future<void> ratePreOrder(String preOrderId, double rating, String review) async {
@@ -297,7 +399,7 @@ class PreOrderManager extends ChangeNotifier {
   }
 
   /// ──────────────────────────────────────────────────────────────────────────
-  /// 5. DELETE (D): Admin functions
+  /// 5. DELETE (D): Buyer or Admin deletes / cancels pre-order
   /// ──────────────────────────────────────────────────────────────────────────
   Future<void> deletePreOrder(String preOrderId) async {
     _preOrders.removeWhere((o) => o.id == preOrderId);
@@ -309,6 +411,7 @@ class PreOrderManager extends ChangeNotifier {
 
     if (SupabaseConfig.isInitialized) {
       try {
+        await SupabaseConfig.client.from('pre_order_progress').delete().eq('pre_order_id', preOrderId);
         await SupabaseConfig.client.from('pre_orders').delete().eq('id', preOrderId);
       } catch (e) {
         debugPrint('[PreOrderManager] DB delete error: $e');

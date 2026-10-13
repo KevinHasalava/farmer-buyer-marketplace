@@ -55,5 +55,24 @@ class PreOrderProgressModel {
     );
   }
 
-  static List<PreOrderProgressModel> get sampleProgress => const [];
+  static List<PreOrderProgressModel> get sampleProgress => [
+    PreOrderProgressModel(
+      id: 'prog_201',
+      preOrderId: 'po_102',
+      stage: 'Land Preparation',
+      description: 'Tilled 1.5 acres of red loamy soil, applied organic compost and raised nursery beds.',
+      images: const ['https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&auto=format&fit=crop&q=80'],
+      date: DateTime.now().subtract(const Duration(days: 10)),
+      updateType: 'Progress',
+    ),
+    PreOrderProgressModel(
+      id: 'prog_202',
+      preOrderId: 'po_102',
+      stage: 'Seeds Planted',
+      description: 'Certified seed set planting completed across all ridges. Initial sprinkler irrigation underway.',
+      images: const ['https://images.unsplash.com/photo-1592417817098-8f3d6ef2c6e6?w=600&auto=format&fit=crop&q=80'],
+      date: DateTime.now().subtract(const Duration(days: 4)),
+      updateType: 'Progress',
+    ),
+  ];
 }

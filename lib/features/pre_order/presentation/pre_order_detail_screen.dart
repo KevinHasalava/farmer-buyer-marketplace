@@ -3,8 +3,10 @@ import '../../../core/localization/app_settings.dart';
 
 import '../../../core/constants/constants.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../models/pre_order_model.dart';
 import '../services/pre_order_manager.dart';
 import 'add_progress_update_screen.dart';
+import 'create_pre_order_screen.dart';
 import 'farmer_contract_acceptance_screen.dart';
 import 'farmer_rating_dialog.dart';
 
@@ -36,6 +38,87 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
     );
 
     if (success == true) {
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _editPreOrder(PreOrderModel order) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreatePreOrderScreen(editOrder: order),
+      ),
+    );
+    if (updated == true && mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _cancelPreOrder(PreOrderModel order) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cancel Pre-Order Request', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to cancel and remove your contract request for ${order.requiredQuantityKg} Kg of ${order.cropName}? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Contract', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Yes, Cancel Request'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await PreOrderManager.instance.deletePreOrder(order.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pre-order request cancelled and removed.'),
+          backgroundColor: Color(0xFFDC2626),
+        ),
+      );
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _deleteMilestone(String milestoneId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Milestone', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to remove this progress update?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await PreOrderManager.instance.deleteProgressUpdate(milestoneId);
       if (mounted) setState(() {});
     }
   }
@@ -228,15 +311,17 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                       const SizedBox(height: 24),
 
                       // Action Buttons for Farmer
-                      if (widget.isFarmerMode && order.status == 'Pending')
+                      if (widget.isFarmerMode && order.status == 'Pending') ...[
                         AppPrimaryButton(
-                          label: 'Accept Contract',
+                          label: 'Accept Contract & Propose Timeline',
+                          icon: Icons.handshake_rounded,
                           onPressed: () => _acceptContract(order.cropName, order.requiredQuantityKg),
                         ),
+                      ],
 
-                      if (widget.isFarmerMode && order.status == 'In Progress')
+                      if (widget.isFarmerMode && order.status == 'In Progress') ...[
                         AppPrimaryButton(
-                          label: 'Add Progress Update',
+                          label: 'Add Harvest Milestone Update',
                           icon: Icons.add_a_photo_rounded,
                           onPressed: () {
                             Navigator.push(
@@ -247,6 +332,62 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                             );
                           },
                         ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: const Text('Complete Contract?', style: TextStyle(fontWeight: FontWeight.bold)),
+                                content: const Text('Confirm that this harvest is fully ready and complete contract requirements?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Not Yet')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryGreen,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Yes, Complete Contract'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await PreOrderManager.instance.updatePreOrderStatus(order.id, 'Completed');
+                              if (mounted) setState(() {});
+                            }
+                          },
+                          icon: const Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen),
+                          label: const Text('Mark Harvest Ready / Completed', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+
+                      // Buyer Actions (CRUD: Update & Delete when Pending)
+                      if (!widget.isFarmerMode && order.status == 'Pending') ...[
+                        AppPrimaryButton(
+                          label: 'Edit Request Details',
+                          icon: Icons.edit_note_rounded,
+                          onPressed: () => _editPreOrder(order),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => _cancelPreOrder(order),
+                          icon: const Icon(Icons.cancel_outlined, color: Color(0xFFDC2626)),
+                          label: const Text('Cancel Request', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            side: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -269,7 +410,7 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                       if (!widget.isFarmerMode && order.status == 'In Progress') ...[
                         const SizedBox(height: 16),
                         AppPrimaryButton(
-                          label: 'Mark as Completed',
+                          label: 'Confirm Delivery & Mark Completed',
                           icon: Icons.check_circle_rounded,
                           onPressed: () async {
                             await PreOrderManager.instance.updatePreOrderStatus(order.id, 'Completed');
@@ -340,22 +481,23 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          prog.updateType == 'Issue' && prog.issueType != null 
-                                              ? 'Alert: ${prog.issueType}'
-                                              : prog.updateType == 'Delay' 
-                                                  ? 'Delay Reported'
-                                                  : prog.stage,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 15,
-                                            color: prog.updateType == 'Issue' 
-                                              ? Colors.red.shade700 
-                                              : prog.updateType == 'Delay' 
-                                                  ? Colors.orange.shade800 
-                                                  : AppColors.textDark,
+                                        Expanded(
+                                          child: Text(
+                                            prog.updateType == 'Issue' && prog.issueType != null 
+                                                ? 'Alert: ${prog.issueType}'
+                                                : prog.updateType == 'Delay' 
+                                                    ? 'Delay Reported'
+                                                    : prog.stage,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                              color: prog.updateType == 'Issue' 
+                                                ? Colors.red.shade700 
+                                                : prog.updateType == 'Delay' 
+                                                    ? Colors.orange.shade800 
+                                                    : AppColors.textDark,
+                                            ),
                                           ),
                                         ),
                                         Text(
@@ -365,6 +507,17 @@ class _PreOrderDetailScreenState extends State<PreOrderDetailScreen> {
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
+                                        if (widget.isFarmerMode) ...[
+                                          const SizedBox(width: 6),
+                                          InkWell(
+                                            onTap: () => _deleteMilestone(prog.id),
+                                            child: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              size: 18,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                     const SizedBox(height: 4),

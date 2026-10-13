@@ -3357,22 +3357,57 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           return _buildEmptyState(
             title: 'No Contracts Found',
             message: 'No pre-orders match your search.',
-            onAction: () {}, // Quick create not needed for contracts directly in admin unless requested
-            actionLabel: 'Refresh',
+            onAction: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreatePreOrderScreen()),
+            ),
+            actionLabel: 'Create Pre-Order',
           );
         }
 
-        return ListView.separated(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (ctx, i) {
-            final o = list[i];
-            final statusColor = o.status == 'Pending' ? const Color(0xFFD97706) : (o.status == 'In Progress' ? const Color(0xFF2563EB) : const Color(0xFF047857));
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
+                children: [
+                  Text(
+                    '${list.length} Active Contracts',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: _textDark),
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const CreatePreOrderScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('New Pre-Order', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF047857),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (ctx, i) {
+                  final o = list[i];
+                  final statusColor = o.status == 'Pending' ? const Color(0xFFD97706) : (o.status == 'In Progress' ? const Color(0xFF2563EB) : const Color(0xFF047857));
 
-            return Container(
-              padding: const EdgeInsets.all(16),
+                  return Container(
+                    padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
@@ -3546,6 +3581,24 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                             ),
                           ),
                           const SizedBox(width: 4),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CreatePreOrderScreen(editOrder: o),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit_note_rounded, size: 15, color: Color(0xFF047857)),
+                            label: const Text('Edit', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF047857))),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF047857)),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
                           IconButton(
                             visualDensity: VisualDensity.compact,
                             constraints: const BoxConstraints(),
@@ -3568,10 +3621,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
               ),
             );
           },
-        );
-      },
+          ),
+        ),
+      ],
     );
-  }
+  },
+);
+}
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔨 10. TAB 7: CROP AUCTIONS & BIDDING MANAGEMENT
