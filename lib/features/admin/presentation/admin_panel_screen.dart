@@ -15,6 +15,8 @@ import '../../pre_order/presentation/create_pre_order_screen.dart';
 import '../../auction/services/auction_manager.dart';
 import '../../auction/presentation/farmer/farmer_auction_detail_screen.dart';
 import '../../auction/presentation/farmer/create_edit_auction_screen.dart';
+import '../../buyer/models/buyer_review_model.dart';
+import '../../buyer/services/buyer_review_service.dart';
 
 /// Ultra-Premium Farm2Home Enterprise Master Admin Console
 /// Features: Side Navigation Rail/Sidebar, High-end Executive UI, Full Role CRUD & Dispatch
@@ -50,7 +52,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 9, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -62,6 +64,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.addListener(_onServiceChanged);
     _auth.addListener(_onServiceChanged);
     AuctionManager.instance.addListener(_onServiceChanged);
+    BuyerReviewService.instance.addListener(_onServiceChanged);
+    BuyerReviewService.instance.loadReviews();
     AdminLogisticsService.instance.addListener(_onLogisticsChanged);
     AdminLogisticsService.instance.loadAll();
     _service.init();
@@ -72,6 +76,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     _service.removeListener(_onServiceChanged);
     _auth.removeListener(_onServiceChanged);
     AuctionManager.instance.removeListener(_onServiceChanged);
+    BuyerReviewService.instance.removeListener(_onServiceChanged);
     AdminLogisticsService.instance.removeListener(_onLogisticsChanged);
     _tabController.dispose();
     _searchController.dispose();
@@ -223,6 +228,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildContractsTab(),
                         _buildAuctionsTab(),
                         AdminDeliveriesTab(searchQuery: _searchQuery),
+                        _buildReviewsTab(),
                       ],
                     ),
                   ),
@@ -259,6 +265,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildContractsTab(),
                   _buildAuctionsTab(),
                   AdminDeliveriesTab(searchQuery: _searchQuery),
+                  _buildReviewsTab(),
                 ],
               ),
             ),
@@ -416,6 +423,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.alt_route_rounded,
                     label: 'Fleet Deliveries & Pickups',
                     badgeCount: '${AdminLogisticsService.instance.deliveries.length}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 9,
+                    icon: Icons.star_rate_rounded,
+                    label: 'Reviews & Ratings',
+                    badgeCount: '${BuyerReviewService.instance.allReviews.length}',
                   ),
                 ],
               ),
@@ -832,6 +845,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Pre-Orders',
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
       'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
+      'Reviews (${BuyerReviewService.instance.allReviews.length})',
     ];
 
     return Container(
@@ -933,6 +947,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'Pre-Orders (Contracts)',
       7 => 'Crop Auctions & Bids',
       8 => 'Fleet Deliveries & Pickups',
+      9 => 'Reviews & Ratings',
       _ => 'Executive Overview',
     };
     return title.trAuto(context);
@@ -948,6 +963,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'New Contract',
       7 => 'Add Auction',
       8 => 'Dispatch Delivery',
+      9 => 'Sync Reviews',
       _ => 'New Entry',
     };
     return label.trAuto(context);
@@ -985,6 +1001,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         break;
       case 8:
         showAdminDeliveryDialog(context);
+        break;
+      case 9:
+        BuyerReviewService.instance.loadReviews();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Syncing reviews with Supabase...'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         break;
       default:
         _showQuickCreateMenu();
