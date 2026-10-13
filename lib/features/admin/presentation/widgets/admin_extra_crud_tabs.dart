@@ -29,6 +29,10 @@ class AdminLogisticsService extends ChangeNotifier {
   List<Map<String, dynamic>> deliveries = [];
   List<Map<String, dynamic>> verifications = [];
   List<Map<String, dynamic>> paymentMethods = [];
+  List<Map<String, dynamic>> cartItems = [];
+  List<Map<String, dynamic>> notifications = [];
+  bool cartTableMissing = false;
+  bool notificationsSchemaMissing = false;
   bool isLoading = false;
   String? lastError;
 
@@ -66,6 +70,30 @@ class AdminLogisticsService extends ChangeNotifier {
           (p as List).map((e) => Map<String, dynamic>.from(e as Map)));
     } catch (e) {
       lastError = 'Payment methods load failed: $e';
+    }
+    try {
+      final c = await _db
+          .from('cart_items')
+          .select()
+          .order('created_at', ascending: false);
+      cartItems = List<Map<String, dynamic>>.from(
+          (c as List).map((e) => Map<String, dynamic>.from(e as Map)));
+      cartTableMissing = false;
+    } catch (e) {
+      cartItems = [];
+      cartTableMissing = true;
+    }
+    try {
+      final n = await _db
+          .from('notifications')
+          .select()
+          .order('created_at', ascending: false);
+      notifications = List<Map<String, dynamic>>.from(
+          (n as List).map((e) => Map<String, dynamic>.from(e as Map)));
+      notificationsSchemaMissing = false;
+    } catch (e) {
+      notifications = [];
+      notificationsSchemaMissing = true;
     }
     isLoading = false;
     notifyListeners();
@@ -182,6 +210,74 @@ class AdminLogisticsService extends ChangeNotifier {
     return _run(() async {
       await _db.from('buyer_payment_methods').delete().eq('id', id);
     }, 'Delete payment method');
+  }
+
+  // ── Shopping cart CRUD (Member: Cart screen) ──────────────────────────────
+  Future<bool> saveCartItem(Map<String, dynamic> row, {required bool isNew}) {
+    return _run(() async {
+      if (isNew) {
+        await _db.from('cart_items').insert(row);
+      } else {
+        await _db
+            .from('cart_items')
+            .update({...row, 'updated_at': DateTime.now().toIso8601String()})
+            .eq('id', row['id']);
+      }
+    }, 'Save cart item');
+  }
+
+  Future<bool> changeCartQuantity(Map<String, dynamic> item, int delta) {
+    final q = ((item['quantity'] as num?)?.toInt() ?? 1) + delta;
+    if (q <= 0) return deleteCartItem(item['id'].toString());
+    return _run(() async {
+      await _db.from('cart_items').update({
+        'quantity': q,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', item['id']);
+    }, 'Update quantity');
+  }
+
+  Future<bool> deleteCartItem(String id) {
+    return _run(() async {
+      await _db.from('cart_items').delete().eq('id', id);
+    }, 'Remove cart item');
+  }
+
+  Future<bool> clearBuyerCart(String buyerId) {
+    return _run(() async {
+      await _db.from('cart_items').delete().eq('buyer_id', buyerId);
+    }, 'Clear cart');
+  }
+
+  // ── Notifications CRUD ────────────────────────────────────────────────────
+  Future<bool> saveNotification(Map<String, dynamic> row, {String? id}) {
+    return _run(() async {
+      if (id == null) {
+        await _db.from('notifications').insert(row);
+      } else {
+        await _db.from('notifications').update(row).eq('id', id);
+      }
+    }, 'Save notification');
+  }
+
+  Future<bool> setNotificationRead(String id, bool read) {
+    return _run(() async {
+      await _db.from('notifications').update({'is_read': read}).eq('id', id);
+    }, 'Update notification');
+  }
+
+  Future<bool> markAllNotificationsRead() {
+    return _run(() async {
+      await _db
+          .from('notifications')
+          .update({'is_read': true}).eq('is_read', false);
+    }, 'Mark all read');
+  }
+
+  Future<bool> deleteNotification(String id) {
+    return _run(() async {
+      await _db.from('notifications').delete().eq('id', id);
+    }, 'Delete notification');
   }
 }
 

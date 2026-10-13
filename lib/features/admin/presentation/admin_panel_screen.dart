@@ -9,6 +9,7 @@ import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
 import 'widgets/admin_extra_crud_tabs.dart';
+import 'widgets/admin_cart_notification_tabs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
 import '../../pre_order/presentation/pre_order_detail_screen.dart';
 import '../../pre_order/presentation/create_pre_order_screen.dart';
@@ -50,7 +51,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 10, vsync: this);
+    _tabController = TabController(length: 12, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -224,6 +225,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildAuctionsTab(),
                         AdminDeliveriesTab(searchQuery: _searchQuery),
                         AdminPaymentMethodsTab(searchQuery: _searchQuery),
+                        AdminCartsTab(searchQuery: _searchQuery),
+                        AdminNotificationsTab(searchQuery: _searchQuery),
                       ],
                     ),
                   ),
@@ -261,6 +264,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildAuctionsTab(),
                   AdminDeliveriesTab(searchQuery: _searchQuery),
                   AdminPaymentMethodsTab(searchQuery: _searchQuery),
+                  AdminCartsTab(searchQuery: _searchQuery),
+                  AdminNotificationsTab(searchQuery: _searchQuery),
                 ],
               ),
             ),
@@ -424,6 +429,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.credit_card_rounded,
                     label: 'Payment Methods & Wallets',
                     badgeCount: '${AdminLogisticsService.instance.paymentMethods.length}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 10,
+                    icon: Icons.shopping_cart_rounded,
+                    label: 'Buyer Carts',
+                    badgeCount: '${AdminLogisticsService.instance.cartItems.length}',
+                  ),
+                  _buildSidebarNavItem(
+                    index: 11,
+                    icon: Icons.notifications_active_rounded,
+                    label: 'Buyer Notifications',
+                    badgeCount: '${AdminLogisticsService.instance.notifications.length}',
                   ),
                 ],
               ),
@@ -841,6 +858,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
       'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
       'Payments (${AdminLogisticsService.instance.paymentMethods.length})',
+      'Carts (${AdminLogisticsService.instance.cartItems.length})',
+      'Notifications (${AdminLogisticsService.instance.notifications.length})',
     ];
 
     return Container(
@@ -943,6 +962,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       7 => 'Crop Auctions & Bids',
       8 => 'Fleet Deliveries & Pickups',
       9 => 'Payment Methods & Wallets',
+      10 => 'Buyer Shopping Carts',
+      11 => 'Buyer Notifications',
       _ => 'Executive Overview',
     };
     return title.trAuto(context);
@@ -959,6 +980,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       7 => 'Add Auction',
       8 => 'Dispatch Delivery',
       9 => 'Add Payment Method',
+      10 => 'Add Cart Item',
+      11 => 'Send Notification',
       _ => 'New Entry',
     };
     return label.trAuto(context);
@@ -999,6 +1022,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         break;
       case 9:
         showAdminPaymentMethodDialog(context);
+        break;
+      case 10:
+        showAdminCartItemDialog(context);
+        break;
+      case 11:
+        showAdminNotificationDialog(context);
         break;
       default:
         _showQuickCreateMenu();
@@ -1550,6 +1579,28 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             iconBg: const Color(0xFFEFF6FF),
             iconColor: const Color(0xFF2563EB),
             onTap: () => _switchTab(9),
+          ),
+          const SizedBox(height: 8),
+
+          // 10. Buyer Cart CRUD
+          _buildQuickActionTile(
+            title: '10. Buyer Shopping Carts (Member 5)',
+            subtitle: 'View live carts, adjust quantities, add or remove items per buyer',
+            icon: Icons.shopping_cart_rounded,
+            iconBg: const Color(0xFFDCFCE7),
+            iconColor: const Color(0xFF047857),
+            onTap: () => _switchTab(10),
+          ),
+          const SizedBox(height: 8),
+
+          // 11. Notifications CRUD
+          _buildQuickActionTile(
+            title: '11. Buyer Notifications (Member 5)',
+            subtitle: 'Send alerts, mark read/unread, edit and delete notifications',
+            icon: Icons.notifications_active_rounded,
+            iconBg: const Color(0xFFFEF3C7),
+            iconColor: const Color(0xFFD97706),
+            onTap: () => _switchTab(11),
           ),
         ],
       ),

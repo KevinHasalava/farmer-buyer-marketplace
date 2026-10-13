@@ -1,13 +1,22 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_config.dart';
 import '../models/buyer_notification_model.dart';
+import 'buyer_profile_manager.dart';
 
+/// Buyer notification CRUD backed by the Supabase `notifications` table.
+/// - Read:   loads notifications addressed to this buyer or broadcast to all
+/// - Update: mark read / unread / mark all read
+/// - Delete: remove a notification
+/// - Live:   Supabase realtime keeps the list in sync with admin changes
 class BuyerNotificationService extends ChangeNotifier {
   BuyerNotificationService._internal() {
     loadNotifications();
+    _subscribeRealtime();
   }
 
   static final BuyerNotificationService instance =
@@ -22,6 +31,7 @@ class BuyerNotificationService extends ChangeNotifier {
   bool _isLoading = false;
   bool _pushNotificationsEnabled = true;
   bool _smsDriverAlertEnabled = true;
+  bool _realtimeStarted = false;
 
   List<BuyerNotificationItem> get items => List.unmodifiable(_items);
   bool get isLoading => _isLoading;
@@ -31,68 +41,89 @@ class BuyerNotificationService extends ChangeNotifier {
   int get unreadCount => _items.where((i) => !i.isRead).length;
 
   List<BuyerNotificationItem> get orderNotifications => _items
-      .where((i) =>
-          i.type == BuyerNotificationType.driverAlert ||
-          i.type == BuyerNotificationType.dispatched ||
-          i.type == BuyerNotificationType.delivered)
+      .where((i) => i.category == BuyerNotificationCategory.orders)
       .toList();
 
   List<BuyerNotificationItem> get harvestAlertNotifications => _items
-      .where((i) =>
-          i.type == BuyerNotificationType.harvestAlert ||
-          i.type == BuyerNotificationType.priceDrop)
+      .where((i) => i.category == BuyerNotificationCategory.harvestAlerts)
       .toList();
 
-  /// Loads notifications from Supabase, SharedPreferences cache, or defaults
-  Future<void> loadNotifications() async {
-    _isLoading = true;
-    notifyListeners();
+  String get _buyerId {
+    try {
+      final id = BuyerProfileManager.instance.profile.id;
+      return id.isNotEmpty ? id : 'buyer_primary';
+    } catch (_) {
+      return 'buyer_primary';
+    }
+  }
+
+  void _subscribeRealtime() {
+    if (_realtimeStarted || !SupabaseConfig.isInitialized) return;
+    try {
+      SupabaseConfig.client
+          .channel('buyer-notifications-live')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'notifications',
+            callback: (_) => loadNotifications(silent: true),
+          )
+          .subscribe();
+      _realtimeStarted = true;
+    } catch (e) {
+      debugPrint('[BuyerNotificationService] realtime note: $e');
+    }
+  }
+
+  /// READ: loads notifications from Supabase (falls back to local cache/defaults
+  /// only when the table is not reachable yet).
+  Future<void> loadNotifications({bool silent = false}) async {
+    if (!silent) {
+      _isLoading = true;
+      notifyListeners();
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       _pushNotificationsEnabled = prefs.getBool(_kPushKey) ?? true;
       _smsDriverAlertEnabled = prefs.getBool(_kSmsKey) ?? true;
 
-      final cached = prefs.getString(_kCacheKey);
-      if (cached != null) {
-        try {
-          final list = jsonDecode(cached) as List<dynamic>;
-          _items = list
-              .map((e) =>
-                  BuyerNotificationItem.fromJson(e as Map<String, dynamic>))
-              .toList();
-        } catch (_) {}
-      }
-
-      // Check Supabase if user is logged in
+      bool loadedFromDb = false;
       if (SupabaseConfig.isInitialized) {
-        final user = SupabaseConfig.auth.currentUser;
-        if (user != null) {
-          try {
-            final res = await SupabaseConfig.client
-                .from('notifications')
-                .select()
-                .eq('user_id', user.id)
-                .order('created_at', ascending: false);
+        try {
+          final id = _buyerId;
+          final res = await SupabaseConfig.client
+              .from('notifications')
+              .select()
+              .or('buyer_id.eq.$id,buyer_id.is.null')
+              .order('created_at', ascending: false);
 
-            final dbItems = (res as List)
-                .map((e) =>
-                    BuyerNotificationItem.fromJson(e as Map<String, dynamic>))
-                .toList();
-
-            if (dbItems.isNotEmpty) {
-              _items = dbItems;
-              await _saveToCache();
-            }
-          } catch (_) {
-            // Table may not exist yet in environment, fallback to defaults
-          }
+          _items = (res as List)
+              .map((e) => BuyerNotificationItem.fromJson(
+                  Map<String, dynamic>.from(e as Map)))
+              .toList();
+          loadedFromDb = true;
+          await _saveToCache();
+        } catch (e) {
+          debugPrint('[BuyerNotificationService] DB load note: $e');
         }
       }
 
-      if (_items.isEmpty) {
-        _items = _getDefaultNotifications();
-        await _saveToCache();
+      if (!loadedFromDb && _items.isEmpty) {
+        final cached = prefs.getString(_kCacheKey);
+        if (cached != null) {
+          try {
+            final list = jsonDecode(cached) as List<dynamic>;
+            _items = list
+                .map((e) => BuyerNotificationItem.fromJson(
+                    Map<String, dynamic>.from(e as Map)))
+                .toList();
+          } catch (_) {}
+        }
+        if (_items.isEmpty) {
+          _items = _getDefaultNotifications();
+          await _saveToCache();
+        }
       }
     } catch (e) {
       if (_items.isEmpty) {
@@ -104,27 +135,31 @@ class BuyerNotificationService extends ChangeNotifier {
     }
   }
 
-  /// Mark specific notification as read
-  Future<void> markAsRead(String id) async {
-    final idx = _items.indexWhere((i) => i.id == id);
-    if (idx != -1 && !_items[idx].isRead) {
-      _items[idx] = _items[idx].copyWith(isRead: true);
-      notifyListeners();
-      await _saveToCache();
+  /// UPDATE: mark one notification as read
+  Future<void> markAsRead(String id) => _setRead(id, true);
 
-      // Try updating in Supabase
-      if (SupabaseConfig.isInitialized) {
-        try {
-          await SupabaseConfig.client
-              .from('notifications')
-              .update({'is_read': true})
-              .eq('id', id);
-        } catch (_) {}
+  /// UPDATE: mark one notification as unread
+  Future<void> markAsUnread(String id) => _setRead(id, false);
+
+  Future<void> _setRead(String id, bool read) async {
+    final idx = _items.indexWhere((i) => i.id == id);
+    if (idx == -1 || _items[idx].isRead == read) return;
+    _items[idx] = _items[idx].copyWith(isRead: read);
+    notifyListeners();
+    await _saveToCache();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client
+            .from('notifications')
+            .update({'is_read': read}).eq('id', id);
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] update note: $e');
       }
     }
   }
 
-  /// Mark all notifications as read
+  /// UPDATE: mark all notifications as read
   Future<void> markAllAsRead() async {
     _items = _items.map((i) => i.copyWith(isRead: true)).toList();
     notifyListeners();
@@ -132,14 +167,30 @@ class BuyerNotificationService extends ChangeNotifier {
 
     if (SupabaseConfig.isInitialized) {
       try {
-        final user = SupabaseConfig.auth.currentUser;
-        if (user != null) {
+        final ids = _items.map((i) => i.id).toList();
+        if (ids.isNotEmpty) {
           await SupabaseConfig.client
               .from('notifications')
-              .update({'is_read': true})
-              .eq('user_id', user.id);
+              .update({'is_read': true}).inFilter('id', ids);
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] markAll note: $e');
+      }
+    }
+  }
+
+  /// DELETE: remove a notification
+  Future<void> deleteNotification(String id) async {
+    _items.removeWhere((i) => i.id == id);
+    notifyListeners();
+    await _saveToCache();
+
+    if (SupabaseConfig.isInitialized) {
+      try {
+        await SupabaseConfig.client.from('notifications').delete().eq('id', id);
+      } catch (e) {
+        debugPrint('[BuyerNotificationService] delete note: $e');
+      }
     }
   }
 

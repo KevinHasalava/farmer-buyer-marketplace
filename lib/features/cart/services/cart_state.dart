@@ -245,6 +245,7 @@ class MarketplaceState extends ChangeNotifier {
 
     // 3. Sync real orders from Supabase
     loadOrdersFromDatabase();
+    loadCartFromDatabase();
   }
 
   Future<void> loadOrdersFromDatabase() async {
@@ -322,12 +323,101 @@ class MarketplaceState extends ChangeNotifier {
   }
 
   // ── Cart Actions ───────────────────────────────────────────────────────────
+  String get _cartBuyerId {
+    try {
+      final id = BuyerProfileManager.instance.profile.id;
+      return id.isNotEmpty ? id : 'buyer_primary';
+    } catch (_) {
+      return 'buyer_primary';
+    }
+  }
+
+  String _cartRowId(String itemId) => '${_cartBuyerId}_$itemId';
+
+  Future<void> _syncCartItem(CartItem item) async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      await SupabaseConfig.client.from('cart_items').upsert({
+        'id': _cartRowId(item.id),
+        'buyer_id': _cartBuyerId,
+        'product_name': item.name,
+        'unit_price': item.price,
+        'unit': item.unit,
+        'quantity': item.quantity,
+        'emoji': item.emoji,
+        'farm_name': item.farmName,
+        'image_url': item.imageUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('[MarketplaceState] cart upsert note: $e');
+    }
+  }
+
+  Future<void> _deleteCartItemRemote(String itemId) async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      await SupabaseConfig.client
+          .from('cart_items')
+          .delete()
+          .eq('id', _cartRowId(itemId));
+    } catch (e) {
+      debugPrint('[MarketplaceState] cart delete note: $e');
+    }
+  }
+
+  Future<void> _clearCartRemote() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      await SupabaseConfig.client
+          .from('cart_items')
+          .delete()
+          .eq('buyer_id', _cartBuyerId);
+    } catch (e) {
+      debugPrint('[MarketplaceState] cart clear note: $e');
+    }
+  }
+
+  /// Reloads this buyer's cart from Supabase `cart_items` (reflects admin edits).
+  Future<void> loadCartFromDatabase() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      final rows = await SupabaseConfig.client
+          .from('cart_items')
+          .select()
+          .eq('buyer_id', _cartBuyerId)
+          .order('created_at');
+      if ((rows as List).isEmpty) return;
+      _cartItems.clear();
+      final prefix = '${_cartBuyerId}_';
+      for (final r in rows) {
+        final row = Map<String, dynamic>.from(r as Map);
+        final rowId = row['id']?.toString() ?? '';
+        _cartItems.add(CartItem(
+          id: rowId.startsWith(prefix) ? rowId.substring(prefix.length) : rowId,
+          name: row['product_name']?.toString() ?? 'Item',
+          price: (row['unit_price'] as num?)?.toDouble() ?? 0,
+          unit: row['unit']?.toString() ?? '/kg',
+          quantity: (row['quantity'] as num?)?.toInt() ?? 1,
+          emoji: row['emoji']?.toString() ?? '🥬',
+          farmName: row['farm_name']?.toString() ?? '',
+          imageUrl: row['image_url']?.toString(),
+        ));
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[MarketplaceState] loadCartFromDatabase: $e');
+    }
+  }
+
   void addToCart(CartItem item) {
     final index = _cartItems.indexWhere((i) => i.name == item.name);
     if (index >= 0) {
       _cartItems[index].quantity += item.quantity;
+      _syncCartItem(_cartItems[index]);
     } else {
       _cartItems.add(item);
+      _syncCartItem(item);
     }
     notifyListeners();
   }
@@ -338,8 +428,10 @@ class MarketplaceState extends ChangeNotifier {
       final newQty = _cartItems[index].quantity + delta;
       if (newQty <= 0) {
         _cartItems.removeAt(index);
+        _deleteCartItemRemote(id);
       } else {
         _cartItems[index].quantity = newQty;
+        _syncCartItem(_cartItems[index]);
       }
       notifyListeners();
     }
@@ -347,11 +439,13 @@ class MarketplaceState extends ChangeNotifier {
 
   void removeItem(String id) {
     _cartItems.removeWhere((i) => i.id == id);
+    _deleteCartItemRemote(id);
     notifyListeners();
   }
 
   void clearCart() {
     _cartItems.clear();
+    _clearCartRemote();
     notifyListeners();
   }
 
@@ -451,6 +545,7 @@ class MarketplaceState extends ChangeNotifier {
 
     _orders.insert(0, newOrder);
     _cartItems.clear();
+    _clearCartRemote();
 
     // Central Multi-Party Synchronization (Driver, Farmer, Buyer, Admin)
     try {
