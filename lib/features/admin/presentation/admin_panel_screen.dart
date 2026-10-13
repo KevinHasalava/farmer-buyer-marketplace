@@ -9,7 +9,6 @@ import '../services/admin_auth_service.dart';
 import '../services/admin_marketplace_service.dart';
 import 'widgets/admin_crud_dialogs.dart';
 import 'widgets/admin_extra_crud_tabs.dart';
-import 'widgets/admin_cart_notification_tabs.dart';
 import '../../pre_order/services/pre_order_manager.dart';
 import '../../pre_order/presentation/pre_order_detail_screen.dart';
 import '../../pre_order/presentation/create_pre_order_screen.dart';
@@ -51,7 +50,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 10, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _activeNavIndex != _tabController.index) {
@@ -224,7 +223,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                         _buildContractsTab(),
                         _buildAuctionsTab(),
                         AdminDeliveriesTab(searchQuery: _searchQuery),
-                        AdminNotificationsTab(searchQuery: _searchQuery),
                       ],
                     ),
                   ),
@@ -261,7 +259,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   _buildContractsTab(),
                   _buildAuctionsTab(),
                   AdminDeliveriesTab(searchQuery: _searchQuery),
-                  AdminNotificationsTab(searchQuery: _searchQuery),
                 ],
               ),
             ),
@@ -419,12 +416,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                     icon: Icons.alt_route_rounded,
                     label: 'Fleet Deliveries & Pickups',
                     badgeCount: '${AdminLogisticsService.instance.deliveries.length}',
-                  ),
-                  _buildSidebarNavItem(
-                    index: 9,
-                    icon: Icons.notifications_active_rounded,
-                    label: 'Buyer Notifications',
-                    badgeCount: '${AdminLogisticsService.instance.notifications.length}',
                   ),
                 ],
               ),
@@ -841,7 +832,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       'Pre-Orders',
       'Auctions (${AuctionManager.instance.activeAuctionsCount})',
       'Deliveries (${AdminLogisticsService.instance.deliveries.length})',
-      'Notifications (${AdminLogisticsService.instance.notifications.length})',
     ];
 
     return Container(
@@ -943,7 +933,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'Pre-Orders (Contracts)',
       7 => 'Crop Auctions & Bids',
       8 => 'Fleet Deliveries & Pickups',
-      9 => 'Buyer Notifications',
       _ => 'Executive Overview',
     };
     return title.trAuto(context);
@@ -959,7 +948,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       6 => 'New Contract',
       7 => 'Add Auction',
       8 => 'Dispatch Delivery',
-      9 => 'Send Notification',
       _ => 'New Entry',
     };
     return label.trAuto(context);
@@ -997,9 +985,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
         break;
       case 8:
         showAdminDeliveryDialog(context);
-        break;
-      case 9:
-        showAdminNotificationDialog(context);
         break;
       default:
         _showQuickCreateMenu();
@@ -2160,7 +2145,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION)',
+          'CORE ENTERPRISE CRUD MODULES (WD_30 SPECIFICATION - 8 MODULES)',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w800,
@@ -2255,17 +2240,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           iconBg: const Color(0xFFF0FDFA),
           iconColor: const Color(0xFF0D9488),
           onTap: () => _switchTab(8),
-        ),
-        const SizedBox(height: 8),
-
-        // 9. Buyer Notifications CRUD
-        _buildQuickActionTile(
-          title: '9. Buyer Notifications & Broadcast Alerts (Member 1 & 5)',
-          subtitle: 'Send marketplace alerts, broadcast harvest deals, mark read/unread and manage push feed',
-          icon: Icons.notifications_active_rounded,
-          iconBg: const Color(0xFFFEF3C7),
-          iconColor: const Color(0xFFD97706),
-          onTap: () => _switchTab(9),
         ),
       ],
     );
