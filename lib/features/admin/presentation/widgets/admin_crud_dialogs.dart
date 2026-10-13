@@ -238,12 +238,14 @@ void showFarmerEditDialog(BuildContext context, {AdminFarmerModel? farmer}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Verified Agri-Partner Badge',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          'Verified Agri-Partner Badge',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isVerified,
                         activeThumbColor: const Color(0xFF047857),
@@ -682,12 +684,14 @@ void showDriverEditDialog(BuildContext context, {AdminDriverModel? driver}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Active Shift Duty (Available for Dispatch)',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          'Active Shift Duty (Available for Dispatch)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isOnDuty,
                         activeThumbColor: const Color(0xFF047857),
@@ -980,12 +984,14 @@ void showProductEditDialog(BuildContext context, {AdminProductModel? product}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '100% Certified Organic Produce',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          '100% Certified Organic Produce',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isOrganic,
                         activeThumbColor: const Color(0xFF047857),
