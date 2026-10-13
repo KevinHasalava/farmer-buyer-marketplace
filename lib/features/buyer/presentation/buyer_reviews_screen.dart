@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/buyer_review_model.dart';
 import '../services/buyer_profile_manager.dart';
 import '../services/buyer_review_service.dart';
+import '../../farmer/services/farmer_profile_manager.dart';
 
 /// 🌟 Buyer Reviews & Ratings Management Screen (Member 1 - IT23843770 Thennakoon T.M.S.N)
 /// Full Create, Read, Update, Delete (CRUD) for verified produce reviews & farmer ratings.
@@ -75,7 +76,13 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
 
   String get _currentBuyerId => _profileManager.profile.id;
   String get _currentBuyerName =>
-      _profileManager.profile.name.isNotEmpty ? _profileManager.profile.name : 'Chamara Perera';
+      _profileManager.profile.name.isNotEmpty ? _profileManager.profile.name : 'Buyer';
+
+  /// True when the signed-in user is the farmer who received this review.
+  bool _isReviewedFarmer(BuyerReview r) {
+    final myId = FarmerProfileManager.instance.profile.id;
+    return myId.isNotEmpty && myId == r.farmerId;
+  }
 
   List<BuyerReview> _getFilteredReviews() {
     var list = _service.allReviews;
@@ -84,7 +91,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
     }
     return switch (_selectedFilterIndex) {
       1 => list.where((r) => r.isOwnedBy(_currentBuyerId)).toList(),
-      2 => list.where((r) => r.rating >= 4.9).toList(),
+      2 => list.where((r) => r.rating >= 4.5).toList(),
       3 => list.where((r) => r.hasFarmerReply).toList(),
       _ => list,
     };
@@ -97,7 +104,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
         ? _service.reviewsForFarmer(_activeFarmerFilter!)
         : _service.allReviews;
     final avgRating = allList.isEmpty
-        ? 4.9
+        ? 0.0
         : (allList.fold<double>(0.0, (acc, r) => acc + r.rating) / allList.length);
     final myCount = allList.where((r) => r.isOwnedBy(_currentBuyerId)).length;
 
@@ -250,6 +257,12 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   // 📊 1. RATING SUMMARY STATS CARD
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildRatingSummaryCard(double avgRating, int totalReviews, int myCount) {
+    final scoped = (_activeFarmerFilter != null && _activeFarmerFilter!.isNotEmpty)
+        ? _service.reviewsForFarmer(_activeFarmerFilter!)
+        : _service.allReviews;
+    final positivePct = scoped.isEmpty
+        ? 0
+        : ((scoped.where((r) => r.rating >= 4).length / scoped.length) * 100).round();
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -271,7 +284,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                avgRating.toStringAsFixed(1),
+                totalReviews == 0 ? '—' : avgRating.toStringAsFixed(1),
                 style: const TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
@@ -282,7 +295,12 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(5, (index) {
-                  return const Icon(Icons.star_rounded, color: _goldStar, size: 16);
+                  final filled = index < avgRating.round();
+                  return Icon(
+                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: filled ? _goldStar : const Color(0xFFCBD5E1),
+                    size: 16,
+                  );
                 }),
               ),
               const SizedBox(height: 4),
@@ -313,14 +331,16 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.verified_rounded, size: 12, color: _emerald),
-                          SizedBox(width: 4),
+                          const Icon(Icons.verified_rounded, size: 12, color: _emerald),
+                          const SizedBox(width: 4),
                           Text(
-                            '96% Positive Rating',
-                            style: TextStyle(
+                            totalReviews == 0
+                                ? 'No ratings yet'
+                                : '$positivePct% Positive Rating',
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: _emerald,
@@ -430,7 +450,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      r.productName,
+                      r.productName.isNotEmpty ? r.productName : r.farmerName,
                       style: const TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
@@ -441,7 +461,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      'Farmer: ${r.farmerName}',
+                      r.productName.isNotEmpty ? 'Farmer: ${r.farmerName}' : 'Farmer rating',
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -615,7 +635,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              if (!r.hasFarmerReply) ...[
+              if (!r.hasFarmerReply && _isReviewedFarmer(r)) ...[
                 TextButton.icon(
                   onPressed: () => _showFarmerReplyDialog(r),
                   icon: const Icon(Icons.reply_rounded, size: 14, color: _forestGreen),
@@ -723,66 +743,63 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
   // ✍️ WRITE / EDIT REVIEW BOTTOM SHEET MODAL (CREATE & UPDATE CRUD)
   // ═══════════════════════════════════════════════════════════════════════════
-  void _showWriteOrEditReviewSheet({
+  void _notifySaved(String okMsg) {
+    if (!mounted) return;
+    final err = _service.lastError;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(err == null ? okMsg : '⚠ $err'),
+        backgroundColor: err == null ? _emerald : const Color(0xFFD97706),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    _service.clearError();
+  }
+
+  Future<void> _showWriteOrEditReviewSheet({
     BuyerReview? existingReview,
     String? preselectedProductId,
     String? preselectedProductName,
     String? preselectedFarmerName,
     String? preselectedProductImage,
-  }) {
+  }) async {
     HapticFeedback.lightImpact();
 
-    // Available produce catalogue for selection
-    final catalogOptions = [
-      {
-        'id': 'prod_1',
-        'name': 'Nuwara Eliya Highland Carrots',
-        'farmer': 'K. M. Bandara',
-        'image': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=600&auto=format&fit=crop&q=80',
-      },
-      {
-        'id': 'prod_2',
-        'name': 'Welimada Fresh White Potatoes',
-        'farmer': 'K. M. Bandara',
-        'image': 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=80',
-      },
-      {
-        'id': 'prod_3',
-        'name': 'Hakgala Crispy Organic Leeks',
-        'farmer': 'K. M. Bandara',
-        'image': 'https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?w=600&auto=format&fit=crop&q=80',
-      },
-      {
-        'id': 'prod_4',
-        'name': 'Kandy Green Crisp Beans',
-        'farmer': 'Sunil Perera',
-        'image': 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=600&auto=format&fit=crop&q=80',
-      },
-      {
-        'id': 'prod_5',
-        'name': 'Dambulla Vine-Ripened Red Tomatoes',
-        'farmer': 'Sunil Perera',
-        'image': 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80',
-      },
-    ];
+    if (existingReview == null && _currentBuyerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in with your buyer account to rate a farmer.'),
+          backgroundColor: Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    // Determine initial values
-    String selectedProdId = existingReview?.productId ??
-        preselectedProductId ??
-        catalogOptions.first['id']!;
+    // Real registered farmers (Supabase `farmers` table)
+    List<RatableFarmer> farmers = const [];
+    RatableFarmer? selectedFarmer;
+    List<RatableProduct> farmerProducts = const [];
+    RatableProduct? selectedProduct;
+    bool loadingProducts = false;
 
-    var selectedItem = catalogOptions.firstWhere(
-      (opt) => opt['id'] == selectedProdId,
-      orElse: () => {
-        'id': selectedProdId,
-        'name': preselectedProductName ?? 'Fresh Produce',
-        'farmer': preselectedFarmerName ?? 'Local Farmer',
-        'image': preselectedProductImage ?? '',
-      },
-    );
-
-    if (!catalogOptions.any((opt) => opt['id'] == selectedProdId)) {
-      catalogOptions.insert(0, selectedItem);
+    if (existingReview == null) {
+      farmers = await _service.fetchRegisteredFarmers();
+      if (!mounted) return;
+      final want = (preselectedFarmerName ?? '').toLowerCase().trim();
+      if (want.isNotEmpty) {
+        selectedFarmer =
+            farmers.where((f) => f.name.toLowerCase().trim() == want).firstOrNull;
+      } else if (farmers.length == 1) {
+        selectedFarmer = farmers.first;
+      }
+      if (selectedFarmer != null) {
+        farmerProducts = await _service.fetchProductsForFarmer(selectedFarmer.id);
+        if (!mounted) return;
+        selectedProduct = farmerProducts
+            .where((p) => p.id == preselectedProductId)
+            .firstOrNull;
+      }
     }
 
     double currentRating = existingReview?.rating ?? 5.0;
@@ -872,63 +889,131 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // 1. Choose Product to Review
-                    const Text(
-                      'SELECTED HARVEST PRODUCE',
-                      style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _borderColor),
+                    // 1. Farmer (and optional product) to rate — real registered data
+                    if (isEditing) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: Text(
+                          existingReview.productName.isNotEmpty
+                              ? '${existingReview.productName} • ${existingReview.farmerName}'
+                              : 'Farmer: ${existingReview.farmerName}',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textDark),
+                        ),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedProdId,
-                          isExpanded: true,
-                          items: catalogOptions.map((opt) {
-                            return DropdownMenuItem<String>(
-                              value: opt['id'],
-                              child: Row(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(6),
-                                    child: Image.network(
-                                      opt['image']!,
-                                      width: 28,
-                                      height: 28,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => const Icon(Icons.eco, size: 20),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
+                    ] else if (farmers.isEmpty) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFDE68A)),
+                        ),
+                        child: const Text(
+                          'No registered farmers found yet. Check your internet connection and try again.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+                        ),
+                      ),
+                    ] else ...[
+                      const Text(
+                        'RATE A REGISTERED FARMER',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedFarmer?.id,
+                            isExpanded: true,
+                            hint: const Text('Choose a farmer', style: TextStyle(fontSize: 12.5)),
+                            items: farmers
+                                .map((f) => DropdownMenuItem<String>(
+                                      value: f.id,
+                                      child: Text(
+                                        f.label,
+                                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textDark),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ))
+                                .toList(),
+                            onChanged: (id) async {
+                              if (id == null) return;
+                              final f = farmers.firstWhere((x) => x.id == id);
+                              setModalState(() {
+                                selectedFarmer = f;
+                                selectedProduct = null;
+                                farmerProducts = const [];
+                                loadingProducts = true;
+                              });
+                              final prods = await _service.fetchProductsForFarmer(f.id);
+                              if (!mounted) return;
+                              setModalState(() {
+                                farmerProducts = prods;
+                                loadingProducts = false;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'PRODUCT (OPTIONAL)',
+                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _borderColor),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedProduct?.id ?? '',
+                            isExpanded: true,
+                            items: [
+                              DropdownMenuItem<String>(
+                                value: '',
+                                child: Text(
+                                  loadingProducts ? 'Loading products...' : 'Overall farmer rating',
+                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textDark),
+                                ),
+                              ),
+                              ...farmerProducts.map((p) => DropdownMenuItem<String>(
+                                    value: p.id,
                                     child: Text(
-                                      '${opt['name']} (${opt['farmer']})',
+                                      p.name,
                                       style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: _textDark),
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: isEditing
-                              ? null
-                              : (val) {
-                                  if (val != null) {
+                                  )),
+                            ],
+                            onChanged: selectedFarmer == null
+                                ? null
+                                : (id) {
                                     setModalState(() {
-                                      selectedProdId = val;
-                                      selectedItem = catalogOptions.firstWhere((o) => o['id'] == val);
+                                      selectedProduct = (id == null || id.isEmpty)
+                                          ? null
+                                          : farmerProducts.firstWhere((p) => p.id == id);
                                     });
-                                  }
-                                },
+                                  },
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                     const SizedBox(height: 16),
 
                     // 2. Interactive Star Rating Selector
@@ -1081,6 +1166,17 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                             return;
                           }
 
+                          if (!isEditing && selectedFarmer == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please choose a registered farmer to rate.'),
+                                backgroundColor: Color(0xFFDC2626),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            return;
+                          }
+
                           Navigator.pop(ctx);
                           HapticFeedback.mediumImpact();
 
@@ -1093,40 +1189,38 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
                               comment: comment,
                               qualityTag: selectedTag,
                             );
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('✓ Review updated successfully!'),
-                                  backgroundColor: _emerald,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
+                            _notifySaved('✓ Review updated successfully!');
                           } else {
-                            // CREATE (C)
-                            await _service.createReview(
-                              buyerId: _currentBuyerId,
-                              buyerName: _currentBuyerName,
-                              productId: selectedItem['id']!,
-                              productName: selectedItem['name']!,
-                              productImage: selectedItem['image']!,
-                              farmerId: 'farmer_${selectedItem['farmer']!.toLowerCase().replaceAll(' ', '_')}',
-                              farmerName: selectedItem['farmer']!,
-                              rating: currentRating,
-                              title: title,
-                              comment: comment,
-                              qualityTag: selectedTag,
-                            );
-
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('✓ Verified review submitted for ${selectedItem['name']}!'),
-                                  backgroundColor: _emerald,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
+                            final farmer = selectedFarmer!;
+                            final prodId = selectedProduct?.id ?? '';
+                            final dup = _service.existingReview(_currentBuyerId, farmer.id, prodId);
+                            if (dup != null) {
+                              // One review per buyer + farmer (+ product): update it instead
+                              await _service.updateReview(
+                                reviewId: dup.id,
+                                rating: currentRating,
+                                title: title,
+                                comment: comment,
+                                qualityTag: selectedTag,
                               );
+                              _notifySaved('✓ You already rated ${farmer.name} — your review was updated.');
+                            } else {
+                              // CREATE (C)
+                              await _service.createReview(
+                                buyerId: _currentBuyerId,
+                                buyerName: _currentBuyerName,
+                                buyerAvatar: _profileManager.profile.avatarUrl ?? '',
+                                productId: prodId,
+                                productName: selectedProduct?.name ?? '',
+                                productImage: selectedProduct?.imageUrl ?? '',
+                                farmerId: farmer.id,
+                                farmerName: farmer.name,
+                                rating: currentRating,
+                                title: title,
+                                comment: comment,
+                                qualityTag: selectedTag,
+                              );
+                              _notifySaved('✓ Your rating for ${farmer.name} was submitted!');
                             }
                           }
                         },

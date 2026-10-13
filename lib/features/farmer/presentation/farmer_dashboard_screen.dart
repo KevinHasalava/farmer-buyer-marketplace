@@ -1196,11 +1196,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     return ListenableBuilder(
       listenable: BuyerReviewService.instance,
       builder: (context, _) {
-        final farmerName = _profileManager.profile.name.isNotEmpty
-            ? _profileManager.profile.name
-            : 'K. M. Bandara';
-        final reviews = BuyerReviewService.instance.reviewsForFarmer(farmerName);
-        final avgRating = BuyerReviewService.instance.getAverageRatingForFarmer(farmerName);
+        final farmerName = _profileManager.profile.name;
+        final farmerKey = _profileManager.profile.id.isNotEmpty
+            ? _profileManager.profile.id
+            : farmerName;
+        final reviews = BuyerReviewService.instance.reviewsForFarmer(farmerKey);
+        final avgRating = BuyerReviewService.instance.getAverageRatingForFarmer(farmerKey);
         final pendingReplies = reviews.where((r) => r.farmerReply == null || r.farmerReply!.trim().isEmpty).length;
 
         return Container(
@@ -1239,7 +1240,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                         const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFBBF24)),
                         const SizedBox(width: 4),
                         Text(
-                          '${avgRating.toStringAsFixed(1)} ★ (${reviews.length} Reviews)',
+                          reviews.isEmpty
+                              ? 'No ratings yet'
+                              : '${avgRating.toStringAsFixed(1)} ★ (${reviews.length} Reviews)',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
