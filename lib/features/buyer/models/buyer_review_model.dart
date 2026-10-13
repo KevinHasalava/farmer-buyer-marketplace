@@ -66,11 +66,11 @@ class BuyerReview {
   }
 
   bool isOwnedBy(String? currentBuyerId) {
-    if (currentBuyerId == null || currentBuyerId.isEmpty) {
-      // Fallback: match default local buyer if unauthenticated
+    if (currentBuyerId == null || currentBuyerId.isEmpty || currentBuyerId == 'buyer_chamara') {
+      // Fallback: match default local buyer if unauthenticated or demo user Chamara
       return buyerId == 'buyer_chamara' || buyerName.toLowerCase().contains('chamara');
     }
-    return buyerId == currentBuyerId || buyerId == 'buyer_chamara';
+    return buyerId == currentBuyerId;
   }
 
   BuyerReview copyWith({

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/localization/app_settings.dart';
 import '../models/buyer_review_model.dart';
 import '../services/buyer_profile_manager.dart';
 import '../services/buyer_review_service.dart';
@@ -15,12 +14,14 @@ class BuyerReviewsScreen extends StatefulWidget {
     this.initialProductName,
     this.initialFarmerName,
     this.initialProductImage,
+    this.initialFilterIndex = 0,
   });
 
   final String? initialProductId;
   final String? initialProductName;
   final String? initialFarmerName;
   final String? initialProductImage;
+  final int initialFilterIndex;
 
   @override
   State<BuyerReviewsScreen> createState() => _BuyerReviewsScreenState();
@@ -30,7 +31,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   final BuyerReviewService _service = BuyerReviewService.instance;
   final BuyerProfileManager _profileManager = BuyerProfileManager.instance;
 
-  int _selectedFilterIndex = 0; // 0: All, 1: My Reviews, 2: 5 Stars, 3: Farmer Replies
+  late int _selectedFilterIndex; // 0: All, 1: My Reviews, 2: 5 Stars, 3: Farmer Replies
 
   static const Color _forestGreen = Color(0xFF0F3D24);
   static const Color _emerald = Color(0xFF059669);
@@ -43,6 +44,7 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedFilterIndex = widget.initialFilterIndex;
     _service.addListener(_onServiceChanged);
     _service.loadReviews();
 
@@ -127,15 +129,14 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             onPressed: () async {
               HapticFeedback.lightImpact();
               await _service.loadReviews();
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('✓ Reviews synchronized with cloud.'),
-                    backgroundColor: _emerald,
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✓ Reviews synchronized with cloud.'),
+                  backgroundColor: _emerald,
+                  duration: Duration(seconds: 1),
+                ),
+              );
             },
           ),
           const SizedBox(width: 4),
@@ -550,45 +551,60 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             ),
           ],
 
-          // ── EDIT & DELETE BUTTONS (FOR OWNER) ─────────────────────────────
-          if (isMyReview) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Edit Button
+          // ── ACTION BUTTONS: FARMER REPLY & OWNER EDIT/DELETE ─────────────
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (!r.hasFarmerReply) ...[
                 TextButton.icon(
-                  onPressed: () => _showWriteOrEditReviewSheet(existingReview: r),
-                  icon: const Icon(Icons.edit_outlined, size: 15, color: _emerald),
+                  onPressed: () => _showFarmerReplyDialog(r),
+                  icon: const Icon(Icons.reply_rounded, size: 14, color: _forestGreen),
                   label: const Text(
-                    'Edit Review',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _emerald),
+                    'Farmer Reply',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _forestGreen),
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
+              ],
+              if (isMyReview) ...[
+                // Edit Button
+                TextButton.icon(
+                  onPressed: () => _showWriteOrEditReviewSheet(existingReview: r),
+                  icon: const Icon(Icons.edit_outlined, size: 14, color: _emerald),
+                  label: const Text(
+                    'Edit',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _emerald),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                const SizedBox(width: 4),
 
                 // Delete Button
                 TextButton.icon(
                   onPressed: () => _confirmDeleteReview(r),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFDC2626)),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 14, color: Color(0xFFDC2626)),
                   label: const Text(
                     'Delete',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
               ],
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );
@@ -707,6 +723,10 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
         'image': preselectedProductImage ?? '',
       },
     );
+
+    if (!catalogOptions.any((opt) => opt['id'] == selectedProdId)) {
+      catalogOptions.insert(0, selectedItem);
+    }
 
     double currentRating = existingReview?.rating ?? 5.0;
     String selectedTag = existingReview?.qualityTag ?? 'Grade-A Fresh';
@@ -1121,6 +1141,140 @@ class _BuyerReviewsScreenState extends State<BuyerReviewsScreen> {
             child: const Text('Delete'),
           ),
         ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 👨‍🌾 FARMER REPLY DIALOG (TWO-WAY FEEDBACK COMMUNICATION)
+  // ═══════════════════════════════════════════════════════════════════════════
+  void _showFarmerReplyDialog(BuyerReview r) {
+    final replyController = TextEditingController();
+    final templates = [
+      'Thank you! Harvested fresh at dawn.',
+      'Glad you loved our produce! Packed with care.',
+      'Appreciate your trust in direct organic harvest!',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.reply_rounded, color: _forestGreen, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Farmer Reply',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _textDark),
+                    ),
+                    Text(
+                      'Replying as ${r.farmerName}',
+                      style: const TextStyle(fontSize: 11, color: _forestGreen, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Review: "${r.title}" (${r.rating}★)',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Quick Templates:',
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: _textMuted),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: templates.map((tmpl) {
+                  return GestureDetector(
+                    onTap: () {
+                      setDlgState(() => replyController.text = tmpl);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        tmpl,
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF334155)),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: replyController,
+                maxLines: 3,
+                style: const TextStyle(fontSize: 12.5, color: _textDark),
+                decoration: InputDecoration(
+                  hintText: 'Type reply to buyer...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _forestGreen, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dlgCtx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _forestGreen,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                final text = replyController.text.trim();
+                if (text.isEmpty) return;
+                Navigator.pop(dlgCtx);
+                HapticFeedback.mediumImpact();
+                await _service.addFarmerReply(reviewId: r.id, replyText: text);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('✓ Response from ${r.farmerName} published!'),
+                      backgroundColor: _forestGreen,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Post Reply'),
+            ),
+          ],
+        ),
       ),
     );
   }

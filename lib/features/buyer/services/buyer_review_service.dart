@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../core/supabase/supabase_config.dart';
 import '../models/buyer_review_model.dart';
@@ -22,7 +22,6 @@ class BuyerReviewService extends ChangeNotifier {
   factory BuyerReviewService() => instance;
 
   static const String _kReviewsCacheKey = 'farm2home_buyer_reviews_v1';
-  static const Uuid _uuid = Uuid();
 
   List<BuyerReview> _reviews = [];
   bool _isLoading = false;
@@ -31,6 +30,21 @@ class BuyerReviewService extends ChangeNotifier {
   List<BuyerReview> get allReviews => List.unmodifiable(_reviews);
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
+
+  /// Generates a compliant RFC-4122 v4 UUID for Supabase and local storage
+  static String _generateUuid() {
+    final rand = Random.secure();
+    final bytes = List<int>.generate(16, (_) => rand.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // v4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+    return [
+      bytes.sublist(0, 4).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      bytes.sublist(4, 6).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      bytes.sublist(6, 8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      bytes.sublist(8, 10).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      bytes.sublist(10, 16).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+    ].join('-');
+  }
 
   /// Loads reviews from Supabase and syncs with local cache
   Future<void> loadReviews() async {
@@ -66,7 +80,7 @@ class BuyerReviewService extends ChangeNotifier {
             .order('created_at', ascending: false)
             .timeout(const Duration(seconds: 4));
 
-        if (res is List && res.isNotEmpty) {
+        if (res.isNotEmpty) {
           final remoteList = res
               .map((e) => BuyerReview.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList();
@@ -101,7 +115,7 @@ class BuyerReviewService extends ChangeNotifier {
     String qualityTag = 'Grade-A Fresh',
   }) async {
     final now = DateTime.now();
-    final newId = _uuid.v4();
+    final newId = _generateUuid();
 
     final newReview = BuyerReview(
       id: newId,
