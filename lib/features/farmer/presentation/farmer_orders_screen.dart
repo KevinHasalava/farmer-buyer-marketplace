@@ -136,7 +136,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                 ? 'ready'
                 : 'new');
         _orders.insert(0, {
-          'id': fo.id.startsWith('#') ? fo.id : '#${fo.id}',
+          'id': fo.id.length > 8 ? '#${fo.id.substring(0, 8).toUpperCase()}' : (fo.id.startsWith('#') ? fo.id : '#${fo.id}'),
           'tag': fo.status == 'Pending' ? '⚡ Urgent • New' : fo.status,
           'tagBg': fo.status == 'Pending' ? const Color(0xFFFFEDD5) : const Color(0xFFDCFCE7),
           'tagText': fo.status == 'Pending' ? const Color(0xFFC2410C) : const Color(0xFF15803D),
@@ -530,34 +530,41 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    ord['id'],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: ord['tagBg'],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      (ord['tag'] as String).trAuto(context),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: ord['tagText'],
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        ord['id'],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: ord['tagBg'],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        (ord['tag'] as String).trAuto(context),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: ord['tagText'],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
                 children: [
                   const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF9CA3AF)),
