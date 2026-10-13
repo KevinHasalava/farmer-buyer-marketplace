@@ -75,6 +75,29 @@ class AuctionManager extends ChangeNotifier {
             }
           }
 
+          // Remember local-only auctions (created offline / failed to sync)
+          final localOnly = <AuctionModel>[];
+          final prefsLocal = await SharedPreferences.getInstance();
+          final rawLocal = prefsLocal.getString(_kStorageKey);
+          final remoteIds = <String>{};
+          for (final item in (auctionRows as List<dynamic>)) {
+            if (item is Map<String, dynamic>) {
+              remoteIds.add(item['id'] as String? ?? '');
+            }
+          }
+          if (rawLocal != null && rawLocal.isNotEmpty) {
+            try {
+              for (final item in (jsonDecode(rawLocal) as List<dynamic>)) {
+                if (item is Map<String, dynamic>) {
+                  final m = AuctionModel.fromJson(item);
+                  if (m.id.isNotEmpty && !remoteIds.contains(m.id) && m.farmerId.isNotEmpty) {
+                    localOnly.add(m);
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+
           _auctions.clear();
           for (final item in (auctionRows as List<dynamic>)) {
             if (item is Map<String, dynamic>) {
@@ -82,6 +105,19 @@ class AuctionManager extends ChangeNotifier {
               final bidsForThis = bidsByAuction[aId] ?? [];
               final auction = AuctionModel.fromJson(item).copyWith(bids: bidsForThis);
               _auctions.add(auction);
+            }
+          }
+
+          // Push local-only auctions up to Supabase and keep them
+          for (final m in localOnly) {
+            _auctions.insert(0, m);
+            try {
+              await SupabaseConfig.client.from('auctions').upsert(m.toDb());
+              for (final b in m.bids) {
+                await SupabaseConfig.client.from('auction_bids').upsert(b.toDb());
+              }
+            } catch (e) {
+              debugPrint('[AuctionManager] Local->cloud sync error: $e');
             }
           }
 
@@ -187,7 +223,7 @@ class AuctionManager extends ChangeNotifier {
     await _saveToLocal();
     if (SupabaseConfig.isInitialized) {
       try {
-        await SupabaseConfig.client.from('auctions').insert(newAuction.toDb());
+        await SupabaseConfig.client.from('auctions').upsert(newAuction.toDb());
       } catch (e) {
         debugPrint('[AuctionManager] DB create error: $e');
       }
@@ -211,7 +247,7 @@ class AuctionManager extends ChangeNotifier {
 
     if (SupabaseConfig.isInitialized) {
       try {
-        await SupabaseConfig.client.from('auctions').update(updated.toDb()).eq('id', updated.id);
+        await SupabaseConfig.client.from('auctions').upsert(updated.toDb());
       } catch (e) {
         debugPrint('[AuctionManager] DB update error: $e');
       }

@@ -1,44 +1,23 @@
 -- =============================================================================
 -- 🤝 Farm2Home Marketplace: Pre-Orders & Contract Farming Module
--- Two-Way Marketplace connecting Wholesale Buyers with Local Farmers
+-- Safe Auto-Migration & Schema Setup (Runs cleanly even if table already exists!)
 -- =============================================================================
 
--- 1. Table: pre_orders
+-- 1. Create pre_orders table if not already created
 CREATE TABLE IF NOT EXISTS public.pre_orders (
     id TEXT PRIMARY KEY,
     buyer_id TEXT NOT NULL DEFAULT '',
-    buyer_name TEXT NOT NULL,
-    farmer_id TEXT DEFAULT NULL,
-    farmer_name TEXT DEFAULT NULL,
-    crop_name TEXT NOT NULL,
-    required_quantity_kg NUMERIC NOT NULL DEFAULT 0,
-    offered_price_per_kg NUMERIC NOT NULL DEFAULT 0,
-    expected_delivery_date TIMESTAMPTZ NOT NULL,
-    quality_requirements TEXT DEFAULT '',
-    delivery_location TEXT DEFAULT '',
-    payment_terms TEXT DEFAULT 'Negotiable',
-    packaging_requirements TEXT DEFAULT 'Standard Packaging',
-    advance_payment_rs NUMERIC DEFAULT 0,
-    status TEXT DEFAULT 'Pending', -- 'Pending', 'Accepted', 'In Progress', 'Completed', 'Cancelled'
-    farmer_expected_harvest_date TIMESTAMPTZ,
-    farmer_estimated_yield_kg NUMERIC,
-    farmer_location TEXT DEFAULT '',
-    farmer_notes TEXT DEFAULT '',
-    farmer_rating NUMERIC,
-    farmer_review TEXT,
-    rated_at TIMESTAMPTZ,
+    buyer_name TEXT NOT NULL DEFAULT 'Wholesale Buyer',
+    crop_name TEXT NOT NULL DEFAULT '',
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Ensure columns exist if table was partially created previously
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS buyer_id TEXT DEFAULT '';
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS buyer_name TEXT NOT NULL DEFAULT 'Wholesale Buyer';
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS farmer_id TEXT DEFAULT NULL;
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS farmer_name TEXT DEFAULT NULL;
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS crop_name TEXT NOT NULL DEFAULT 'Fresh Produce';
+-- 2. Safely add ALL required columns if they do not exist
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS required_quantity_kg NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS offered_price_per_kg NUMERIC NOT NULL DEFAULT 0;
-ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS expected_delivery_date TIMESTAMPTZ DEFAULT now();
+ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS expected_delivery_date TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '14 days');
+ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS farmer_id TEXT DEFAULT NULL;
+ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS farmer_name TEXT DEFAULT NULL;
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS quality_requirements TEXT DEFAULT '';
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS delivery_location TEXT DEFAULT '';
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS payment_terms TEXT DEFAULT 'Negotiable';
@@ -54,28 +33,35 @@ ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS farmer_review TEXT;
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS rated_at TIMESTAMPTZ;
 ALTER TABLE public.pre_orders ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 
--- Drop foreign key constraint on farmer_id if exists to allow flexible prototype farmer logins
-ALTER TABLE public.pre_orders DROP CONSTRAINT IF EXISTS pre_orders_farmer_id_fkey;
+-- 3. If previous columns existed with old names, migrate their data
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pre_orders' AND column_name = 'required_quantity') THEN
+        UPDATE public.pre_orders SET required_quantity_kg = required_quantity WHERE (required_quantity_kg = 0 OR required_quantity_kg IS NULL) AND required_quantity IS NOT NULL;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pre_orders' AND column_name = 'offered_price') THEN
+        UPDATE public.pre_orders SET offered_price_per_kg = offered_price WHERE (offered_price_per_kg = 0 OR offered_price_per_kg IS NULL) AND offered_price IS NOT NULL;
+    END IF;
+END $$;
 
--- 2. Table: pre_order_progress (Milestone Tracking)
+-- 4. Create pre_order_progress table if not already created
 CREATE TABLE IF NOT EXISTS public.pre_order_progress (
     id TEXT PRIMARY KEY,
     pre_order_id TEXT NOT NULL REFERENCES public.pre_orders(id) ON DELETE CASCADE,
-    stage TEXT NOT NULL,
-    description TEXT DEFAULT '',
-    images TEXT[] DEFAULT '{}',
-    date TIMESTAMPTZ DEFAULT now(),
-    update_type TEXT DEFAULT 'Progress', -- 'Progress', 'Delay', 'Issue'
-    new_expected_date TIMESTAMPTZ,
-    issue_type TEXT,
+    stage TEXT NOT NULL DEFAULT 'Milestone',
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Safely add all milestone tracking columns if missing
+ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS date TIMESTAMPTZ DEFAULT now();
 ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS update_type TEXT DEFAULT 'Progress';
 ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS new_expected_date TIMESTAMPTZ;
 ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS issue_type TEXT;
+ALTER TABLE public.pre_order_progress ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 
--- 3. Enable RLS with open policies for rapid prototype/testing
+-- 5. Row Level Security (Permissive for development & prototype)
 ALTER TABLE public.pre_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pre_order_progress ENABLE ROW LEVEL SECURITY;
 
@@ -103,13 +89,13 @@ CREATE POLICY "Public update on pre_order_progress" ON public.pre_order_progress
 DROP POLICY IF EXISTS "Public delete on pre_order_progress" ON public.pre_order_progress;
 CREATE POLICY "Public delete on pre_order_progress" ON public.pre_order_progress FOR DELETE USING (true);
 
--- Indexes for performance
+-- Indexes for lightning-fast queries
 CREATE INDEX IF NOT EXISTS idx_pre_orders_buyer ON public.pre_orders(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_pre_orders_farmer ON public.pre_orders(farmer_id);
 CREATE INDEX IF NOT EXISTS idx_pre_orders_status ON public.pre_orders(status);
 CREATE INDEX IF NOT EXISTS idx_pre_order_progress_order ON public.pre_order_progress(pre_order_id);
 
--- 4. Realistic Seed Pre-Orders
+-- 6. Seed Sample Pre-Orders (Safe ON CONFLICT update)
 INSERT INTO public.pre_orders (
     id, buyer_id, buyer_name, farmer_id, farmer_name, crop_name,
     required_quantity_kg, offered_price_per_kg, expected_delivery_date,
@@ -194,9 +180,13 @@ VALUES
     NOW() - INTERVAL '2 days',
     NOW() - INTERVAL '30 days'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    crop_name = EXCLUDED.crop_name,
+    required_quantity_kg = EXCLUDED.required_quantity_kg,
+    offered_price_per_kg = EXCLUDED.offered_price_per_kg,
+    status = EXCLUDED.status;
 
--- Seed Progress Updates for po_102
+-- 7. Seed Sample Progress Updates for po_102
 INSERT INTO public.pre_order_progress (
     id, pre_order_id, stage, description, images, date, update_type
 )
@@ -219,4 +209,7 @@ VALUES
     NOW() - INTERVAL '4 days',
     'Progress'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    stage = EXCLUDED.stage,
+    description = EXCLUDED.description,
+    update_type = EXCLUDED.update_type;

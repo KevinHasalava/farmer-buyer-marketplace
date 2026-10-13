@@ -2459,7 +2459,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('\: +94 52 222 3456'),
+                  content: Text(': +94 52 222 3456'),
                   backgroundColor: Color(0xFF064E3B),
                   behavior: SnackBarBehavior.floating,
                 ),
