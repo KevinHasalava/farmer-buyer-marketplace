@@ -45,6 +45,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
   bool _otpSending = false;
   bool _isAttached = false;
   bool _isLoading = false;
+  bool _submitting = false;
 
   final Set<String> _selectedCrops = {
     'Carrots & Root Veg',
@@ -97,20 +98,19 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       _authSubscription =
           SupabaseConfig.auth.onAuthStateChange.listen((data) async {
         final session = data.session;
-        if (session != null && mounted) {
-          final sbUser = session.user;
-          final metadata = sbUser.userMetadata ?? {};
-          await context.read<AppSettings>().setRole(UserRole.farmer);
-          final effectiveName = (metadata['full_name'] as String?) ??
-              sbUser.email?.split('@').first ??
-              'Farmer';
-          await FarmerProfileManager.instance.updateProfile(
-            name: effectiveName,
-            email: sbUser.email,
-          );
-          if (mounted) {
-            context.go(AppRoutes.farmerDashboard);
-          }
+        if (session == null || !mounted || _submitting) return;
+        try {
+          final roleStr = await _authService.fetchRole();
+          if (!mounted || roleStr == 'admin') return;
+          final role = UserRole.fromName(roleStr) ?? UserRole.farmer;
+          await context.read<AppSettings>().setRole(role);
+          if (mounted) context.go(AppRoutes.homeFor(role));
+        } on AuthException {
+          // New Google user without a profile: stay on this form and prefill.
+          if (!mounted) return;
+          final meta = session.user.userMetadata ?? {};
+          final name = (meta['full_name'] ?? meta['name'] ?? '').toString();
+          if (_nameCtrl.text.isEmpty && name.isNotEmpty) _nameCtrl.text = name;
         }
       });
     }
@@ -138,7 +138,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
+            content: AutoText(e.message),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -148,7 +148,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Google Sign-In: ${e.toString()}'),
+            content: AutoText('Google Sign-In: ${e.toString()}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -164,7 +164,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     if (rawPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.tr.enterPhoneFirst),
+          content: AutoText(context.tr.enterPhoneFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -175,7 +175,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AutoText(
               'Please enter a valid Sri Lankan mobile number (e.g., 77 234 5678).'),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -203,7 +203,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.error ?? 'Could not send SMS.'),
+          content: AutoText(res.error ?? 'Could not send SMS.'),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -225,7 +225,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
+          content: AutoText(
               'Please verify your mobile number with the SMS OTP code first.'),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -235,6 +235,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       return;
     }
 
+    _submitting = true;
     setState(() => _isLoading = true);
 
     try {
@@ -274,13 +275,14 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration error: ${e.toString()}'),
+            content: AutoText('Registration error: ${e.toString()}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
+      _submitting = false;
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -308,7 +310,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            AutoText(
               context.tr.producerAccountRegistered,
               style: TextStyle(
                 fontSize: 18,
@@ -317,7 +319,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AutoText(
               context.tr.producerWelcomeMsg,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -341,7 +343,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: AutoText(
                   context.tr.goToFarmerDashboard,
                   style: const TextStyle(
                     fontSize: 15,
@@ -375,7 +377,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
             }
           },
         ),
-        title: Text(
+        title: AutoText(
           context.tr.registerFarmerTitle,
           style: const TextStyle(
             fontSize: 16,
@@ -447,9 +449,9 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🌱', style: TextStyle(fontSize: 12)),
+                              AutoText('🌱', style: TextStyle(fontSize: 12)),
                               SizedBox(width: 5),
-                              Text(
+                              AutoText(
                                 'FARMER REGISTRATION',
                                 style: TextStyle(
                                   fontSize: 10.5,
@@ -473,7 +475,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                AutoText(
                                   context.tr.changeRole,
                                   style: const TextStyle(
                                     fontSize: 11.5,
@@ -494,7 +496,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text(
+                    AutoText(
                       context.tr.registerFarmerTitle,
                       style: const TextStyle(
                         fontSize: 22,
@@ -504,7 +506,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    AutoText(
                       context.tr.farmerRegisterSub,
                       style: TextStyle(
                         fontSize: 12.5,
@@ -552,7 +554,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        const AutoText(
                           'FAST 1-CLICK REGISTRATION',
                           style: TextStyle(
                             fontSize: 11,
@@ -568,7 +570,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             color: const Color(0xFFDCFCE7),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: const AutoText(
                             'RECOMMENDED',
                             style: TextStyle(
                               fontSize: 9.5,
@@ -587,7 +589,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Center(
-                      child: Text(
+                      child: AutoText(
                         'Instant verification • No password needed',
                         style: TextStyle(
                           fontSize: 11.5,
@@ -622,7 +624,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: const AutoText(
                       'OR COMPLETE FARM DETAILS',
                       style: TextStyle(
                         fontSize: 10.5,
@@ -684,7 +686,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                               : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: AutoText(
                           _otpVerified
                               ? context.tr.smsOtpVerified
                               : context.tr.smsOtpVerification,
@@ -723,9 +725,9 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🇱🇰', style: TextStyle(fontSize: 16)),
+                              AutoText('🇱🇰', style: TextStyle(fontSize: 16)),
                               SizedBox(width: 6),
-                              Text(
+                              AutoText(
                                 '+94',
                                 style: TextStyle(
                                   fontSize: 13.5,
@@ -799,7 +801,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                                           color: Color(0xFF15803D),
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.verified,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -814,7 +816,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                                           color: Colors.white,
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.sendOtp,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -880,7 +882,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                               onChanged: (val) =>
                                   setState(() => _selectedDistrict = val),
                               items: _districts.map((d) {
-                                return DropdownMenuItem(value: d, child: Text(d));
+                                return DropdownMenuItem(value: d, child: AutoText(d));
                               }).toList(),
                             ),
                           ),
@@ -911,7 +913,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildFieldLabel(context.tr.primaryCropsHarvestTypes),
-                      Text(
+                      AutoText(
                         context.tr.selectMultiple,
                         style: const TextStyle(
                           fontSize: 10.5,
@@ -926,7 +928,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     children: _cropOptions.map((crop) {
                       final isSel = _selectedCrops.contains(crop);
                       return FilterChip(
-                        label: Text(crop),
+                        label: AutoText(crop),
                         selected: isSel,
                         onSelected: (selected) {
                           setState(() {
@@ -1000,7 +1002,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(
+                                child: AutoText(
                                   scale,
                                   style: TextStyle(
                                     fontSize: 11.5,
@@ -1062,7 +1064,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
+                                  child: AutoText(
                                     prac,
                                     style: TextStyle(
                                       fontSize: 12,
@@ -1084,7 +1086,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                                       color: const Color(0xFFBBF7D0),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: Text(
+                                    child: AutoText(
                                       context.tr.topRate,
                                       style: const TextStyle(
                                         fontSize: 9.5,
@@ -1110,7 +1112,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 title: context.tr.directBankPayouts,
                 icon: Icons.account_balance_outlined,
                 children: [
-                  Text(
+                  AutoText(
                     context.tr.zeroCommissionBankSettlement,
                     style: const TextStyle(
                       fontSize: 11.5,
@@ -1146,7 +1148,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       setState(() => _isAttached = !_isAttached);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
+                          content: AutoText(
                             _isAttached
                                 ? 'Documents attached successfully!'
                                 : 'Documents cleared',
@@ -1182,7 +1184,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                             color: const Color(0xFF15803D),
                           ),
                           const SizedBox(width: 8),
-                          Text(
+                          AutoText(
                             _isAttached
                                 ? 'Agrarian_Deed_Doc.pdf Attached'
                                 : context.tr.attachPhotosDocuments,
@@ -1228,7 +1230,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
+                            AutoText(
                               context.tr.registerMyFarm,
                               style: const TextStyle(
                                 fontSize: 15.5,
@@ -1252,7 +1254,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    Text(
+                    AutoText(
                       context.tr.alreadyRegisteredFarmer,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -1262,7 +1264,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                     ),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
-                      child: Text(
+                      child: AutoText(
                         context.tr.login,
                         style: const TextStyle(
                           fontSize: 13,
@@ -1315,7 +1317,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
                 child: Icon(icon, color: const Color(0xFF15803D), size: 16),
               ),
               const SizedBox(width: 10),
-              Text(
+              AutoText(
                 title,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -1337,7 +1339,7 @@ class _FarmerRegistrationScreenState extends State<FarmerRegistrationScreen> {
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
+      child: AutoText(
         label,
         style: const TextStyle(
           fontSize: 12.5,

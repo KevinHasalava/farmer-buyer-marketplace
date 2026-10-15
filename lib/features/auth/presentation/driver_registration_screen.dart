@@ -40,6 +40,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   int _selectedVehicleIndex = 0;
   bool _chilledEquipped = true;
   bool _isLoading = false;
+  bool _submitting = false;
   bool _otpVerified = false;
   bool _otpSending = false;
 
@@ -54,19 +55,19 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       _authSubscription =
           SupabaseConfig.auth.onAuthStateChange.listen((data) async {
         final session = data.session;
-        if (session != null && mounted) {
-          final sbUser = session.user;
-          final metadata = sbUser.userMetadata ?? {};
-          await context.read<AppSettings>().setRole(UserRole.driver);
-          final effectiveName = (metadata['full_name'] as String?) ??
-              sbUser.email?.split('@').first ??
-              'Driver';
-          await DriverProfileManager.instance.updateProfile(
-            fullName: effectiveName,
-          );
-          if (mounted) {
-            context.go(AppRoutes.driverDashboard);
-          }
+        if (session == null || !mounted || _submitting) return;
+        try {
+          final roleStr = await _authService.fetchRole();
+          if (!mounted || roleStr == 'admin') return;
+          final role = UserRole.fromName(roleStr) ?? UserRole.driver;
+          await context.read<AppSettings>().setRole(role);
+          if (mounted) context.go(AppRoutes.homeFor(role));
+        } on AuthException {
+          // New Google user without a profile: stay on this form and prefill.
+          if (!mounted) return;
+          final meta = session.user.userMetadata ?? {};
+          final name = (meta['full_name'] ?? meta['name'] ?? '').toString();
+          if (_nameCtrl.text.isEmpty && name.isNotEmpty) _nameCtrl.text = name;
         }
       });
     }
@@ -93,7 +94,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
+            content: AutoText(e.message),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -103,7 +104,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Google Sign-In: ${e.toString()}'),
+            content: AutoText('Google Sign-In: ${e.toString()}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -119,7 +120,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     if (rawPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.tr.enterPhoneFirst),
+          content: AutoText(context.tr.enterPhoneFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -130,7 +131,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     if (!NotifySmsService.isValidSriLankanMobile(rawPhone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.tr.invalidSriLankaPhone),
+          content: AutoText(context.tr.invalidSriLankaPhone),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -157,7 +158,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.error ?? 'Could not send SMS.'),
+          content: AutoText(res.error ?? 'Could not send SMS.'),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
         ),
@@ -179,7 +180,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(context.tr.verifyOtpFirst),
+          content: AutoText(context.tr.verifyOtpFirst),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -188,6 +189,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       return;
     }
 
+    _submitting = true;
     setState(() => _isLoading = true);
 
     try {
@@ -244,13 +246,14 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Registration error: ${e.toString()}'),
+            content: AutoText('Registration error: ${e.toString()}'),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } finally {
+      _submitting = false;
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -278,7 +281,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            AutoText(
               context.tr.driverApprovedTitle,
               style: TextStyle(
                 fontSize: 18,
@@ -287,7 +290,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AutoText(
               context.tr.driverApprovedMsg,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -311,7 +314,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: AutoText(
                   context.tr.launchDriverDashboard,
                   style: TextStyle(
                     fontSize: 15,
@@ -344,7 +347,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
             }
           },
         ),
-        title: Text(
+        title: AutoText(
           context.tr.driverRegistrationTitle,
           style: const TextStyle(
             fontSize: 16,
@@ -416,9 +419,9 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🚚', style: TextStyle(fontSize: 12)),
+                              AutoText('🚚', style: TextStyle(fontSize: 12)),
                               SizedBox(width: 5),
-                              Text(
+                              AutoText(
                                 'LOGISTICS PARTNER',
                                 style: TextStyle(
                                   fontSize: 10.5,
@@ -442,7 +445,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                AutoText(
                                   context.tr.changeRole,
                                   style: const TextStyle(
                                     fontSize: 11.5,
@@ -463,7 +466,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text(
+                    AutoText(
                       context.tr.driverRegistrationTitle,
                       style: const TextStyle(
                         fontSize: 22,
@@ -473,7 +476,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    AutoText(
                       context.tr.agriTransitTitle,
                       style: TextStyle(
                         fontSize: 12.5,
@@ -521,7 +524,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        const AutoText(
                           'FAST 1-CLICK REGISTRATION',
                           style: TextStyle(
                             fontSize: 11,
@@ -537,7 +540,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                             color: const Color(0xFFDCFCE7),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: const AutoText(
                             'RECOMMENDED',
                             style: TextStyle(
                               fontSize: 9.5,
@@ -556,7 +559,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Center(
-                      child: Text(
+                      child: AutoText(
                         'Instant verification • No password needed',
                         style: TextStyle(
                           fontSize: 11.5,
@@ -591,7 +594,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: const AutoText(
                       'OR COMPLETE DRIVER DETAILS',
                       style: TextStyle(
                         fontSize: 10.5,
@@ -653,7 +656,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                               : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: AutoText(
                           _otpVerified
                               ? context.tr.smsOtpVerified
                               : context.tr.smsOtpVerification,
@@ -692,9 +695,9 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🇱🇰', style: TextStyle(fontSize: 16)),
+                              AutoText('🇱🇰', style: TextStyle(fontSize: 16)),
                               SizedBox(width: 6),
-                              Text(
+                              AutoText(
                                 '+94',
                                 style: TextStyle(
                                   fontSize: 13.5,
@@ -764,7 +767,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                           color: Color(0xFF15803D),
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.verified,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -779,7 +782,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                           color: Colors.white,
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.sendOtp,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -881,7 +884,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: Text(
+                                          child: AutoText(
                                             v['title'] as String,
                                             style: const TextStyle(
                                               fontSize: 13,
@@ -900,7 +903,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                               color: const Color(0xFF0F766E),
                                               borderRadius: BorderRadius.circular(6),
                                             ),
-                                            child: Text(
+                                            child: AutoText(
                                               v['badge'] as String,
                                               style: const TextStyle(
                                                 fontSize: 9,
@@ -913,7 +916,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
+                                    AutoText(
                                       v['sub'] as String,
                                       style: const TextStyle(
                                         fontSize: 11,
@@ -1004,7 +1007,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AutoText(
                                 context.tr.chilledUnitEquipped,
                                 style: const TextStyle(
                                   fontSize: 12.5,
@@ -1013,7 +1016,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
+                              AutoText(
                                 context.tr.chilledBonus,
                                 style: const TextStyle(
                                   fontSize: 11,
@@ -1057,7 +1060,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       final c = entry.value;
                       final isSel = _operatingCorridorIndices.contains(idx);
                       return FilterChip(
-                        label: Text(c),
+                        label: AutoText(c),
                         selected: isSel,
                         onSelected: (selected) {
                           setState(() {
@@ -1119,7 +1122,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
+                          child: AutoText(
                             context.tr.zeroPlatformCommissions,
                             style: const TextStyle(
                               fontSize: 11.5,
@@ -1164,7 +1167,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
+                            AutoText(
                               context.tr.submitApplicationContinue,
                               style: const TextStyle(
                                 fontSize: 15,
@@ -1188,7 +1191,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    Text(
+                    AutoText(
                       context.tr.alreadyRegisteredDriver,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -1198,7 +1201,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     ),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
-                      child: Text(
+                      child: AutoText(
                         context.tr.logIn,
                         style: const TextStyle(
                           fontSize: 13,
@@ -1251,7 +1254,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                 child: Icon(icon, color: const Color(0xFF15803D), size: 16),
               ),
               const SizedBox(width: 10),
-              Text(
+              AutoText(
                 title,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -1273,7 +1276,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
+      child: AutoText(
         label,
         style: const TextStyle(
           fontSize: 12.5,
