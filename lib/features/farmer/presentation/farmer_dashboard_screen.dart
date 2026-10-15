@@ -7,6 +7,7 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../../pre_order/presentation/pre_order_list_screen.dart';
+import '../../pre_order/services/pre_order_manager.dart';
 import 'package:go_router/go_router.dart';
 import '../services/farmer_profile_manager.dart';
 import 'add_edit_product_screen.dart';
@@ -47,6 +48,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     _profileManager.addListener(_onProfileChanged);
     _profileManager.loadProfile();
     OrderLifecycleManager.instance.addListener(_onProfileChanged);
+    PreOrderManager.instance.addListener(_onProfileChanged);
+    PreOrderManager.instance.loadPreOrders();
 
     _fadeController = AnimationController(
       vsync: this,
@@ -59,6 +62,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
   void dispose() {
     _profileManager.removeListener(_onProfileChanged);
     OrderLifecycleManager.instance.removeListener(_onProfileChanged);
+    PreOrderManager.instance.removeListener(_onProfileChanged);
     _fadeController.dispose();
     super.dispose();
   }
@@ -278,6 +282,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Greeting Header ───────────────────────────────────────
                 _buildGreeting(),
+                const SizedBox(height: 14),
+
+                // ── Live Market Reception Banner ───────────────────────────
+                _buildLiveMarketReception(),
                 const SizedBox(height: 16),
 
 
@@ -304,6 +312,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
 
                 // ── Crop Auctions & Bidding Live Banner ───────────────────
                 _buildAuctionBanner(context),
+                const SizedBox(height: 20),
+
+                // ── Contract Farming & Pre-Orders Banner (Idea 4 🤝) ────────
+                _buildPreOrdersBanner(context),
                 const SizedBox(height: 24),
 
                 // ── Recent Harvest Orders ─────────────────────────────────
@@ -1184,11 +1196,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
     return ListenableBuilder(
       listenable: BuyerReviewService.instance,
       builder: (context, _) {
-        final farmerName = _profileManager.profile.name.isNotEmpty
-            ? _profileManager.profile.name
-            : 'K. M. Bandara';
-        final reviews = BuyerReviewService.instance.reviewsForFarmer(farmerName);
-        final avgRating = BuyerReviewService.instance.getAverageRatingForFarmer(farmerName);
+        final farmerName = _profileManager.profile.name;
+        final farmerKey = _profileManager.profile.id.isNotEmpty
+            ? _profileManager.profile.id
+            : farmerName;
+        final reviews = BuyerReviewService.instance.reviewsForFarmer(farmerKey);
+        final avgRating = BuyerReviewService.instance.getAverageRatingForFarmer(farmerKey);
         final pendingReplies = reviews.where((r) => r.farmerReply == null || r.farmerReply!.trim().isEmpty).length;
 
         return Container(
@@ -1227,7 +1240,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                         const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFBBF24)),
                         const SizedBox(width: 4),
                         Text(
-                          '${avgRating.toStringAsFixed(1)} ★ (${reviews.length} Reviews)',
+                          reviews.isEmpty
+                              ? 'No ratings yet'
+                              : '${avgRating.toStringAsFixed(1)} ★ (${reviews.length} Reviews)',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
@@ -1447,6 +1462,132 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Contract Farming & Pre-Orders Banner (Idea 4 🤝) ────────────────────────
+  Widget _buildPreOrdersBanner(BuildContext context) {
+    return ListenableBuilder(
+      listenable: PreOrderManager.instance,
+      builder: (context, _) {
+        final openCount = PreOrderManager.instance.openRequestsCount;
+        final activeCount = PreOrderManager.instance.activeContractsCount;
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0D3B2E), Color(0xFF165D46)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF165D46).withValues(alpha: 0.25),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.6)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.handshake_rounded, size: 12, color: Color(0xFFFDE047)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$openCount OPEN BUYER REQUESTS'.trAuto(context),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFFEF08A),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (activeCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF7DD3FC).withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        '$activeCount In Progress'.trAuto(context),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFBAE6FD),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Contract Farming & Pre-Orders 🤝'.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Wholesale buyers need verified harvests with guaranteed forward pricing and advance payments.'.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFD1FAE5),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PreOrderListScreen(isFarmerMode: true),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0F3822),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.touch_app_rounded, size: 18),
+                  label: Text(
+                    'Browse & Accept Contracts →'.trAuto(context),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                  ),
+                ),
               ),
             ],
           ),
@@ -2321,7 +2462,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen>
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('\: +94 52 222 3456'),
+                  content: Text(': +94 52 222 3456'),
                   backgroundColor: Color(0xFF064E3B),
                   behavior: SnackBarBehavior.floating,
                 ),

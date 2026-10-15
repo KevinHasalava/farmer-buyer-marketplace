@@ -66,10 +66,7 @@ class BuyerReview {
   }
 
   bool isOwnedBy(String? currentBuyerId) {
-    if (currentBuyerId == null || currentBuyerId.isEmpty || currentBuyerId == 'buyer_chamara') {
-      // Fallback: match default local buyer if unauthenticated or demo user Chamara
-      return buyerId == 'buyer_chamara' || buyerName.toLowerCase().contains('chamara');
-    }
+    if (currentBuyerId == null || currentBuyerId.isEmpty) return false;
     return buyerId == currentBuyerId;
   }
 
@@ -136,8 +133,8 @@ class BuyerReview {
   factory BuyerReview.fromJson(Map<String, dynamic> json) {
     return BuyerReview(
       id: json['id']?.toString() ?? '',
-      buyerId: json['buyer_id']?.toString() ?? 'buyer_chamara',
-      buyerName: json['buyer_name']?.toString() ?? 'Chamara Perera',
+      buyerId: json['buyer_id']?.toString() ?? '',
+      buyerName: json['buyer_name']?.toString() ?? 'Buyer',
       buyerAvatar: json['buyer_avatar']?.toString() ?? '',
       productId: json['product_id']?.toString() ?? '',
       productName: json['product_name']?.toString() ?? '',

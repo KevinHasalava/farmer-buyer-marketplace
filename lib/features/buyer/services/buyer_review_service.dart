@@ -6,13 +6,44 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../models/buyer_review_model.dart';
 
-/// 🌟 Real-time Buyer Reviews & Farmer Ratings Service
-/// Member 1 (IT23843770 Thennakoon T.M.S.N) - Buyer Feedback CRUD
-/// Features:
-/// - Full Create, Read, Update, Delete (CRUD)
-/// - Supabase Cloud Synchronization with fast 4s timeout
-/// - SharedPreferences Local Cache for offline instant reliability
-/// - Dynamic Product & Farmer Rating Calculations
+/// A registered farmer (real row from the Supabase `farmers` table) that a
+/// buyer can rate.
+class RatableFarmer {
+  const RatableFarmer({
+    required this.id,
+    required this.name,
+    this.farmName = '',
+    this.district = '',
+  });
+
+  final String id;
+  final String name;
+  final String farmName;
+  final String district;
+
+  String get label => farmName.isNotEmpty ? '$name • $farmName' : name;
+}
+
+/// A real product listed by a registered farmer.
+class RatableProduct {
+  const RatableProduct({
+    required this.id,
+    required this.name,
+    this.imageUrl = '',
+  });
+
+  final String id;
+  final String name;
+  final String imageUrl;
+}
+
+/// 🌟 Buyer Reviews & Farmer Ratings Service (Supabase `marketplace_reviews`)
+///
+/// - Supabase is the source of truth (buyer app, farmer app and admin panel
+///   all read/write the same table).
+/// - SharedPreferences cache for instant/offline rendering.
+/// - Reviews written while offline are kept in a "pending" queue and pushed
+///   to Supabase on the next sync. Nothing is seeded with fake data.
 class BuyerReviewService extends ChangeNotifier {
   BuyerReviewService._internal() {
     loadReviews();
@@ -21,37 +52,44 @@ class BuyerReviewService extends ChangeNotifier {
   static final BuyerReviewService instance = BuyerReviewService._internal();
   factory BuyerReviewService() => instance;
 
-  static const String _kReviewsCacheKey = 'farm2home_buyer_reviews_v1';
+  static const String _kReviewsCacheKey = 'farm2home_buyer_reviews_v2';
+  static const String _kPendingKey = 'farm2home_buyer_reviews_pending_v2';
+  static const String _table = 'marketplace_reviews';
 
   List<BuyerReview> _reviews = [];
+  final Set<String> _pendingUpsert = {};
   bool _isLoading = false;
   String? _lastError;
 
   List<BuyerReview> get allReviews => List.unmodifiable(_reviews);
   bool get isLoading => _isLoading;
   String? get lastError => _lastError;
+  void clearError() => _lastError = null;
 
-  /// Generates a compliant RFC-4122 v4 UUID for Supabase and local storage
+  /// Generates a compliant RFC-4122 v4 UUID.
   static String _generateUuid() {
     final rand = Random.secure();
     final bytes = List<int>.generate(16, (_) => rand.nextInt(256));
-    bytes[6] = (bytes[6] & 0x0f) | 0x40; // v4
-    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    String h(List<int> b) =>
+        b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
     return [
-      bytes.sublist(0, 4).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-      bytes.sublist(4, 6).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-      bytes.sublist(6, 8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-      bytes.sublist(8, 10).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
-      bytes.sublist(10, 16).map((b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      h(bytes.sublist(0, 4)),
+      h(bytes.sublist(4, 6)),
+      h(bytes.sublist(6, 8)),
+      h(bytes.sublist(8, 10)),
+      h(bytes.sublist(10, 16)),
     ].join('-');
   }
 
-  /// Loads reviews from Supabase and syncs with local cache
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📥 READ (R): cache first, then Supabase (authoritative)
+  // ═══════════════════════════════════════════════════════════════════════════
   Future<void> loadReviews() async {
     _isLoading = true;
     notifyListeners();
 
-    // 1. First, load from SharedPreferences for instant UI rendering
     try {
       final prefs = await SharedPreferences.getInstance();
       final cachedJson = prefs.getString(_kReviewsCacheKey);
@@ -61,35 +99,49 @@ class BuyerReviewService extends ChangeNotifier {
             .map((e) => BuyerReview.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList();
       }
+      _pendingUpsert
+        ..clear()
+        ..addAll(prefs.getStringList(_kPendingKey) ?? const []);
     } catch (_) {}
-
-    // If cache was empty, seed with initial realistic reviews
-    if (_reviews.isEmpty) {
-      _reviews = _generateSeedReviews();
-      await _persistToLocalCache();
-    }
-
     notifyListeners();
 
-    // 2. Query live Supabase table with safe timeout
     if (SupabaseConfig.isInitialized) {
       try {
         final res = await SupabaseConfig.client
-            .from('marketplace_reviews')
+            .from(_table)
             .select()
             .order('created_at', ascending: false)
-            .timeout(const Duration(seconds: 4));
+            .timeout(const Duration(seconds: 8));
 
-        if (res.isNotEmpty) {
-          final remoteList = res
-              .map((e) => BuyerReview.fromJson(Map<String, dynamic>.from(e as Map)))
-              .toList();
-          _reviews = remoteList;
-          await _persistToLocalCache();
+        final remote = (res as List)
+            .map((e) => BuyerReview.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        final remoteIds = remote.map((r) => r.id).toSet();
+
+        // Push reviews that were written offline / failed to sync
+        final stillPending = <String>{};
+        final merged = [...remote];
+        for (final id in _pendingUpsert) {
+          final local = _reviews.where((r) => r.id == id).toList();
+          if (local.isEmpty) continue;
+          try {
+            await SupabaseConfig.client.from(_table).upsert(local.first.toJson());
+            if (!remoteIds.contains(id)) merged.insert(0, local.first);
+          } catch (e) {
+            stillPending.add(id);
+            if (!remoteIds.contains(id)) merged.insert(0, local.first);
+            debugPrint('[BuyerReviewService] pending sync failed: $e');
+          }
         }
+        _reviews = merged;
+        _pendingUpsert
+          ..clear()
+          ..addAll(stillPending);
+        _lastError = null;
+        await _persist();
       } catch (e) {
-        // Table may not exist yet or offline; fallback to cached data seamlessly
-        debugPrint('[BuyerReviewService] Supabase sync note: $e');
+        _lastError = 'Could not reach cloud database: $e';
+        debugPrint('[BuyerReviewService] load error: $e');
       }
     }
 
@@ -97,15 +149,63 @@ class BuyerReviewService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Real registered farmers from Supabase (`farmers` table).
+  Future<List<RatableFarmer>> fetchRegisteredFarmers() async {
+    if (!SupabaseConfig.isInitialized) return const [];
+    try {
+      final res = await SupabaseConfig.client
+          .from('farmers')
+          .select('id, full_name, farm_name, district')
+          .order('full_name', ascending: true)
+          .timeout(const Duration(seconds: 8));
+      return (res as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .where((m) => (m['full_name']?.toString() ?? '').trim().isNotEmpty)
+          .map((m) => RatableFarmer(
+                id: m['id'].toString(),
+                name: m['full_name'].toString(),
+                farmName: m['farm_name']?.toString() ?? '',
+                district: m['district']?.toString() ?? '',
+              ))
+          .toList();
+    } catch (e) {
+      debugPrint('[BuyerReviewService] fetch farmers error: $e');
+      return const [];
+    }
+  }
+
+  /// Real products listed by a registered farmer.
+  Future<List<RatableProduct>> fetchProductsForFarmer(String farmerId) async {
+    if (!SupabaseConfig.isInitialized || farmerId.isEmpty) return const [];
+    try {
+      final res = await SupabaseConfig.client
+          .from('products')
+          .select('id, name, image_url')
+          .eq('farmer_id', farmerId)
+          .timeout(const Duration(seconds: 8));
+      return (res as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((m) => RatableProduct(
+                id: m['id'].toString(),
+                name: m['name']?.toString() ?? 'Product',
+                imageUrl: m['image_url']?.toString() ?? '',
+              ))
+          .toList();
+    } catch (e) {
+      debugPrint('[BuyerReviewService] fetch products error: $e');
+      return const [];
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // ➕ CREATE (C): Submit a new verified produce review
+  // ➕ CREATE (C)
   // ═══════════════════════════════════════════════════════════════════════════
   Future<BuyerReview> createReview({
     required String buyerId,
     required String buyerName,
     String buyerAvatar = '',
-    required String productId,
-    required String productName,
+    String productId = '',
+    String productName = '',
     String productImage = '',
     required String farmerId,
     required String farmerName,
@@ -115,20 +215,16 @@ class BuyerReviewService extends ChangeNotifier {
     String qualityTag = 'Grade-A Fresh',
   }) async {
     final now = DateTime.now();
-    final newId = _generateUuid();
-
-    final newReview = BuyerReview(
-      id: newId,
-      buyerId: buyerId.isNotEmpty ? buyerId : 'buyer_chamara',
-      buyerName: buyerName.isNotEmpty ? buyerName : 'Chamara Perera',
-      buyerAvatar: buyerAvatar.isNotEmpty
-          ? buyerAvatar
-          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    final review = BuyerReview(
+      id: _generateUuid(),
+      buyerId: buyerId,
+      buyerName: buyerName,
+      buyerAvatar: buyerAvatar,
       productId: productId,
       productName: productName,
       productImage: productImage,
-      farmerId: farmerId.isNotEmpty ? farmerId : 'farmer_bandara',
-      farmerName: farmerName.isNotEmpty ? farmerName : 'K. M. Bandara',
+      farmerId: farmerId,
+      farmerName: farmerName,
       rating: rating.clamp(1.0, 5.0),
       title: title.trim(),
       comment: comment.trim(),
@@ -137,88 +233,94 @@ class BuyerReviewService extends ChangeNotifier {
       updatedAt: now,
     );
 
-    // Optimistic local update
-    _reviews.insert(0, newReview);
-    await _persistToLocalCache();
+    _reviews.insert(0, review);
+    await _upsertRemote(review);
+    await _persist();
     notifyListeners();
-
-    // Remote sync
-    if (SupabaseConfig.isInitialized) {
-      try {
-        await SupabaseConfig.client
-            .from('marketplace_reviews')
-            .insert(newReview.toJson())
-            .timeout(const Duration(seconds: 4));
-      } catch (e) {
-        debugPrint('[BuyerReviewService] Remote insert note: $e');
-      }
-    }
-
-    return newReview;
+    return review;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🔍 READ (R): Filter & Query Getters
+  // 🔍 READ helpers
   // ═══════════════════════════════════════════════════════════════════════════
-  List<BuyerReview> myReviews([String? currentBuyerId]) {
-    return _reviews.where((r) => r.isOwnedBy(currentBuyerId)).toList();
-  }
+  List<BuyerReview> myReviews([String? currentBuyerId]) =>
+      _reviews.where((r) => r.isOwnedBy(currentBuyerId)).toList();
 
   List<BuyerReview> reviewsForProduct(String productId) {
-    if (productId.isEmpty) return _reviews;
-    return _reviews.where((r) {
-      return r.productId.toLowerCase() == productId.toLowerCase() ||
-          r.productName.toLowerCase().contains(productId.toLowerCase());
-    }).toList();
+    if (productId.isEmpty) return const [];
+    return _reviews
+        .where((r) => r.productId.toLowerCase() == productId.toLowerCase())
+        .toList();
   }
 
+  /// Matches by farmer id (exact) or farmer name (exact, case-insensitive).
   List<BuyerReview> reviewsForFarmer(String farmerNameOrId) {
-    if (farmerNameOrId.isEmpty) return _reviews;
     final term = farmerNameOrId.toLowerCase().trim();
-    return _reviews.where((r) {
-      return r.farmerName.toLowerCase().contains(term) ||
-          r.farmerId.toLowerCase() == term;
-    }).toList();
+    if (term.isEmpty) return const [];
+    return _reviews
+        .where((r) =>
+            r.farmerId.toLowerCase() == term ||
+            r.farmerName.toLowerCase().trim() == term)
+        .toList();
+  }
+
+  /// A buyer's review of a given farmer (+ optional product).
+  BuyerReview? existingReview(String? buyerId, String farmerId, [String productId = '']) {
+    try {
+      return _reviews.firstWhere((r) =>
+          r.isOwnedBy(buyerId) &&
+          r.farmerId == farmerId &&
+          r.productId == productId);
+    } catch (_) {
+      return null;
+    }
   }
 
   BuyerReview? existingReviewForProduct(String? buyerId, String productId) {
     try {
       return _reviews.firstWhere(
-        (r) => r.isOwnedBy(buyerId) &&
-            (r.productId.toLowerCase() == productId.toLowerCase() ||
-                r.productName.toLowerCase() == productId.toLowerCase()),
+        (r) => r.isOwnedBy(buyerId) && r.productId.toLowerCase() == productId.toLowerCase(),
       );
     } catch (_) {
       return null;
     }
   }
 
-  double getAverageRatingForProduct(String productId, [double defaultVal = 4.9]) {
-    final list = reviewsForProduct(productId);
-    if (list.isEmpty) return defaultVal;
+  double _avg(List<BuyerReview> list) {
+    if (list.isEmpty) return 0.0;
     final sum = list.fold<double>(0.0, (acc, r) => acc + r.rating);
     return double.parse((sum / list.length).toStringAsFixed(1));
   }
 
-  double getAverageRatingForFarmer(String farmerNameOrId, [double defaultVal = 4.9]) {
-    final list = reviewsForFarmer(farmerNameOrId);
-    if (list.isEmpty) return defaultVal;
-    final sum = list.fold<double>(0.0, (acc, r) => acc + r.rating);
-    return double.parse((sum / list.length).toStringAsFixed(1));
+  /// Returns [defaultVal] only when there are no real reviews (0 = "unrated").
+  double getAverageRatingForProduct(String productId, [double defaultVal = 0.0]) {
+    final list = reviewsForProduct(productId);
+    return list.isEmpty ? defaultVal : _avg(list);
   }
 
-  int getReviewCountForProduct(String productId, [int defaultVal = 24]) {
+  double getAverageRatingForFarmer(String farmerNameOrId, [double defaultVal = 0.0]) {
+    final list = reviewsForFarmer(farmerNameOrId);
+    return list.isEmpty ? defaultVal : _avg(list);
+  }
+
+  int getReviewCountForProduct(String productId, [int defaultVal = 0]) {
     final list = reviewsForProduct(productId);
     return list.isEmpty ? defaultVal : list.length;
   }
 
-  int getReviewCountForFarmer(String farmerNameOrId, [int defaultVal = 145]) {
+  int getReviewCountForFarmer(String farmerNameOrId, [int defaultVal = 0]) {
     final list = reviewsForFarmer(farmerNameOrId);
     return list.isEmpty ? defaultVal : list.length;
   }
+
+  // Overall stats (admin dashboard)
+  double get overallAverage => _avg(_reviews);
+  int get fiveStarCount => _reviews.where((r) => r.rating >= 4.5).length;
+  int get ratedFarmersCount => _reviews.map((r) => r.farmerId).toSet().length;
+  int get repliedCount => _reviews.where((r) => r.hasFarmerReply).length;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ✏️ UPDATE (U): Edit an existing review & star rating
+  // ✏️ UPDATE (U) — buyer edits own review; admin may edit any review
   // ═══════════════════════════════════════════════════════════════════════════
   Future<bool> updateReview({
     required String reviewId,
@@ -230,68 +332,50 @@ class BuyerReviewService extends ChangeNotifier {
     final index = _reviews.indexWhere((r) => r.id == reviewId);
     if (index == -1) return false;
 
-    final existing = _reviews[index];
-    final updated = existing.copyWith(
+    final updated = _reviews[index].copyWith(
       rating: rating.clamp(1.0, 5.0),
       title: title.trim(),
       comment: comment.trim(),
-      qualityTag: qualityTag ?? existing.qualityTag,
+      qualityTag: qualityTag ?? _reviews[index].qualityTag,
       updatedAt: DateTime.now(),
     );
-
     _reviews[index] = updated;
-    await _persistToLocalCache();
+    await _upsertRemote(updated);
+    await _persist();
     notifyListeners();
-
-    if (SupabaseConfig.isInitialized) {
-      try {
-        await SupabaseConfig.client
-            .from('marketplace_reviews')
-            .update({
-              'rating': updated.rating,
-              'title': updated.title,
-              'comment': updated.comment,
-              'quality_tag': updated.qualityTag,
-              'updated_at': updated.updatedAt.toIso8601String(),
-            })
-            .eq('id', reviewId)
-            .timeout(const Duration(seconds: 4));
-      } catch (e) {
-        debugPrint('[BuyerReviewService] Remote update note: $e');
-      }
-    }
-
     return true;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🗑️ DELETE (D): Remove a submitted review
+  // 🗑️ DELETE (D)
   // ═══════════════════════════════════════════════════════════════════════════
   Future<bool> deleteReview(String reviewId) async {
     final index = _reviews.indexWhere((r) => r.id == reviewId);
     if (index == -1) return false;
 
     _reviews.removeAt(index);
-    await _persistToLocalCache();
+    _pendingUpsert.remove(reviewId);
+    await _persist();
     notifyListeners();
 
     if (SupabaseConfig.isInitialized) {
       try {
         await SupabaseConfig.client
-            .from('marketplace_reviews')
+            .from(_table)
             .delete()
             .eq('id', reviewId)
-            .timeout(const Duration(seconds: 4));
+            .timeout(const Duration(seconds: 8));
+        _lastError = null;
       } catch (e) {
-        debugPrint('[BuyerReviewService] Remote delete note: $e');
+        _lastError = 'Deleted locally but cloud delete failed: $e';
+        debugPrint('[BuyerReviewService] delete error: $e');
       }
     }
-
     return true;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 👨‍🌾 FARMER REPLY: Connects Farmer side to feedback
+  // 👨‍🌾 FARMER REPLY (farmer side) / admin moderation
   // ═══════════════════════════════════════════════════════════════════════════
   Future<bool> addFarmerReply({
     required String reviewId,
@@ -301,120 +385,46 @@ class BuyerReviewService extends ChangeNotifier {
     if (index == -1) return false;
 
     final now = DateTime.now();
-    final existing = _reviews[index];
-    final updated = existing.copyWith(
+    final updated = _reviews[index].copyWith(
       farmerReply: replyText.trim(),
       farmerReplyAt: now,
       updatedAt: now,
     );
-
     _reviews[index] = updated;
-    await _persistToLocalCache();
+    await _upsertRemote(updated);
+    await _persist();
     notifyListeners();
-
-    if (SupabaseConfig.isInitialized) {
-      try {
-        await SupabaseConfig.client
-            .from('marketplace_reviews')
-            .update({
-              'farmer_reply': updated.farmerReply,
-              'farmer_reply_at': updated.farmerReplyAt?.toIso8601String(),
-              'updated_at': updated.updatedAt.toIso8601String(),
-            })
-            .eq('id', reviewId)
-            .timeout(const Duration(seconds: 4));
-      } catch (e) {
-        debugPrint('[BuyerReviewService] Remote reply note: $e');
-      }
-    }
-
     return true;
   }
 
-  // ── Helper Persistence ──────────────────────────────────────────────────
-  Future<void> _persistToLocalCache() async {
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  Future<void> _upsertRemote(BuyerReview review) async {
+    if (!SupabaseConfig.isInitialized) {
+      _pendingUpsert.add(review.id);
+      return;
+    }
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonList = _reviews.map((r) => r.toJson()).toList();
-      await prefs.setString(_kReviewsCacheKey, jsonEncode(jsonList));
-    } catch (_) {}
+      await SupabaseConfig.client
+          .from(_table)
+          .upsert(review.toJson())
+          .timeout(const Duration(seconds: 8));
+      _pendingUpsert.remove(review.id);
+      _lastError = null;
+    } catch (e) {
+      _pendingUpsert.add(review.id);
+      _lastError = 'Saved on device, will sync to cloud later: $e';
+      debugPrint('[BuyerReviewService] upsert error: $e');
+    }
   }
 
-  static List<BuyerReview> _generateSeedReviews() {
-    final now = DateTime.now();
-    return [
-      BuyerReview(
-        id: 'rev_101',
-        buyerId: 'buyer_chamara',
-        buyerName: 'Chamara Perera',
-        buyerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-        productId: 'prod_1',
-        productName: 'Nuwara Eliya Highland Carrots',
-        productImage: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=600&auto=format&fit=crop&q=80',
-        farmerId: 'farmer_bandara',
-        farmerName: 'K. M. Bandara',
-        rating: 5.0,
-        title: 'Unbeatable Highland Sweetness & Crunch',
-        comment: 'The carrots arrived fresh from Hakgala valley within 10 hours. Sweet, crunchy and 100% soil-washed. Highly recommended for hotel salads!',
-        qualityTag: 'Grade-A Fresh',
-        farmerReply: 'Thank you Chamara! We harvested this lot at 5:30 AM before morning mist cleared.',
-        farmerReplyAt: now.subtract(const Duration(days: 1)),
-        createdAt: now.subtract(const Duration(days: 2)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-      ),
-      BuyerReview(
-        id: 'rev_102',
-        buyerId: 'buyer_nimal',
-        buyerName: 'Nimal Senanayake',
-        buyerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
-        productId: 'prod_3',
-        productName: 'Hakgala Crispy Organic Leeks',
-        productImage: 'https://images.unsplash.com/photo-1524179091875-bf99a9a6fa57?w=600&auto=format&fit=crop&q=80',
-        farmerId: 'farmer_bandara',
-        farmerName: 'K. M. Bandara',
-        rating: 4.9,
-        title: 'Certified Organic & Extremely Tender',
-        comment: 'Cooked soup with these leeks. The aroma is distinct from store-bought ones. Clean packaging and zero damage during refrigerated van transit.',
-        qualityTag: '100% Organic',
-        createdAt: now.subtract(const Duration(days: 3)),
-        updatedAt: now.subtract(const Duration(days: 3)),
-      ),
-      BuyerReview(
-        id: 'rev_103',
-        buyerId: 'buyer_dharshana',
-        buyerName: 'Dharshana Silva',
-        buyerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-        productId: 'prod_5',
-        productName: 'Dambulla Vine-Ripened Red Tomatoes',
-        productImage: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=80',
-        farmerId: 'farmer_sunil',
-        farmerName: 'Sunil Perera',
-        rating: 4.8,
-        title: 'Plump, Juicy & Perfect for Curries',
-        comment: 'No bruises on arrival. Sun-ripened flavor is rich and tangy. Great direct price with no retail markup.',
-        qualityTag: 'Crisp & Sweet',
-        farmerReply: 'Appreciate your trust Dharshana! Packed in aerated crates to prevent transit heat.',
-        farmerReplyAt: now.subtract(const Duration(days: 4)),
-        createdAt: now.subtract(const Duration(days: 5)),
-        updatedAt: now.subtract(const Duration(days: 4)),
-      ),
-      BuyerReview(
-        id: 'rev_104',
-        buyerId: 'buyer_chamara',
-        buyerName: 'Chamara Perera',
-        buyerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-        productId: 'prod_2',
-        productName: 'Welimada Fresh White Potatoes',
-        productImage: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=80',
-        farmerId: 'farmer_bandara',
-        farmerName: 'K. M. Bandara',
-        rating: 5.0,
-        title: 'Top Grade Welimada Harvest',
-        comment: 'Firm skin, perfectly dry and zero hollow hearts. Made French fries and curries for family gathering, everyone loved it.',
-        qualityTag: 'Grade-A Fresh',
-        createdAt: now.subtract(const Duration(days: 7)),
-        updatedAt: now.subtract(const Duration(days: 7)),
-      ),
-    ];
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _kReviewsCacheKey,
+        jsonEncode(_reviews.map((r) => r.toJson()).toList()),
+      );
+      await prefs.setStringList(_kPendingKey, _pendingUpsert.toList());
+    } catch (_) {}
   }
 }

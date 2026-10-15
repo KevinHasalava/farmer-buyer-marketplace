@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../models/auction_model.dart';
 import '../../services/auction_manager.dart';
 import 'create_edit_auction_screen.dart';
+import '../../../farmer/services/farmer_profile_manager.dart';
 import 'farmer_auction_detail_screen.dart';
 
 class FarmerAuctionListScreen extends StatefulWidget {
@@ -38,7 +39,9 @@ class _FarmerAuctionListScreenState extends State<FarmerAuctionListScreen>
     return ListenableBuilder(
       listenable: AuctionManager.instance,
       builder: (context, _) {
-        final allAuctions = AuctionManager.instance.auctions;
+        final me = FarmerProfileManager.instance.profile;
+        final myId = me.id.isNotEmpty ? me.id : 'farmer_current';
+        final allAuctions = AuctionManager.instance.getAuctionsByFarmer(myId);
         final activeList = allAuctions.where((a) => a.isActive).toList();
         final completedList = allAuctions.where((a) => !a.isActive).toList();
 

@@ -81,8 +81,9 @@ class AuthService {
           .eq('id', u.id)
           .maybeSingle();
       if (row == null) {
-        throw const AuthException(
-            'Your account profile was not found. Please contact support.');
+        // No profile row yet — this is a brand-new Google/OAuth user.
+        // Throw a sentinel so the login screen can redirect to registration.
+        throw const AuthException('profile_not_found');
       }
       if ((row['status'] ?? 'Active') != 'Active') {
         await SupabaseConfig.auth.signOut();

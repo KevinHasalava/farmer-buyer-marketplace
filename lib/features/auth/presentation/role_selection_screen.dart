@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import 'role_meta.dart';
@@ -29,7 +30,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   Future<void> _continue() async {
     final role = _selected ?? UserRole.farmer;
     await context.settings.setRole(role);
-    if (mounted) context.go(AppRoutes.login);
+    if (!mounted) return;
+
+    // If the user already has an active session (e.g. signed in via Google
+    // OAuth but has no profile yet), send them directly to registration.
+    // Otherwise send them to login as usual.
+    final hasSession = SupabaseConfig.isInitialized &&
+        SupabaseConfig.auth.currentUser != null;
+    if (hasSession) {
+      context.go(AppRoutes.registerFor(role));
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
   @override
