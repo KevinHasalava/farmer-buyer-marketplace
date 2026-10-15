@@ -122,11 +122,26 @@ class _LoginScreenState extends State<LoginScreen>
   bool _entering = false;
 
   /// Reads the role from the database and opens the matching home screen.
+  /// If the user has no profile yet (new Google sign-in), redirects to the
+  /// role-selection / registration flow instead of showing an error.
   Future<void> _enterApp() async {
     if (_entering) return;
     _entering = true;
     try {
-      final roleStr = await _authService.fetchRole();
+      String? roleStr;
+      try {
+        roleStr = await _authService.fetchRole();
+      } on AuthException catch (e) {
+        // Profile row not found = brand-new Google/OAuth user who hasn't registered yet.
+        if (e.message == 'profile_not_found' ||
+            e.message.toLowerCase().contains('not found') ||
+            e.message.toLowerCase().contains('no rows')) {
+          if (mounted) context.go(AppRoutes.roleSelection);
+          return;
+        }
+        rethrow;
+      }
+
       if (!mounted) return;
 
       if (roleStr == 'admin') {
