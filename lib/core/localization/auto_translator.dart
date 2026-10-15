@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 import 'app_settings.dart';
+import 'register_vocab.dart';
 
 /// Hybrid Automated Localization & Translation Engine for FarmTrust Marketplace.
 ///
@@ -26,6 +27,10 @@ class AppAutoTranslator extends ChangeNotifier {
   static Map<String, (String, String)> get _lookupIndex {
     if (_cachedIndex != null) return _cachedIndex!;
     final map = <String, (String, String)>{};
+
+    for (final e in kRegisterVocab.entries) {
+      map[e.key.toLowerCase().trim()] = e.value;
+    }
 
     for (final e in _primaryVocab.entries) {
       map[e.key.toLowerCase().trim()] = e.value;

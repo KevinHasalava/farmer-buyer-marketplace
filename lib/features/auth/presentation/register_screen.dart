@@ -145,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _toast(String msg, {bool error = true}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
+      content: Text(msg.trAuto(context)),
       backgroundColor: error ? AppColors.error : AppColors.primaryGreen,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -316,7 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         keyboardType: type,
         obscureText: obscure,
         textCapitalization: caps,
-        validator: validator ?? _required,
+        validator: (v) => (validator ?? _required)(v)?.trAuto(context),
         decoration: _deco(label, icon, suffix: suffix),
       ),
     );
@@ -343,7 +343,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
         ],
         onChanged: onChanged,
-        validator: (v) => v == null ? 'Please select' : null,
+        validator: (v) => v == null ? 'Please select'.trAuto(context) : null,
       ),
     );
   }
@@ -484,7 +484,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AutoText(
-                              'Join Farm2Home as a $_roleLabel',
+                              '${'Join Farm2Home as a'.trAuto(context)} ${_roleLabel.trAuto(context)}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
