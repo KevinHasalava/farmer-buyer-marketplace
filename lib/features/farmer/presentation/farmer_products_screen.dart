@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -9,8 +9,8 @@ import '../../admin/services/admin_marketplace_service.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../services/farmer_profile_manager.dart';
+import 'farmer_bottom_nav.dart';
 import 'add_edit_product_screen.dart';
-import 'farmer_dashboard_screen.dart';
 
 /// Pixel-perfect My Products Screen matching reference design
 class FarmerProductsScreen extends StatefulWidget {
@@ -23,7 +23,6 @@ class FarmerProductsScreen extends StatefulWidget {
 class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     with SingleTickerProviderStateMixin {
   int _selectedFilter = 0;
-  int _selectedNav = 0;
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
@@ -404,7 +403,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
+      bottomNavigationBar: FarmerBottomNav(current: 1),
     );
   }
 
@@ -1010,119 +1009,4 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     );
   }
 
-  // ── Bottom Navigation Bar ───────────────────────────────────────────────────
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            icon: Icons.home_rounded,
-            label: context.tr.home,
-            isSelected: _selectedNav == 0,
-            onTap: () {
-              setState(() => _selectedNav = 0);
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              } else {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const FarmerDashboardScreen(),
-                  ),
-                );
-              }
-            },
-          ),
-          _buildNavItem(
-            icon: Icons.assignment_outlined,
-            label: context.tr.orders,
-            hasBadge: true,
-            isSelected: _selectedNav == 1,
-            onTap: () => setState(() => _selectedNav = 1),
-          ),
-          _buildNavItem(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: context.tr.messages,
-            isSelected: _selectedNav == 2,
-            onTap: () => setState(() => _selectedNav = 2),
-          ),
-          _buildNavItem(
-            icon: Icons.person_outline_rounded,
-            label: context.tr.navProfile,
-            isSelected: _selectedNav == 3,
-            onTap: () {
-              setState(() => _selectedNav = 3);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FarmerProfileScreen(farmer: _farmer),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    bool hasBadge = false,
-    required VoidCallback onTap,
-  }) {
-    const activeColor = Color(0xFF235A43);
-    const inactiveColor = Color(0xFF9CA3AF);
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-              if (hasBadge)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppTheme.fontStyle(context.currentLanguage, 
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

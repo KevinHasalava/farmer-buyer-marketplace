@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
@@ -7,10 +7,9 @@ import '../../../core/services/order_lifecycle_manager.dart';
 import '../../dashboard/presentation/farmer_profile_screen.dart';
 import '../../dashboard/presentation/product_detail_screen.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import 'farmer_bottom_nav.dart';
 import '../services/farmer_profile_manager.dart';
-import 'farmer_products_screen.dart';
 import '../../orders_chat/presentation/chat_detail_screen.dart';
-import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../../../services/chat_service.dart';
 
 /// Pixel-perfect Farmer Orders Screen matching Image 1
@@ -26,7 +25,6 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
   FarmerData get _farmer => _profileManager.profile.toFarmerData();
 
   int _selectedFilter = 0; // 0: New (3), 1: Preparing (4), 2: Ready for Pickup
-  final int _selectedNav = 2; // Orders tab active
   final Set<String> _expandedOrderIds = {'#FH-9021', '#FH-9018', '#FH-9005'};
 
   // Mock order items with interactive status changes
@@ -227,7 +225,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: FarmerBottomNav(current: 2),
     );
   }
 
@@ -1243,140 +1241,4 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
     );
   }
 
-  // ── Bottom Navigation matching Image 1 ──────────────────────────────────────
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildNavItem(
-              icon: Icons.dashboard_outlined,
-              label: 'Dashboard',
-              isSelected: _selectedNav == 0,
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          Expanded(
-            child: _buildNavItem(
-              icon: Icons.spa_outlined,
-              label: 'Products',
-              isSelected: _selectedNav == 1,
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const FarmerProductsScreen(),
-                  ),
-                );
-              },
-            ),
-          ),
-          Expanded(
-            child: _buildNavItem(
-              icon: Icons.assignment_outlined,
-              label: 'Orders',
-              hasBadge: true,
-              isSelected: _selectedNav == 2,
-              onTap: () {},
-            ),
-          ),
-          Expanded(
-            child: _buildNavItem(
-              icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chat',
-              isSelected: _selectedNav == 3,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ChatListScreen(currentRole: 'farmer'),
-                  ),
-                );
-              },
-            ),
-          ),
-          Expanded(
-            child: _buildNavItem(
-              icon: Icons.person_outline_rounded,
-              label: 'Profile',
-              isSelected: _selectedNav == 4,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => FarmerProfileScreen(farmer: _farmer),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    bool hasBadge = false,
-    required VoidCallback onTap,
-  }) {
-    const activeColor = Color(0xFF166534);
-    const inactiveColor = Color(0xFF9CA3AF);
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-              if (hasBadge)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF10B981),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label.trAuto(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
