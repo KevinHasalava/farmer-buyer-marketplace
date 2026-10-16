@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -33,33 +35,75 @@ enum _Step { personal, role, account, review }
 
 class _RegisterScreenState extends State<RegisterScreen> {
   static const _districts = <String>[
-    'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle',
-    'Gampaha', 'Hambantota', 'Jaffna', 'Kalutara', 'Kandy', 'Kegalle',
-    'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale', 'Matara', 'Monaragala',
-    'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
-    'Trincomalee', 'Vavuniya',
+    'Ampara',
+    'Anuradhapura',
+    'Badulla',
+    'Batticaloa',
+    'Colombo',
+    'Galle',
+    'Gampaha',
+    'Hambantota',
+    'Jaffna',
+    'Kalutara',
+    'Kandy',
+    'Kegalle',
+    'Kilinochchi',
+    'Kurunegala',
+    'Mannar',
+    'Matale',
+    'Matara',
+    'Monaragala',
+    'Mullaitivu',
+    'Nuwara Eliya',
+    'Polonnaruwa',
+    'Puttalam',
+    'Ratnapura',
+    'Trincomalee',
+    'Vavuniya',
   ];
   static const _farmScales = <String>[
-    'Under 1 Acre', '1 - 3 Acres', '3 - 10 Acres', '10+ Acres',
+    'Under 1 Acre',
+    '1 - 3 Acres',
+    '3 - 10 Acres',
+    '10+ Acres',
   ];
   static const _practices = <String>[
-    'Certified Organic', 'Chemical-Free / Natural', 'Conventional (GAP)',
+    'Certified Organic',
+    'Chemical-Free / Natural',
+    'Conventional (GAP)',
     'In Conversion',
   ];
   static const _crops = <String>[
-    'Carrots & Root Vegetables', 'Leeks & Cabbage', 'Tomatoes', 'Leafy Greens',
-    'Beans & Pumpkin', 'Fruits', 'Rice & Grains', 'Spices', 'Other',
+    'Carrots & Root Vegetables',
+    'Leeks & Cabbage',
+    'Tomatoes',
+    'Leafy Greens',
+    'Beans & Pumpkin',
+    'Fruits',
+    'Rice & Grains',
+    'Spices',
+    'Other',
   ];
   static const _buyerTypes = <String>[
-    'Family / Household', 'Restaurant & Hospitality', 'Retail Store',
-    'Wholesaler', 'Other',
+    'Family / Household',
+    'Restaurant & Hospitality',
+    'Retail Store',
+    'Wholesaler',
+    'Other',
   ];
   static const _vehicleTypes = <String>[
-    'Motorbike', 'Three-Wheeler', 'Lorry (Small)', 'Cargo Van',
-    'Refrigerated Van', 'Truck',
+    'Motorbike',
+    'Three-Wheeler',
+    'Lorry (Small)',
+    'Cargo Van',
+    'Refrigerated Van',
+    'Truck',
   ];
   static const _capacities = <String>[
-    'Up to 100 kg', '100 - 500 kg', '500 kg - 1 ton', '1 - 3 tons',
+    'Up to 100 kg',
+    '100 - 500 kg',
+    '500 kg - 1 ton',
+    '1 - 3 tons',
     'Above 3 tons',
   ];
 
@@ -97,6 +141,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscure = true;
   bool _loading = false;
 
+  // Profile photo (optional). Kept in memory until the account exists.
+  Uint8List? _photoBytes;
+  String _photoExt = 'jpg';
+
   @override
   void initState() {
     super.initState();
@@ -115,8 +163,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     for (final c in [
-      _nameCtrl, _phoneCtrl, _emailCtrl, _passCtrl, _confirmCtrl,
-      _farmNameCtrl, _plateCtrl, _licenseCtrl,
+      _nameCtrl,
+      _phoneCtrl,
+      _emailCtrl,
+      _passCtrl,
+      _confirmCtrl,
+      _farmNameCtrl,
+      _plateCtrl,
+      _licenseCtrl,
     ]) {
       c.dispose();
     }
@@ -127,35 +181,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool get _roleLocked => widget.initialRole != null;
 
-  List<_Step> get _steps => _social
-      ? const [_Step.personal, _Step.role, _Step.review]
-      : const [_Step.personal, _Step.role, _Step.account, _Step.review];
+  List<_Step> get _steps =>
+      _social
+          ? const [_Step.personal, _Step.role, _Step.review]
+          : const [_Step.personal, _Step.role, _Step.account, _Step.review];
 
   _Step get _step => _steps[_stepIndex];
   bool get _isLast => _stepIndex == _steps.length - 1;
 
   String _stepTitle(_Step s) => switch (s) {
-        _Step.personal => 'About you',
-        _Step.role => switch (_role) {
-            UserRole.farmer => 'Farm details',
-            UserRole.buyer => 'Buyer details',
-            UserRole.driver => 'Vehicle details',
-          },
-        _Step.account => 'Sign-in details',
-        _Step.review => 'Review & confirm',
-      };
+    _Step.personal => 'About you',
+    _Step.role => switch (_role) {
+      UserRole.farmer => 'Farm details',
+      UserRole.buyer => 'Buyer details',
+      UserRole.driver => 'Vehicle details',
+    },
+    _Step.account => 'Sign-in details',
+    _Step.review => 'Review & confirm',
+  };
 
   String get _roleLabel => switch (_role) {
-        UserRole.farmer => 'Farmer',
-        UserRole.buyer => 'Buyer',
-        UserRole.driver => 'Driver',
-      };
+    UserRole.farmer => 'Farmer',
+    UserRole.buyer => 'Buyer',
+    UserRole.driver => 'Driver',
+  };
 
   IconData get _roleIcon => switch (_role) {
-        UserRole.farmer => Icons.agriculture_rounded,
-        UserRole.buyer => Icons.shopping_basket_rounded,
-        UserRole.driver => Icons.local_shipping_rounded,
-      };
+    UserRole.farmer => Icons.agriculture_rounded,
+    UserRole.buyer => Icons.shopping_basket_rounded,
+    UserRole.driver => Icons.local_shipping_rounded,
+  };
 
   String? _required(String? v, [String msg = 'Required']) =>
       (v == null || v.trim().isEmpty) ? msg : null;
@@ -263,12 +318,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _toast(String msg, {bool error = true}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg.trAuto(context)),
-      backgroundColor: error ? AppColors.error : AppColors.primaryGreen,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg.trAuto(context)),
+        backgroundColor: error ? AppColors.error : AppColors.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   // ── navigation between steps ───────────────────────────────────────────
@@ -316,9 +373,145 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // ── saving ─────────────────────────────────────────────────────────────
 
+  /// Lets the user choose a profile photo from camera / gallery (optional).
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final x = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (x == null) return;
+      final bytes = await x.readAsBytes();
+      if (bytes.length > 5 * 1024 * 1024) {
+        _toast('Photo is too large (max 5 MB)');
+        return;
+      }
+      final dot = x.name.lastIndexOf('.');
+      final ext = dot == -1 ? 'jpg' : x.name.substring(dot + 1).toLowerCase();
+      if (!mounted) return;
+      setState(() {
+        _photoBytes = bytes;
+        _photoExt =
+            const ['jpg', 'jpeg', 'png', 'webp'].contains(ext) ? ext : 'jpg';
+      });
+    } catch (e) {
+      _toast('Could not open the photo picker');
+    }
+  }
+
+  void _showPhotoSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder:
+          (ctx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Profile photo'.trAuto(context),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (!kIsWeb)
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_camera_rounded,
+                        color: AppColors.primaryGreen,
+                      ),
+                      title: Text('Take a photo'.trAuto(context)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickPhoto(ImageSource.camera);
+                      },
+                    ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.photo_library_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
+                    title: Text('Choose from gallery'.trAuto(context)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickPhoto(ImageSource.gallery);
+                    },
+                  ),
+                  if (_photoBytes != null)
+                    ListTile(
+                      leading: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppColors.error,
+                      ),
+                      title: Text(
+                        'Remove photo'.trAuto(context),
+                        style: const TextStyle(color: AppColors.error),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        setState(() => _photoBytes = null);
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  /// Uploads the chosen photo to the public `avatars` bucket and returns its
+  /// URL. Never blocks registration: returns null if anything goes wrong.
+  Future<String?> _uploadPhoto(String uid) async {
+    final bytes = _photoBytes;
+    if (bytes == null) return null;
+    try {
+      final path =
+          '$uid/avatar-${DateTime.now().millisecondsSinceEpoch}.$_photoExt';
+      final store = SupabaseConfig.client.storage.from('avatars');
+      await store.uploadBinary(
+        path,
+        bytes,
+        fileOptions: sb.FileOptions(
+          contentType: _photoExt == 'jpg' ? 'image/jpeg' : 'image/$_photoExt',
+          upsert: true,
+        ),
+      );
+      return store.getPublicUrl(path);
+    } catch (e) {
+      debugPrint('[RegisterScreen] photo upload note: $e');
+      _toast(
+        'Account saved, but the photo could not be uploaded. '
+        'You can add it later from your profile.',
+      );
+      return null;
+    }
+  }
+
   /// Writes the profile + role row directly. Needed for Google users (no
   /// sign-up metadata for the trigger) and used as a safety net otherwise.
-  Future<void> _syncTables(String uid, String email) async {
+  Future<void> _syncTables(
+    String uid,
+    String email, {
+    String? avatarUrl,
+  }) async {
     final cleanPhone = _normalizePhone(_phoneCtrl.text);
     final name = _nameCtrl.text.trim();
     final db = SupabaseConfig.client;
@@ -332,6 +525,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'district': _district,
       'address': _role == UserRole.buyer ? _district : '',
       'is_active': true,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
     }, onConflict: 'id');
 
     switch (_role) {
@@ -385,20 +579,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final u = SupabaseConfig.auth.currentUser;
         if (u == null) {
           throw const AuthException(
-              'Your session expired. Please sign in with Google again.');
+            'Your session expired. Please sign in with Google again.',
+          );
         }
+        String? avatarUrl;
         try {
-          await _syncTables(u.id, u.email ?? _socialEmail);
+          avatarUrl = await _uploadPhoto(u.id);
+          await _syncTables(
+            u.id,
+            u.email ?? _socialEmail,
+            avatarUrl: avatarUrl,
+          );
         } on sb.PostgrestException catch (e) {
           throw AuthException('Could not save your details: ${e.message}');
         }
         try {
-          await SupabaseConfig.auth.updateUser(sb.UserAttributes(data: {
-            'full_name': _nameCtrl.text.trim(),
-            'phone': _normalizePhone(_phoneCtrl.text),
-            'role': _role.name,
-            ..._details()..removeWhere((_, v) => v == null),
-          }));
+          await SupabaseConfig.auth.updateUser(
+            sb.UserAttributes(
+              data: {
+                'full_name': _nameCtrl.text.trim(),
+                'phone': _normalizePhone(_phoneCtrl.text),
+                'role': _role.name,
+                if (avatarUrl != null) 'avatar_url': avatarUrl,
+                ..._details()..removeWhere((_, v) => v == null),
+              },
+            ),
+          );
         } catch (e) {
           debugPrint('[RegisterScreen] metadata update note: $e');
         }
@@ -412,9 +618,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           details: _details()..removeWhere((_, v) => v == null),
         );
         try {
-          final uid = const AuthService().lastCreatedUserId ??
+          final uid =
+              const AuthService().lastCreatedUserId ??
               SupabaseConfig.auth.currentUser?.id;
-          if (uid != null) await _syncTables(uid, _emailCtrl.text.trim());
+          if (uid != null) {
+            final avatarUrl = await _uploadPhoto(uid);
+            await _syncTables(
+              uid,
+              _emailCtrl.text.trim(),
+              avatarUrl: avatarUrl,
+            );
+          }
         } catch (e) {
           debugPrint('[RegisterScreen] Client-side backup upsert note: $e');
         }
@@ -425,31 +639,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (signedIn) {
-        context.go(AppRoutes.entering, extra: {
-          'role': _role.name,
-          'name': _nameCtrl.text.trim(),
-          'isNew': true,
-        });
+        context.go(
+          AppRoutes.entering,
+          extra: {
+            'role': _role.name,
+            'name': _nameCtrl.text.trim(),
+            'isNew': true,
+          },
+        );
       } else {
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Text('Check your email'.trAuto(context)),
-            content: Text(
-              '${'We sent a confirmation link to'.trAuto(context)} '
-              '${_emailCtrl.text.trim()}. '
-              '${'Open it, then sign in.'.trAuto(context)}',
-            ),
-            actions: [
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('OK'.trAuto(context)),
+          builder:
+              (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Text('Check your email'.trAuto(context)),
+                content: Text(
+                  '${'We sent a confirmation link to'.trAuto(context)} '
+                  '${_emailCtrl.text.trim()}. '
+                  '${'Open it, then sign in.'.trAuto(context)}',
+                ),
+                actions: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('OK'.trAuto(context)),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
         if (mounted) context.go(AppRoutes.login);
       }
@@ -466,17 +685,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   InputDecoration _deco(String label, IconData icon, {Widget? suffix}) {
     OutlineInputBorder b(Color c, [double w = 1.2]) => OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: c, width: w),
-        );
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: c, width: w),
+    );
     return InputDecoration(
       labelText: label.trAuto(context),
       labelStyle: const TextStyle(
-          color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+        color: AppColors.textSecondary,
+        fontWeight: FontWeight.w500,
+      ),
       floatingLabelStyle: const TextStyle(
-          color: AppColors.primaryGreen, fontWeight: FontWeight.w700),
+        color: AppColors.primaryGreen,
+        fontWeight: FontWeight.w700,
+      ),
       errorStyle: const TextStyle(
-          color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+        color: AppColors.error,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+      ),
       errorMaxLines: 2,
       counterText: '',
       prefixIcon: Container(
@@ -552,16 +778,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         style: _inputText,
         dropdownColor: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded,
-            color: AppColors.primaryGreen),
+        icon: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: AppColors.primaryGreen,
+        ),
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: _deco(label, icon),
         items: [
           for (final i in items)
             DropdownMenuItem(
               value: i,
-              child: Text(i.trAuto(context),
-                  style: _inputText, overflow: TextOverflow.ellipsis),
+              child: Text(
+                i.trAuto(context),
+                style: _inputText,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
         ],
         onChanged: onChanged,
@@ -571,101 +802,101 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _section(String title, IconData icon, {String? subtitle}) => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFF15803D), Color(0xFF34D399)]),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 18, color: Colors.white),
+    padding: const EdgeInsets.only(top: 8, bottom: 16),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF15803D), Color(0xFF34D399)],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title.trAuto(context),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.darkGreen,
-                    ),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle.trAuto(context),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 18, color: Colors.white),
         ),
-      );
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title.trAuto(context),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.darkGreen,
+                ),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle.trAuto(context),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _card(List<Widget> children) => Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE8EEEA)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryGreen.withValues(alpha: 0.07),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 18),
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: const Color(0xFFE8EEEA)),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primaryGreen.withValues(alpha: 0.07),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ),
-      );
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    ),
+  );
 
   Widget _pill({
     required IconData icon,
     required String text,
     Widget? trailing,
     Color color = AppColors.primaryGreen,
-  }) =>
-      Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreen,
-                  fontSize: 13.5,
-                ),
-              ),
+  }) => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 18),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreen,
+              fontSize: 13.5,
             ),
-            if (trailing != null) trailing,
-          ],
+          ),
         ),
-      );
+        if (trailing != null) trailing,
+      ],
+    ),
+  );
 
   // ── header with progress ───────────────────────────────────────────────
 
@@ -700,8 +931,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Icon(_roleIcon, color: Colors.white, size: 26),
               ),
@@ -744,9 +976,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     curve: Curves.easeOut,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: i <= _stepIndex
-                          ? const Color(0xFF34D399)
-                          : Colors.white.withValues(alpha: 0.22),
+                      color:
+                          i <= _stepIndex
+                              ? const Color(0xFF34D399)
+                              : Colors.white.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -762,16 +995,118 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // ── steps ──────────────────────────────────────────────────────────────
 
+  Widget _avatar(double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: const LinearGradient(
+        colors: [Color(0xFF15803D), Color(0xFF34D399)],
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    padding: const EdgeInsets.all(3),
+    child: ClipOval(
+      child:
+          _photoBytes != null
+              ? Image.memory(_photoBytes!, fit: BoxFit.cover)
+              : Container(
+                color: const Color(0xFFF0FDF4),
+                child: Icon(
+                  Icons.person_rounded,
+                  size: size * 0.55,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+    ),
+  );
+
+  Widget _photoPicker() => Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 18),
+    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: const Color(0xFFE8EEEA)),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primaryGreen.withValues(alpha: 0.07),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        GestureDetector(
+          onTap: _showPhotoSheet,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _avatar(104),
+              Positioned(
+                right: 0,
+                bottom: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.5),
+                  ),
+                  child: Icon(
+                    _photoBytes == null
+                        ? Icons.photo_camera_rounded
+                        : Icons.edit_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          (_photoBytes == null ? 'Add a profile photo' : 'Looking good!')
+              .trAuto(context),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: AppColors.darkGreen,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'A clear face photo helps others trust you (optional)'.trAuto(
+            context,
+          ),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+      ],
+    ),
+  );
+
   Widget _personalStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _photoPicker(),
         if (_social)
           _pill(
             icon: Icons.verified_user_rounded,
-            text: _socialEmail.isEmpty
-                ? 'Signed in with Google'.trAuto(context)
-                : '${'Signed in with Google'.trAuto(context)}\n$_socialEmail',
+            text:
+                _socialEmail.isEmpty
+                    ? 'Signed in with Google'.trAuto(context)
+                    : '${'Signed in with Google'.trAuto(context)}\n$_socialEmail',
             trailing: TextButton(
               onPressed: () async {
                 await const AuthService().signOut();
@@ -782,8 +1117,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         if (!_roleLocked)
           _card([
-            _section('Account type', Icons.groups_rounded,
-                subtitle: 'How will you use Farm2Home?'),
+            _section(
+              'Account type',
+              Icons.groups_rounded,
+              subtitle: 'How will you use Farm2Home?',
+            ),
             _drop(
               label: 'I am a',
               icon: Icons.groups_rounded,
@@ -791,8 +1129,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               value: _roleLabel,
               onChanged: (v) {
                 if (v == null) return;
-                setState(() => _role = UserRole.values
-                    .firstWhere((r) => r.name == v.toLowerCase()));
+                setState(
+                  () =>
+                      _role = UserRole.values.firstWhere(
+                        (r) => r.name == v.toLowerCase(),
+                      ),
+                );
               },
             ),
           ])
@@ -801,23 +1143,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
             icon: _roleIcon,
             text:
                 '${'Registering as'.trAuto(context)} ${_roleLabel.trAuto(context)}',
-            trailing: const Icon(Icons.verified_rounded,
-                color: AppColors.primaryGreen, size: 20),
+            trailing: const Icon(
+              Icons.verified_rounded,
+              color: AppColors.primaryGreen,
+              size: 20,
+            ),
           ),
         _card([
-          _section('About you', Icons.person_rounded,
-              subtitle: 'Tell us who you are'),
-          _text(_nameCtrl, 'Full name', Icons.person_rounded,
-              caps: TextCapitalization.words,
-              maxLength: 60,
-              validator: _validateName),
-          _text(_phoneCtrl, 'Mobile number', Icons.phone_rounded,
-              type: TextInputType.phone,
-              maxLength: 13,
-              formatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-]')),
-              ],
-              validator: _validatePhone),
+          _section(
+            'About you',
+            Icons.person_rounded,
+            subtitle: 'Tell us who you are',
+          ),
+          _text(
+            _nameCtrl,
+            'Full name',
+            Icons.person_rounded,
+            caps: TextCapitalization.words,
+            maxLength: 60,
+            validator: _validateName,
+          ),
+          _text(
+            _phoneCtrl,
+            'Mobile number',
+            Icons.phone_rounded,
+            type: TextInputType.phone,
+            maxLength: 13,
+            formatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-]')),
+            ],
+            validator: _validatePhone,
+          ),
           _drop(
             label: 'District',
             icon: Icons.location_on_rounded,
@@ -833,90 +1189,101 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _roleStep() {
     final (title, icon, sub) = switch (_role) {
       UserRole.farmer => (
-          'Farm details',
-          Icons.agriculture_rounded,
-          'Help buyers know your farm'
-        ),
+        'Farm details',
+        Icons.agriculture_rounded,
+        'Help buyers know your farm',
+      ),
       UserRole.buyer => (
-          'Buyer details',
-          Icons.storefront_rounded,
-          'So farmers can serve you better'
-        ),
+        'Buyer details',
+        Icons.storefront_rounded,
+        'So farmers can serve you better',
+      ),
       UserRole.driver => (
-          'Vehicle details',
-          Icons.local_shipping_rounded,
-          'Used to match you with deliveries'
-        ),
+        'Vehicle details',
+        Icons.local_shipping_rounded,
+        'Used to match you with deliveries',
+      ),
     };
 
     final fields = switch (_role) {
       UserRole.farmer => <Widget>[
-          _text(_farmNameCtrl, 'Farm name', Icons.agriculture_rounded,
-              caps: TextCapitalization.words,
-              maxLength: 60,
-              validator: _validateFarmName),
-          _drop(
-            label: 'Farm size',
-            icon: Icons.landscape_rounded,
-            items: _farmScales,
-            value: _scale,
-            onChanged: (v) => setState(() => _scale = v),
-          ),
-          _drop(
-            label: 'Farming method',
-            icon: Icons.eco_rounded,
-            items: _practices,
-            value: _practice,
-            onChanged: (v) => setState(() => _practice = v),
-          ),
-          _drop(
-            label: 'Main crop',
-            icon: Icons.grass_rounded,
-            items: _crops,
-            value: _crop,
-            onChanged: (v) => setState(() => _crop = v),
-          ),
-        ],
+        _text(
+          _farmNameCtrl,
+          'Farm name',
+          Icons.agriculture_rounded,
+          caps: TextCapitalization.words,
+          maxLength: 60,
+          validator: _validateFarmName,
+        ),
+        _drop(
+          label: 'Farm size',
+          icon: Icons.landscape_rounded,
+          items: _farmScales,
+          value: _scale,
+          onChanged: (v) => setState(() => _scale = v),
+        ),
+        _drop(
+          label: 'Farming method',
+          icon: Icons.eco_rounded,
+          items: _practices,
+          value: _practice,
+          onChanged: (v) => setState(() => _practice = v),
+        ),
+        _drop(
+          label: 'Main crop',
+          icon: Icons.grass_rounded,
+          items: _crops,
+          value: _crop,
+          onChanged: (v) => setState(() => _crop = v),
+        ),
+      ],
       UserRole.buyer => <Widget>[
-          _drop(
-            label: 'I am buying as',
-            icon: Icons.storefront_rounded,
-            items: _buyerTypes,
-            value: _buyerType,
-            onChanged: (v) => setState(() => _buyerType = v),
-          ),
-        ],
+        _drop(
+          label: 'I am buying as',
+          icon: Icons.storefront_rounded,
+          items: _buyerTypes,
+          value: _buyerType,
+          onChanged: (v) => setState(() => _buyerType = v),
+        ),
+      ],
       UserRole.driver => <Widget>[
-          _drop(
-            label: 'Vehicle type',
-            icon: Icons.local_shipping_rounded,
-            items: _vehicleTypes,
-            value: _vehicleType,
-            onChanged: (v) => setState(() => _vehicleType = v),
-          ),
-          _text(_plateCtrl, 'Vehicle number (e.g. WP CAB-1234)',
-              Icons.pin_rounded,
-              caps: TextCapitalization.characters,
-              maxLength: 12,
-              formatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9\s\-]')),
-              ],
-              validator: _validatePlate),
-          _text(_licenseCtrl, 'Driving licence number', Icons.badge_rounded,
-              caps: TextCapitalization.characters,
-              maxLength: 12,
-              formatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-              ],
-              validator: _validateLicense),
-          _drop(
-            label: 'Load capacity',
-            icon: Icons.scale_rounded,
-            items: _capacities,
-            value: _capacity,
-            onChanged: (v) => setState(() => _capacity = v),
-          ),
-        ],
+        _drop(
+          label: 'Vehicle type',
+          icon: Icons.local_shipping_rounded,
+          items: _vehicleTypes,
+          value: _vehicleType,
+          onChanged: (v) => setState(() => _vehicleType = v),
+        ),
+        _text(
+          _plateCtrl,
+          'Vehicle number (e.g. WP CAB-1234)',
+          Icons.pin_rounded,
+          caps: TextCapitalization.characters,
+          maxLength: 12,
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9\s\-]')),
+          ],
+          validator: _validatePlate,
+        ),
+        _text(
+          _licenseCtrl,
+          'Driving licence number',
+          Icons.badge_rounded,
+          caps: TextCapitalization.characters,
+          maxLength: 12,
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+          ],
+          validator: _validateLicense,
+        ),
+        _drop(
+          label: 'Load capacity',
+          icon: Icons.scale_rounded,
+          items: _capacities,
+          value: _capacity,
+          onChanged: (v) => setState(() => _capacity = v),
+        ),
+      ],
     };
 
     return _card([_section(title, icon, subtitle: sub), ...fields]);
@@ -940,8 +1307,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final p = _passCtrl.text;
     final (v, label, color) = _strength(p);
     return _card([
-      _section('Sign-in details', Icons.lock_rounded,
-          subtitle: 'You will use these to sign in'),
+      _section(
+        'Sign-in details',
+        Icons.lock_rounded,
+        subtitle: 'You will use these to sign in',
+      ),
       _text(
         _emailCtrl,
         'Email',
@@ -961,10 +1331,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onChanged: (_) => setState(() {}),
         suffix: IconButton(
           icon: Icon(
-              _obscure
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-              color: AppColors.textSecondary),
+            _obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: AppColors.textSecondary,
+          ),
           onPressed: () => setState(() => _obscure = !_obscure),
         ),
       ),
@@ -988,7 +1359,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Text(
                 label.trAuto(context),
                 style: TextStyle(
-                    color: color, fontWeight: FontWeight.w700, fontSize: 12),
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -1005,8 +1379,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ]);
   }
 
-  Widget _summaryBlock(String title, IconData icon, int stepIdx,
-      List<(String, String)> rows) {
+  Widget _summaryBlock(
+    String title,
+    IconData icon,
+    int stepIdx,
+    List<(String, String)> rows,
+  ) {
     return _card([
       Row(
         children: [
@@ -1029,7 +1407,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Text(
                   r.$1.trAuto(context),
                   style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13),
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               Expanded(
@@ -1052,24 +1432,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String t(String? v) => (v ?? '').trAuto(context);
     final roleRows = switch (_role) {
       UserRole.farmer => <(String, String)>[
-          ('Farm name', _farmNameCtrl.text.trim()),
-          ('Farm size', t(_scale)),
-          ('Farming method', t(_practice)),
-          ('Main crop', t(_crop)),
-        ],
+        ('Farm name', _farmNameCtrl.text.trim()),
+        ('Farm size', t(_scale)),
+        ('Farming method', t(_practice)),
+        ('Main crop', t(_crop)),
+      ],
       UserRole.buyer => <(String, String)>[('Buying as', t(_buyerType))],
       UserRole.driver => <(String, String)>[
-          ('Vehicle type', t(_vehicleType)),
-          ('Vehicle number', _plateCtrl.text.trim().toUpperCase()),
-          ('Licence number', _licenseCtrl.text.trim().toUpperCase()),
-          ('Load capacity', t(_capacity)),
-        ],
+        ('Vehicle type', t(_vehicleType)),
+        ('Vehicle number', _plateCtrl.text.trim().toUpperCase()),
+        ('Licence number', _licenseCtrl.text.trim().toUpperCase()),
+        ('Load capacity', t(_capacity)),
+      ],
     };
     final email = _social ? _socialEmail : _emailCtrl.text.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: _avatar(84),
+          ),
+        ),
         _summaryBlock('About you', Icons.person_rounded, 0, [
           ('Account type', _roleLabel.trAuto(context)),
           ('Full name', _nameCtrl.text.trim()),
@@ -1079,20 +1465,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _summaryBlock(_stepTitle(_Step.role), _roleIcon, 1, roleRows),
         _card([
           _section(
-              _social ? 'Google account' : 'Sign-in details',
-              _social ? Icons.verified_user_rounded : Icons.lock_rounded),
+            _social ? 'Google account' : 'Sign-in details',
+            _social ? Icons.verified_user_rounded : Icons.lock_rounded,
+          ),
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Row(
               children: [
-                const Icon(Icons.mail_rounded,
-                    size: 18, color: AppColors.primaryGreen),
+                const Icon(
+                  Icons.mail_rounded,
+                  size: 18,
+                  color: AppColors.primaryGreen,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     email,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 13.5),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
                   ),
                 ),
               ],
@@ -1101,21 +1493,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ]),
         InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => setState(() {
-            _agreed = !_agreed;
-            if (_agreed) _agreeError = false;
-          }),
+          onTap:
+              () => setState(() {
+                _agreed = !_agreed;
+                if (_agreed) _agreeError = false;
+              }),
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: _agreeError
-                  ? AppColors.error.withValues(alpha: 0.07)
-                  : Colors.white,
+              color:
+                  _agreeError
+                      ? AppColors.error.withValues(alpha: 0.07)
+                      : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: _agreeError
-                    ? AppColors.error
-                    : const Color(0xFFE2E8F0),
+                color: _agreeError ? AppColors.error : const Color(0xFFE2E8F0),
               ),
             ),
             child: Row(
@@ -1123,15 +1515,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Checkbox(
                   value: _agreed,
                   activeColor: AppColors.primaryGreen,
-                  onChanged: (v) => setState(() {
-                    _agreed = v ?? false;
-                    if (_agreed) _agreeError = false;
-                  }),
+                  onChanged:
+                      (v) => setState(() {
+                        _agreed = v ?? false;
+                        if (_agreed) _agreeError = false;
+                      }),
                 ),
                 Expanded(
                   child: Text(
-                    'I agree to the Terms of Service and Privacy Policy'
-                        .trAuto(context),
+                    'I agree to the Terms of Service and Privacy Policy'.trAuto(
+                      context,
+                    ),
                     style: const TextStyle(fontSize: 13, height: 1.35),
                   ),
                 ),
@@ -1153,11 +1547,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _stepBody() => switch (_step) {
-        _Step.personal => _personalStep(),
-        _Step.role => _roleStep(),
-        _Step.account => _accountStep(),
-        _Step.review => _reviewStep(),
-      };
+    _Step.personal => _personalStep(),
+    _Step.role => _roleStep(),
+    _Step.account => _accountStep(),
+    _Step.review => _reviewStep(),
+  };
 
   Widget _bottomBar() {
     final label = _isLast ? 'Create account' : 'Continue';
@@ -1191,11 +1585,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primaryGreen,
                             side: const BorderSide(
-                                color: AppColors.primaryGreen, width: 1.4),
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
+                              color: AppColors.primaryGreen,
+                              width: 1.4,
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18)),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
                           ),
                           child: const Icon(Icons.arrow_back_rounded),
                         ),
@@ -1206,15 +1602,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Container(
                         height: 54,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [
-                            Color(0xFF15803D),
-                            Color(0xFF1E8342),
-                          ]),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF15803D), Color(0xFF1E8342)],
+                          ),
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryGreen
-                                  .withValues(alpha: 0.4),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.4,
+                              ),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
@@ -1228,34 +1624,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             foregroundColor: Colors.white,
                             disabledBackgroundColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18)),
+                              borderRadius: BorderRadius.circular(18),
+                            ),
                           ),
-                          child: _loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2.4),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      label.trAuto(context),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
+                          child:
+                              _loading
+                                  ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.4,
+                                    ),
+                                  )
+                                  : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        label.trAuto(context),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      _isLast
-                                          ? Icons.check_circle_rounded
-                                          : Icons.arrow_forward_rounded,
-                                      size: 20,
-                                    ),
-                                  ],
-                                ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        _isLast
+                                            ? Icons.check_circle_rounded
+                                            : Icons.arrow_forward_rounded,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
                         ),
                       ),
                     ),
@@ -1325,13 +1725,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               tween: Tween(begin: 0, end: 1),
                               duration: const Duration(milliseconds: 380),
                               curve: Curves.easeOutCubic,
-                              builder: (_, t, child) => Opacity(
-                                opacity: t,
-                                child: Transform.translate(
-                                  offset: Offset(0, 18 * (1 - t)),
-                                  child: child,
-                                ),
-                              ),
+                              builder:
+                                  (_, t, child) => Opacity(
+                                    opacity: t,
+                                    child: Transform.translate(
+                                      offset: Offset(0, 18 * (1 - t)),
+                                      child: child,
+                                    ),
+                                  ),
                               child: _stepBody(),
                             ),
                           ),
