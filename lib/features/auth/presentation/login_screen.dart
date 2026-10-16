@@ -136,7 +136,12 @@ class _LoginScreenState extends State<LoginScreen>
         if (e.message == 'profile_not_found' ||
             e.message.toLowerCase().contains('not found') ||
             e.message.toLowerCase().contains('no rows')) {
-          if (mounted) context.go(AppRoutes.roleSelection);
+          if (mounted) {
+            final chosen = context.read<AppSettings>().role;
+            context.go(chosen != null
+                ? AppRoutes.registerFor(chosen)
+                : AppRoutes.roleSelection);
+          }
           return;
         }
         rethrow;
@@ -179,7 +184,12 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
 
-      if (mounted) context.go(AppRoutes.homeFor(targetRole));
+      if (mounted) {
+        context.go(AppRoutes.entering, extra: {
+          'role': targetRole.name,
+          'name': effectiveName,
+        });
+      }
     } finally {
       _entering = false;
     }

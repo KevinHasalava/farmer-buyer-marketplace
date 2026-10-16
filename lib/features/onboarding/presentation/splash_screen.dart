@@ -87,7 +87,12 @@ class _SplashScreenState extends State<SplashScreen>
             msg.contains('no rows')) {
           // Signed in (e.g. Google) but not registered yet: keep the session
           // and let the user pick a role and complete registration.
-          context.go(s.hasLanguage ? AppRoutes.roleSelection : AppRoutes.language);
+          final chosen = s.role;
+          context.go(!s.hasLanguage
+              ? AppRoutes.language
+              : (chosen != null
+                  ? AppRoutes.registerFor(chosen)
+                  : AppRoutes.roleSelection));
           return;
         }
         await const AuthService().signOut();
