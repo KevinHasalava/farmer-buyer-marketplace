@@ -7,10 +7,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../services/driver_firestore_service.dart';
 import '../services/driver_profile_manager.dart';
-import 'deliveries_screen.dart';
 import 'delivery_history_screen.dart';
+import 'driver_bottom_nav.dart';
 import 'driver_chat_screen.dart';
-import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routes/app_router.dart';
@@ -1290,137 +1289,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
 
   // ── Bottom Navigation Bar ──────────────────────────────────────────────────
   Widget _buildBottomNavBar(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFF1F5F9), width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // Dashboard
-            _buildNavItem(
-              index: 0,
-              icon: Icons.grid_view_rounded,
-              label: context.tr.navHome,
-              isSelected: false,
-              onTap: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => const DriverDashboardScreen(),
-                  ),
-                  (route) => route.isFirst,
-                );
-              },
-            ),
-
-            // Deliveries
-            _buildNavItem(
-              index: 1,
-              icon: Icons.fact_check_outlined,
-              label: context.tr.navDeliveries,
-              isSelected: false,
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const DeliveriesScreen(),
-                  ),
-                );
-              },
-            ),
-
-            // Chat
-            _buildNavItem(
-              index: 2,
-              icon: Icons.chat_bubble_outline_rounded,
-              label: context.tr.navChat,
-              isSelected: false,
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => DriverChatScreen(
-                      driverId: widget.driverId,
-                      driverName: widget.driverName,
-                      vehicleType: widget.vehicleType,
-                      plateNumber: widget.plateNumber,
-                      bankName: widget.bankName,
-                      accountNumber: widget.accountNumber,
-                      cargoCapacity: widget.cargoCapacity,
-                      licenseNumber: widget.licenseNumber,
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            // Profile (Active)
-            _buildNavItem(
-              index: 3,
-              icon: Icons.person_rounded,
-              label: context.tr.navProfile,
-              isSelected: true,
-              onTap: () {},
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    const activeColor = Color(0xFF065F46);
-    const inactiveColor = Color(0xFF94A3B8);
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(height: 3),
-              Container(
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(
-                  color: activeColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+    return DriverBottomNav(
+      current: 4,
+      driverId: widget.driverId,
+      driverName: widget.driverName,
+      vehicleType: widget.vehicleType,
+      plateNumber: widget.plateNumber,
+      bankName: widget.bankName,
+      accountNumber: widget.accountNumber,
+      cargoCapacity: widget.cargoCapacity,
+      licenseNumber: widget.licenseNumber,
     );
   }
 

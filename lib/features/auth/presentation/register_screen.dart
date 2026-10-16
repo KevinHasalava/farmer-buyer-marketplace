@@ -11,6 +11,8 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
+import 'otp_verification_dialog.dart';
 
 /// Step-by-step registration for Farmers, Buyers and Drivers.
 ///
@@ -140,6 +142,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _agreeError = false;
   bool _obscure = true;
   bool _loading = false;
+
+  // OTP verification state for phone number on personal step
+  bool _phoneVerified = false;
 
   // Profile photo (optional). Kept in memory until the account exists.
   Uint8List? _photoBytes;
@@ -345,8 +350,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _submit();
       return;
     }
+    // ── Phone OTP gate on Step 0 (personal step) ────────────────────────
+    // Social (Google) users skip OTP because their identity is already proven.
+    if (_stepIndex == 0 && !_social && !_phoneVerified) {
+      _sendAndVerifyPhoneOtp();
+      return;
+    }
     HapticFeedback.selectionClick();
     setState(() => _stepIndex++);
+  }
+
+  /// Sends an SMS OTP to the entered phone number and shows the verification
+  /// sheet. On success, marks the phone as verified and advances to the next step.
+  Future<void> _sendAndVerifyPhoneOtp() async {
+    final phone = _phoneCtrl.text.trim();
+    if (!NotifySmsService.isValidSriLankanMobile(phone)) {
+      _toast('Please enter a valid Sri Lankan mobile number');
+      return;
+    }
+
+    setState(() => _loading = true);
+    final result = await NotifySmsService.instance.sendOtp(phone);
+    if (!mounted) return;
+    setState(() => _loading = false);
+
+    if (!result.success) {
+      // If SMS gateway fails, warn but still let the user continue
+      // (dev/test mode or gateway unavailable) if we got the OTP code
+      if (result.otpCode == null) {
+        _toast(result.error ?? 'Could not send OTP. Please try again.');
+        return;
+      }
+      // Gateway error but we have the code locally (test fallback)
+      debugPrint('[RegisterScreen] SMS gateway error: ${result.error}. '
+          'OTP is ${result.otpCode} (dev fallback active)');
+    }
+
+    if (!mounted) return;
+    final verified = await OtpVerificationSheet.show(
+      context,
+      rawPhone: phone,
+      onVerified: () {
+        if (mounted) setState(() => _phoneVerified = true);
+      },
+    );
+
+    if (!mounted) return;
+    if (verified == true) {
+      HapticFeedback.selectionClick();
+      setState(() => _stepIndex++);
+    }
   }
 
   void _goTo(int i) {
@@ -1173,6 +1226,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-]')),
             ],
             validator: _validatePhone,
+            onChanged: (_) {
+              // Reset verification if the number changes
+              if (_phoneVerified) setState(() => _phoneVerified = false);
+            },
+            suffix: _phoneVerified
+                ? const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Icon(
+                      Icons.verified_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 22,
+                    ),
+                  )
+                : null,
           ),
           _drop(
             label: 'District',

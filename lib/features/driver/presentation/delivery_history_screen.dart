@@ -4,9 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../services/driver_firestore_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
-import 'deliveries_screen.dart';
-import 'driver_dashboard_screen.dart';
-import 'driver_profile_screen.dart';
+import 'driver_bottom_nav.dart';
 
 /// Pixel-perfect Delivery History Screen matching reference mockup.
 ///
@@ -1519,142 +1517,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen> {
 
   // ── Bottom Navigation Bar ──────────────────────────────────────────────────
   Widget _buildBottomNavBar(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFF1F5F9), width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // Dashboard
-            _buildNavItem(
-              index: 0,
-              icon: Icons.grid_view_rounded,
-              label: context.tr.dashboard,
-              isSelected: false,
-              onTap: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => const DriverDashboardScreen(),
-                  ),
-                  (route) => route.isFirst,
-                );
-              },
-            ),
-
-            // Deliveries (with green notification dot)
-            _buildNavItem(
-              index: 1,
-              icon: Icons.inventory_2_outlined,
-              label: context.tr.navDeliveries,
-              isSelected: true,
-              hasDot: true,
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const DeliveriesScreen(),
-                  ),
-                );
-              },
-            ),
-
-            // Chat
-            _buildNavItem(
-              index: 2,
-              icon: Icons.chat_bubble_outline_rounded,
-              label: context.tr.navChat,
-              isSelected: false,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Chat tab selected'.trAuto(context), style: const TextStyle())),
-                );
-              },
-            ),
-
-            // Profile
-            _buildNavItem(
-              index: 3,
-              icon: Icons.person_outline_rounded,
-              label: context.tr.profile,
-              isSelected: false,
-              onTap: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const DriverProfileScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    bool hasDot = false,
-    required VoidCallback onTap,
-  }) {
-    const activeColor = Color(0xFF065F46);
-    const inactiveColor = Color(0xFF94A3B8);
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected ? activeColor : inactiveColor,
-                ),
-                if (hasDot)
-                  Positioned(
-                    top: -2,
-                    right: -2,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const DriverBottomNav(current: 2);
   }
 }
 

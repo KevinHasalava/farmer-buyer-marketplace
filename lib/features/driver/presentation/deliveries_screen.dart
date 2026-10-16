@@ -6,8 +6,7 @@ import '../../../widgets/premium/premium_widgets.dart';
 import '../models/delivery_order_model.dart';
 import '../services/driver_firestore_service.dart';
 import 'delivery_details_screen.dart';
-import 'driver_chat_screen.dart';
-import 'driver_profile_screen.dart';
+import 'driver_bottom_nav.dart';
 
 /// Pixel-perfect "Assigned Deliveries" screen matching reference design.
 /// Connected with Cloud Firestore for:
@@ -22,7 +21,6 @@ class DeliveriesScreen extends StatefulWidget {
 
 class _DeliveriesScreenState extends State<DeliveriesScreen> {
   int _selectedFilterIndex = 0;
-  final int _selectedNavIndex = 1; // Deliveries tab is active (index 1)
 
   final DriverFirestoreService _firestoreService = DriverFirestoreService();
   List<DeliveryOrderModel> _deliveries = [];
@@ -1419,114 +1417,7 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
 
   // ── Bottom Navigation Bar (Deliveries Tab is Active) ───────────────────────
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.only(top: 10, bottom: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            index: 0,
-            icon: Icons.grid_view_rounded,
-            label: context.tr.dashboard,
-            onTap: () {
-              Navigator.of(context).maybePop();
-            },
-          ),
-          _buildNavItem(
-            index: 1,
-            icon: Icons.inventory_2_outlined,
-            label: context.tr.assignedDeliveries,
-            onTap: () {},
-          ),
-          _buildNavItem(
-            index: 2,
-            icon: Icons.chat_bubble_outline_rounded,
-            label: context.tr.chat,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const DriverChatScreen(),
-                ),
-              );
-            },
-          ),
-          _buildNavItem(
-            index: 3,
-            icon: Icons.person_outline_rounded,
-            label: context.tr.profile,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const DriverProfileScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final isSelected = _selectedNavIndex == index;
-    const activeColor = Color(0xFF065F46);
-    const inactiveColor = Color(0xFF94A3B8);
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(height: 3),
-              Container(
-                width: 5,
-                height: 5,
-                decoration: const BoxDecoration(
-                  color: activeColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    return const DriverBottomNav(current: 1);
   }
 
   // ── Dialogs & Sheets ───────────────────────────────────────────────────────

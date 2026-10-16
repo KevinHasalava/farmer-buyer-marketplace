@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../farmer/presentation/add_edit_product_screen.dart';
+import '../../farmer/presentation/farmer_bottom_nav.dart';
 import '../../farmer/presentation/farmer_products_screen.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import 'product_detail_screen.dart';
@@ -1309,9 +1310,47 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
                             ),
                           ),
 
+                          const SizedBox(height: 18),
+
+                          // ── Add Product Action Button ───────────────────────
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _forestGreen,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const AddEditProductScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.add_circle_outline_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              label: Text(
+                                context.tr.addProduct,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+
                           // ── Logout & Switch Account Button ─────────────────
                           Padding(
-                            padding: const EdgeInsets.only(top: 28, bottom: 84),
+                            padding: const EdgeInsets.only(top: 14, bottom: 24),
                             child: InkWell(
                               onTap: () => _handleLogout(context),
                               borderRadius: BorderRadius.circular(16),
@@ -1349,68 +1388,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen>
               ),
             ],
           ),
-
-          // ── Fixed "Add Product" Button matching Image 2 ────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 14 + bottomPad),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _forestGreen,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AddEditProductScreen(),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.add_circle_outline_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        context.tr.addProduct,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
+      bottomNavigationBar: const FarmerBottomNav(current: 4),
     );
   }
 
