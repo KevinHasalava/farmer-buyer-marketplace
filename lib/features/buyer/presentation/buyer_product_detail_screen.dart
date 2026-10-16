@@ -4,10 +4,13 @@ import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
-import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 import '../models/buyer_models.dart';
+import '../services/buyer_review_service.dart';
 import 'buyer_cart_screen.dart';
 import 'buyer_farmer_profile_screen.dart';
+import 'buyer_reviews_screen.dart';
 
 /// 14. Product Details Screen — matching Screenshot 14
 class BuyerProductDetailScreen extends StatefulWidget {
@@ -278,19 +281,46 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${prod.rating} • ${context.tr.verifiedBuyerReviewsCount(prod.reviewsCount)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _textMuted,
+                ListenableBuilder(
+                  listenable: BuyerReviewService.instance,
+                  builder: (ctx, _) {
+                    final dynRating = BuyerReviewService.instance
+                        .getAverageRatingForProduct(prod.id, prod.rating);
+                    final dynCount = BuyerReviewService.instance
+                        .getReviewCountForProduct(prod.id, prod.reviewsCount);
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BuyerReviewsScreen(
+                              initialProductId: prod.id,
+                              initialProductName: prod.name,
+                              initialFarmerName: prod.farmerName,
+                              initialProductImage: prod.imageUrl,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$dynRating • $dynCount Verified Reviews',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _textDark,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: _textMuted),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -438,6 +468,40 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                                 ],
                               ),
                             ),
+                            IconButton(
+                              tooltip: 'Chat with Farmer',
+                              icon: Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFDCFCE7),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 15,
+                                  color: _forestGreen,
+                                ),
+                              ),
+                              onPressed: () {
+                                final conv = ChatService.instance.getOrCreateConversation(
+                                  peerId: 'conv_farmer_${prod.farmerName.toLowerCase().replaceAll(' ', '_')}',
+                                  peerName: prod.farmerName,
+                                  peerRole: 'Farmer',
+                                  avatarUrl: prod.farmerAvatarUrl,
+                                  subtitle: '${prod.farmName} • ${prod.farmLocation}',
+                                  productContext: '${prod.name} (${prod.formattedPrice}/${prod.unit})',
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatDetailScreen(
+                                      conversation: conv,
+                                      currentRole: 'buyer',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                             const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: _textMuted),
                           ],
                         ),
@@ -534,6 +598,11 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                     _buildFeatureChip(icon: Icons.all_inbox_rounded, label: context.tr.aeratedBox),
                   ],
                 ),
+                const SizedBox(height: 22),
+
+                // 🌟 Customer Reviews & Farmer Ratings Section (CRUD Integrated)
+                _buildProductReviewsSection(prod),
+                const SizedBox(height: 100),
               ],
             ),
           ),
@@ -632,10 +701,21 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             onPressed: () {
+                              final conv = ChatService.instance.getOrCreateConversation(
+                                peerId: 'conv_farmer_${prod.farmerName.toLowerCase().replaceAll(' ', '_')}',
+                                peerName: prod.farmerName,
+                                peerRole: 'Farmer',
+                                avatarUrl: prod.farmerAvatarUrl,
+                                subtitle: '${prod.farmName} • ${prod.farmLocation}',
+                                productContext: '${prod.name} (${prod.formattedPrice}/${prod.unit})',
+                              );
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const OrdersChatScreen(initialTab: 1),
+                                  builder: (_) => ChatDetailScreen(
+                                    conversation: conv,
+                                    currentRole: 'buyer',
+                                  ),
                                 ),
                               );
                             },
@@ -694,6 +774,311 @@ class _BuyerProductDetailScreenState extends State<BuyerProductDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⭐ CUSTOMER REVIEWS & FARMER RATINGS SECTION (MEMBER 1 CRUD INTEGRATED)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildProductReviewsSection(BuyerProduct prod) {
+    return ListenableBuilder(
+      listenable: BuyerReviewService.instance,
+      builder: (ctx, _) {
+        final service = BuyerReviewService.instance;
+        final reviews = service.reviewsForProduct(prod.id);
+        final dynRating = service.getAverageRatingForProduct(prod.id, prod.rating);
+        final dynCount = service.getReviewCountForProduct(prod.id, prod.reviewsCount);
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header Row: Title + "Write Review" Button ─────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Customer Reviews',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
+                          ),
+                          Text(
+                            'Verified buyers & harvest ratings',
+                            style: TextStyle(fontSize: 11, color: _textMuted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BuyerReviewsScreen(
+                            initialProductId: prod.id,
+                            initialProductName: prod.name,
+                            initialFarmerName: prod.farmerName,
+                            initialProductImage: prod.imageUrl,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.rate_review_rounded, size: 14),
+                    label: const Text('Add Review', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _forestGreen,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // ── Rating Score Banner ───────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          dynRating.toStringAsFixed(1),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: _textDark,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(5, (_) {
+                            return const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14);
+                          }),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+                    const SizedBox(height: 40, child: VerticalDivider(color: Color(0xFFCBD5E1), thickness: 1)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$dynCount Verified Reviews',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _textDark),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            '96% of buyers recommend this crop from ${''}',
+                            style: TextStyle(fontSize: 10.5, color: _textMuted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Reviews List ──────────────────────────────────────────────
+              if (reviews.isEmpty) ...[
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'No reviews for this product yet.',
+                          style: TextStyle(fontSize: 12, color: _textMuted),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BuyerReviewsScreen(
+                                  initialProductId: prod.id,
+                                  initialProductName: prod.name,
+                                  initialFarmerName: prod.farmerName,
+                                  initialProductImage: prod.imageUrl,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Be the first to review!', style: TextStyle(color: _forestGreen, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Show up to 3 most recent reviews
+                ...reviews.take(3).map((r) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: List.generate(5, (idx) {
+                                    final filled = idx < r.rating.floor();
+                                    return Icon(
+                                      filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                                      color: filled ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                                      size: 14,
+                                    );
+                                  }),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    r.qualityTag,
+                                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(r.timeAgo, style: const TextStyle(fontSize: 10, color: _textMuted)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          r.title,
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: _textDark),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          r.comment,
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569), height: 1.35),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.person_outline_rounded, size: 12, color: _textMuted),
+                            const SizedBox(width: 4),
+                            Text(r.buyerName, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: _textMuted)),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.verified_rounded, size: 11, color: Color(0xFF059669)),
+                          ],
+                        ),
+                        if (r.hasFarmerReply) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.reply_rounded, size: 12, color: Color(0xFF059669)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Farmer response: "${r.farmerReply}"',
+                                    style: const TextStyle(fontSize: 10.5, fontStyle: FontStyle.italic, color: Color(0xFF065F46)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 6),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BuyerReviewsScreen(
+                            initialProductId: prod.id,
+                            initialProductName: prod.name,
+                            initialFarmerName: prod.farmerName,
+                            initialProductImage: prod.imageUrl,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'View All Reviews ($dynCount) >',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _forestGreen),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

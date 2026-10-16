@@ -5,6 +5,7 @@ import '../../../core/supabase/supabase_config.dart';
 import '../models/delivery_order_model.dart';
 import '../models/driver_model.dart';
 import '../models/pickup_verification_model.dart';
+import '../../../core/services/order_lifecycle_manager.dart';
 
 /// Service handling all driver operations using Supabase as the single database backend,
 /// with instant local fallback for ultra-smooth UI performance.
@@ -28,6 +29,7 @@ class DriverFirestoreService {
   // ── In-Memory Datastores (for instant UI & fallback) ──────────────────────
   static final Map<String, DriverModel> _drivers = {};
   static final Map<String, DeliveryOrderModel> _deliveries = {};
+  static final Map<String, String> _deliveryPins = {};
   static final Map<String, PickupVerificationModel> _verifications = {};
   static final List<Map<String, dynamic>> _history = [];
   static final List<Map<String, dynamic>> _chatMessages = [];
@@ -39,52 +41,7 @@ class DriverFirestoreService {
       StreamController<List<Map<String, dynamic>>>.broadcast();
 
   void _initDefaults() {
-    if (_drivers.isEmpty) {
-      final defaultDriver = DriverModel(
-        id: 'DRV-4091',
-        fullName: 'Ranjith Subha Udhasanak',
-        licenseNumber: 'B-8492019',
-        mobileNumber: '+94771234567',
-        vehicleType: 'Chilled / Refrigerated Van',
-        plateNumber: 'NC-4982',
-        cargoCapacity: '1,200 kg',
-        isColdBoxEquipped: true,
-        operatingCorridors: const [
-          'Nuwara Eliya ⇄ Colombo (A7)',
-          'Dambulla ⇄ Colombo (A6)',
-        ],
-        bankName: 'Commercial Bank of Ceylon',
-        accountNumber: '8004 1293 4198',
-        isOnDuty: true,
-        rating: 4.9,
-        completedTrips: 184,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        scheduledDeliveries: 6,
-        deliveredToday: 4,
-        netEarnings: 7850.0,
-        activeOrderId: '#FH-8841',
-        activeFarmerName: 'Farmer Bandar',
-        activeFarmLocation: 'Hakgala Organic Farm',
-        activeEstPayout: 1450.0,
-        activeCargoItem: '5 kg Fresh Carrots & Leeks',
-        activeCrate: 'Crate #C',
-        activePickupLocation: 'Upper Division Gate B, Hakgala Rd',
-      );
-      _drivers[defaultDriver.id] = defaultDriver;
-    }
-
-    if (_deliveries.isEmpty) {
-      _seedInitialDeliveriesSync();
-    }
-
-    if (_history.isEmpty) {
-      seedInitialDeliveryHistorySync();
-    }
-
-    if (_chatMessages.isEmpty) {
-      seedInitialChatMessagesSync();
-    }
+    // Zero fake seed data. All profiles and deliveries are fetched from Supabase.
   }
 
   // ── DRIVER MANAGEMENT (Supabase `drivers`) ─────────────────────────────────
@@ -104,7 +61,7 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('drivers').upsert(saved.toMap());
+        await client.from('drivers').upsert(saved.toSupabaseMap());
         debugPrint('[DriverService] Driver synced to Supabase: $id');
       }
     } catch (e) {
@@ -181,7 +138,7 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('drivers').update(driver.toMap()).eq('id', driver.id);
+        await client.from('drivers').update(driver.toSupabaseMap()).eq('id', driver.id);
       }
     } catch (_) {}
   }
@@ -196,8 +153,9 @@ class DriverFirestoreService {
       final client = _sb;
       if (client != null) {
         await client.from('drivers').update({
-          'isOnDuty': isOnDuty,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'duty_status': isOnDuty,
+          'is_on_duty': isOnDuty,
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', driverId);
       }
     } catch (_) {}
@@ -217,9 +175,10 @@ class DriverFirestoreService {
       final client = _sb;
       if (client != null) {
         await client.from('drivers').update({
-          'bankName': bankName,
-          'accountNumber': accountNumber,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'bank_name': bankName,
+          'bank_account_number': accountNumber,
+          'account_number': accountNumber,
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', driverId);
       }
     } catch (_) {}
@@ -283,19 +242,23 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        final res = await client.from('driver_deliveries').select();
+        final uid = SupabaseConfig.auth.currentUser?.id;
+        final query = client.from('driver_deliveries').select();
+        final res = uid != null
+            ? await query.or('driver_id.eq.$uid,driver_id.is.null')
+            : await query;
         if (res.isNotEmpty) {
+          _deliveries.clear();
           for (final row in res) {
-            final id = row['id']?.toString() ?? row['orderNumber']?.toString() ?? 'order';
-            _deliveries[id] = DeliveryOrderModel.fromMap(row, id);
+            final id = row['id']?.toString() ?? row['order_number']?.toString() ?? 'order';
+            _deliveries[id] = DeliveryOrderModel.fromMap(Map<String, dynamic>.from(row as Map), id);
           }
         }
       }
-    } catch (_) {}
-
-    if (_deliveries.isEmpty) {
-      _seedInitialDeliveriesSync();
+    } catch (e) {
+      debugPrint('[DriverFirestoreService] getAssignedDeliveries note: $e');
     }
+
     final orders = _deliveries.values.toList();
     if (filter.startsWith('Ready')) {
       return orders.where((o) => o.status == 'Ready for Pickup').toList();
@@ -306,9 +269,6 @@ class DriverFirestoreService {
   }
 
   Stream<List<DeliveryOrderModel>> getDeliveriesStream({String filter = 'All'}) async* {
-    if (_deliveries.isEmpty) {
-      _seedInitialDeliveriesSync();
-    }
     yield await getAssignedDeliveries(filter: filter);
     yield* _deliveriesStreamController.stream.map((orders) {
       if (filter.startsWith('Ready')) {
@@ -324,6 +284,33 @@ class DriverFirestoreService {
     _deliveriesStreamController.add(_deliveries.values.toList());
   }
 
+  /// Add a newly created delivery from Buyer Checkout
+  void addDeliveryOrder(DeliveryOrderModel order, {String? handoverPin}) {
+    final cleanId = order.id.replaceAll('#', '').trim();
+    _deliveries[cleanId] = order;
+    if (handoverPin != null) {
+      _deliveryPins[cleanId] = handoverPin;
+    } else {
+      _deliveryPins[cleanId] = '4921';
+    }
+    _broadcastDeliveries();
+
+    try {
+      final client = _sb;
+      if (client != null) {
+        client.from('driver_deliveries').upsert(order.toSupabaseMap()).catchError((e) {
+          debugPrint('[DriverService] addDeliveryOrder Supabase sync note: $e');
+        });
+      }
+    } catch (_) {}
+  }
+
+  /// Lookup a delivery by its ID or order number
+  DeliveryOrderModel? getDeliveryById(String orderId) {
+    final cleanId = orderId.replaceAll('#', '').trim();
+    return _deliveries[cleanId];
+  }
+
   Future<void> updateDeliveryStatus(String orderId, String newStatus) async {
     final cleanId = orderId.replaceAll('#', '').trim();
     final order = _deliveries[cleanId];
@@ -332,13 +319,30 @@ class DriverFirestoreService {
       _broadcastDeliveries();
     }
 
+    // Sync across Buyer, Farmer, and Admin in real time
+    try {
+      OrderLifecycleManager.instance.onDriverStatusUpdated(cleanId, newStatus);
+    } catch (_) {}
+
     try {
       final client = _sb;
       if (client != null) {
         await client.from('driver_deliveries').update({
           'status': newStatus,
-          'updatedAt': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', cleanId);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> deleteDeliveryOrder(String orderId) async {
+    final cleanId = orderId.replaceAll('#', '').trim();
+    _deliveries.remove(cleanId);
+    _broadcastDeliveries();
+    try {
+      final client = _sb;
+      if (client != null) {
+        await client.from('driver_deliveries').delete().eq('id', cleanId);
       }
     } catch (_) {}
   }
@@ -358,9 +362,11 @@ class DriverFirestoreService {
     try {
       final client = _sb;
       if (client != null) {
-        await client.from('pickup_verifications').upsert(newVer.toMap());
+        await client.from('pickup_verifications').upsert(newVer.toSupabaseMap());
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[DriverService] pickup verification sync note: $e');
+    }
 
     return id;
   }
@@ -377,6 +383,22 @@ class DriverFirestoreService {
 
   Future<Map<String, dynamic>> getPickupManifestDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      final pin = _deliveryPins[cleanId] ?? '4921';
+      return {
+        'orderId': '#$cleanId',
+        'farmerName': d.farmerName,
+        'farmLocation': d.farmerAddress,
+        'gateInfo': 'Depot Platform Gate #1 / A',
+        'crateId': '#CR-$cleanId',
+        'handoverPin': pin,
+        'ambientTemp': '16°C',
+        'vanTemp': '4.0°C',
+        'produceDescription': d.produceDescription,
+      };
+    }
+
     final is8850 = cleanId.contains('8850');
     if (is8850) {
       return {
@@ -408,6 +430,27 @@ class DriverFirestoreService {
 
   Future<Map<String, dynamic>> getDeliveryTrackingDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      return {
+        'orderId': '#$cleanId',
+        'buyerName': d.buyerName,
+        'buyerAddress': d.buyerAddress,
+        'gateCode': '#2819',
+        'dropoffNotes': 'Leave with security counter or front porch.',
+        'codAmount': 'Rs. ${d.driverFee.toInt()}',
+        'cratesCount': d.crateCount,
+        'remainingDistance': '22 km',
+        'estimatedTime': '30 min',
+        'targetEta': 'In 35 mins',
+        'cargoCoolTemp': '18°C',
+        'vanChillerTemp': 4.0,
+        'latitude': 6.8344,
+        'longitude': 79.8654,
+        'transitStatus': d.status == 'In Transit' ? 'IN_TRANSIT' : d.status,
+      };
+    }
+
     if (cleanId.contains('8850')) {
       return {
         'orderId': '#FH-8850',
@@ -453,13 +496,52 @@ class DriverFirestoreService {
     required double vanTemperature,
     required String transitStatus,
   }) async {
-    // Recorded locally & telemetry sync
+    final cleanId = orderId.replaceAll('#', '').trim();
+    try {
+      final client = _sb;
+      if (client != null) {
+        // Telemetry GPS sync to remote driver_locations
+        client.from('driver_locations').upsert({
+          'driver_id': cleanId,
+          'lat': latitude,
+          'lng': longitude,
+          'heading': 45.0,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).catchError((_) {});
+
+        // Van temperature and transit state sync
+        client.from('driver_deliveries').update({
+          'van_temp': '${vanTemperature.toStringAsFixed(1)}°C',
+          'status': transitStatus,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', cleanId).catchError((_) {});
+      }
+    } catch (_) {}
   }
 
   // ── DELIVERY COMPLETION & SETTLEMENT ───────────────────────────────────────
 
   Future<Map<String, dynamic>> getCompletedDeliveryDetails(String orderId) async {
     final cleanId = orderId.replaceAll('#', '').trim();
+    final d = _deliveries[cleanId];
+    if (d != null) {
+      return {
+        'orderId': '#$cleanId',
+        'buyerName': d.buyerName,
+        'buyerAddress': d.buyerAddress,
+        'totalEarned': 'Rs. ${d.driverFee.toInt()}',
+        'baseTransit': 'Rs. ${(d.driverFee * 0.8).toInt()}',
+        'terrainBonus': '+Rs. ${(d.driverFee * 0.2).toInt()}',
+        'directTip': '+Rs. 150',
+        'dailyWalletTotal': 'Rs. 9,300',
+        'deliveryTime': 'Today, Just now',
+        'earlyBadge': 'On schedule ⚡',
+        'handoverType': 'Cash on Delivery',
+        'collectedAmount': 'Rs. ${d.driverFee.toInt()} Collected & Pocketed',
+        'ratingStars': 5.0,
+      };
+    }
+
     if (cleanId.contains('8850')) {
       return {
         'orderId': '#FH-8850',
@@ -519,7 +601,7 @@ class DriverFirestoreService {
       try {
         final client = _sb;
         if (client != null) {
-          await client.from('drivers').update(updated.toMap()).eq('id', targetDriver.id);
+          await client.from('drivers').update(updated.toSupabaseMap()).eq('id', targetDriver.id);
         }
       } catch (_) {}
     }

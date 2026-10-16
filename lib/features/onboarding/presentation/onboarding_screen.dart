@@ -69,8 +69,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeInOutCubic,
       );
-    } else if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
+    } else {
+      context.go(AppRoutes.language);
     }
   }
 
@@ -91,6 +91,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           assetPath: 'assets/images/onboarding_2.jpg',
           networkFallbackUrl:
               'https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200&auto=format&fit=crop&q=85',
+          buttonText: tr.continueBtn,
+        ),
+        _OnboardSlideData(
+          tag: tr.onb3Tag,
+          title: tr.onb3Title,
+          subtitle: tr.onb3Body,
+          assetPath: 'assets/images/promo_3.jpg',
+          networkFallbackUrl:
+              'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&auto=format&fit=crop&q=85',
           buttonText: tr.getStarted,
         ),
       ];
@@ -153,14 +162,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Left Item: Back arrow on slide 1, or Language switcher on slide 2
-                      if (_currentPage == 0)
-                        _buildBackButton()
-                      else
-                        _buildLanguageTogglePill(),
+                      // Left Item: Back arrow on all slides
+                      _buildBackButton(),
 
-                      // Right Item: Translucent "Skip" pill
-                      _buildSkipButton(tr.skip),
+                      // Right Item: Language switcher and Translucent "Skip" pill
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildLanguageTogglePill(),
+                          const SizedBox(width: 8),
+                          _buildSkipButton(tr.skip),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -222,7 +235,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: () => _onNextTap(slides.length),
                       ),
 
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 20),
+
 
                       // Home indicator line
                       Center(
@@ -441,4 +455,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+
+
 }

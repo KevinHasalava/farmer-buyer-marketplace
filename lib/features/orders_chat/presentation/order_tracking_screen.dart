@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/order_model.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../cart/services/cart_state.dart';
+import 'chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 
 /// Live Order Tracking screen showing farm-to-table progress
 class OrderTrackingScreen extends StatelessWidget {
@@ -19,6 +22,21 @@ class OrderTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: MarketplaceState.instance,
+      builder: (context, _) {
+        final liveOrder = MarketplaceState.instance.orders.firstWhere(
+          (o) => o.id.replaceAll('#', '').trim() == order.id.replaceAll('#', '').trim(),
+          orElse: () => order,
+        );
+
+        final double progressValue = switch (liveOrder.status) {
+          OrderStatus.pending || OrderStatus.confirmed => 0.25,
+          OrderStatus.processing => 0.50,
+          OrderStatus.inTransit => 0.75,
+          OrderStatus.delivered => 1.0,
+          OrderStatus.cancelled => 0.0,
+        };
     return Scaffold(
       backgroundColor: _bgSoft,
       appBar: AppBar(
@@ -101,7 +119,7 @@ class OrderTrackingScreen extends StatelessWidget {
                                 color: Colors.white, size: 14),
                             const SizedBox(width: 6),
                             Text(
-                              order.status.localizedLabel(context),
+                              liveOrder.status.localizedLabel(context),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -112,7 +130,7 @@ class OrderTrackingScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        order.preferredDateTime,
+                        liveOrder.preferredDateTime,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
@@ -143,12 +161,203 @@ class OrderTrackingScreen extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: 0.75,
+                      value: progressValue,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
                       valueColor:
                           const AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
                       minHeight: 6,
                     ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // Assigned Rider & Cold Chain Fleet Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFEDF2EF)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Icon(Icons.two_wheeler_rounded, color: _forestGreen, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Ranjith Subha (NC-4982)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: _textDark,
+                              ),
+                            ),
+                            Text(
+                              'Chilled Fleet • +94 77 123 4567',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: liveOrder.status == OrderStatus.delivered
+                              ? const Color(0xFFECFDF5)
+                              : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: liveOrder.status == OrderStatus.delivered
+                                ? const Color(0xFFA7F3D0)
+                                : const Color(0xFFBFDBFE),
+                          ),
+                        ),
+                        child: Text(
+                          liveOrder.status == OrderStatus.delivered
+                              ? 'Delivered'
+                              : liveOrder.status == OrderStatus.inTransit
+                                  ? 'En Route'
+                                  : 'Assigned',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: liveOrder.status == OrderStatus.delivered
+                                ? const Color(0xFF059669)
+                                : const Color(0xFF2563EB),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 38,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _forestGreen,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
+                            label: const Text(
+                              'Chat with Driver',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            onPressed: () {
+                              final conv = ChatService.instance.getOrCreateConversation(
+                                peerId: 'conv_driver_ranjith',
+                                peerName: 'Ranjith Subha (Driver)',
+                                peerRole: 'Driver',
+                                phone: '+94 77 123 4567',
+                                subtitle: 'Chilled Transit Van NC-4982 • Order #${liveOrder.id}',
+                                orderId: liveOrder.id,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChatDetailScreen(
+                                    conversation: conv,
+                                    currentRole: 'buyer',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 38,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _forestGreen,
+                            side: const BorderSide(color: _forestGreen, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                          ),
+                          icon: const Icon(Icons.phone_outlined, size: 15),
+                          label: const Text(
+                            'Call',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.phone_forwarded_rounded, color: _forestGreen),
+                                    SizedBox(width: 10),
+                                    Text('Call Driver', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                content: const Text(
+                                  'Dialing Ranjith Subha (NC-4982)\n+94 77 123 4567',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _forestGreen,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Call Now'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -185,9 +394,9 @@ class OrderTrackingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ...List.generate(order.trackingSteps.length, (index) {
-                    final step = order.trackingSteps[index];
-                    final isLast = index == order.trackingSteps.length - 1;
+                  ...List.generate(liveOrder.trackingSteps.length, (index) {
+                    final step = liveOrder.trackingSteps[index];
+                    final isLast = index == liveOrder.trackingSteps.length - 1;
 
                     return IntrinsicHeight(
                       child: Row(
@@ -306,7 +515,7 @@ class OrderTrackingScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          order.deliveryAddress,
+                          liveOrder.deliveryAddress,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -323,7 +532,7 @@ class OrderTrackingScreen extends StatelessWidget {
                           color: _forestGreen, size: 18),
                       const SizedBox(width: 10),
                       Text(
-                        order.contactNumber,
+                        liveOrder.contactNumber,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -338,6 +547,8 @@ class OrderTrackingScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

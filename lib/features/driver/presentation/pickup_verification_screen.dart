@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
@@ -160,7 +160,7 @@ class _PickupVerificationScreenState extends State<PickupVerificationScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save audit log: $e'),
+            content: Text('${context.tr.failedSaveAuditLog}: $e'),
             backgroundColor: Colors.red.shade800,
           ),
         );

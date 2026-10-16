@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/app_settings.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/admin_models.dart';
@@ -237,12 +238,14 @@ void showFarmerEditDialog(BuildContext context, {AdminFarmerModel? farmer}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Verified Agri-Partner Badge',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          'Verified Agri-Partner Badge',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isVerified,
                         activeThumbColor: const Color(0xFF047857),
@@ -258,7 +261,7 @@ void showFarmerEditDialog(BuildContext context, {AdminFarmerModel? farmer}) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -366,10 +369,10 @@ void showBuyerEditDialog(BuildContext context, {AdminBuyerModel? buyer}) {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2563EB), size: 22),
+              child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF047857), size: 22),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -480,11 +483,11 @@ void showBuyerEditDialog(BuildContext context, {AdminBuyerModel? buyer}) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
+              backgroundColor: const Color(0xFF047857),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -529,7 +532,7 @@ void showBuyerEditDialog(BuildContext context, {AdminBuyerModel? buyer}) {
                   content: Text(isEditing
                       ? 'Buyer ${updatedBuyer.name} updated!'
                       : 'Buyer ${updatedBuyer.name} added successfully!'),
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: const Color(0xFF047857),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -570,10 +573,10 @@ void showDriverEditDialog(BuildContext context, {AdminDriverModel? driver}) {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
+                color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.local_shipping_rounded, color: Color(0xFFD97706), size: 22),
+              child: const Icon(Icons.local_shipping_rounded, color: Color(0xFF047857), size: 22),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -681,12 +684,14 @@ void showDriverEditDialog(BuildContext context, {AdminDriverModel? driver}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Active Shift Duty (Available for Dispatch)',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          'Active Shift Duty (Available for Dispatch)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isOnDuty,
                         activeThumbColor: const Color(0xFF047857),
@@ -702,11 +707,11 @@ void showDriverEditDialog(BuildContext context, {AdminDriverModel? driver}) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD97706),
+              backgroundColor: const Color(0xFF047857),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -758,7 +763,7 @@ void showDriverEditDialog(BuildContext context, {AdminDriverModel? driver}) {
                   content: Text(isEditing
                       ? 'Driver ${updatedDriver.name} updated!'
                       : 'Driver ${updatedDriver.name} enrolled in fleet!'),
-                  backgroundColor: const Color(0xFFD97706),
+                  backgroundColor: const Color(0xFF047857),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -979,12 +984,14 @@ void showProductEditDialog(BuildContext context, {AdminProductModel? product}) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        '100% Certified Organic Produce',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      const Expanded(
+                        child: Text(
+                          '100% Certified Organic Produce',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Switch(
                         value: isOrganic,
                         activeThumbColor: const Color(0xFF047857),
@@ -1000,7 +1007,7 @@ void showProductEditDialog(BuildContext context, {AdminProductModel? product}) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1111,10 +1118,10 @@ void showOrderEditDialog(BuildContext context, {AdminOrderModel? order}) {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3E8FF),
+                color: const Color(0xFFDCFCE7),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.inventory_rounded, color: Color(0xFF7E22CE), size: 22),
+              child: const Icon(Icons.inventory_rounded, color: Color(0xFF047857), size: 22),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1257,11 +1264,11 @@ void showOrderEditDialog(BuildContext context, {AdminOrderModel? order}) {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7E22CE),
+              backgroundColor: const Color(0xFF047857),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -1310,7 +1317,7 @@ void showOrderEditDialog(BuildContext context, {AdminOrderModel? order}) {
                   content: Text(isEditing
                       ? 'Order #${updatedOrder.id} dispatch updated!'
                       : 'Order #${updatedOrder.id} registered!'),
-                  backgroundColor: const Color(0xFF7E22CE),
+                  backgroundColor: const Color(0xFF047857),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -1362,7 +1369,7 @@ void showDeleteConfirmDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+          child: Text(context.tr.cancel, style: const TextStyle(color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(

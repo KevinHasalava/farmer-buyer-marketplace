@@ -1,0 +1,1244 @@
+﻿import 'dart:math';
+import 'package:flutter/material.dart';
+import '../../../core/localization/app_settings.dart';
+import 'package:flutter/services.dart';
+
+import '../../../core/services/order_lifecycle_manager.dart';
+import '../../dashboard/presentation/farmer_profile_screen.dart';
+import '../../dashboard/presentation/product_detail_screen.dart';
+import '../../../widgets/premium/premium_widgets.dart';
+import 'farmer_bottom_nav.dart';
+import '../services/farmer_profile_manager.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
+
+/// Pixel-perfect Farmer Orders Screen matching Image 1
+class FarmerOrdersScreen extends StatefulWidget {
+  const FarmerOrdersScreen({super.key});
+
+  @override
+  State<FarmerOrdersScreen> createState() => _FarmerOrdersScreenState();
+}
+
+class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
+  final FarmerProfileManager _profileManager = FarmerProfileManager.instance;
+  FarmerData get _farmer => _profileManager.profile.toFarmerData();
+
+  int _selectedFilter = 0; // 0: New (3), 1: Preparing (4), 2: Ready for Pickup
+  final Set<String> _expandedOrderIds = {'#FH-9021', '#FH-9018', '#FH-9005'};
+
+  // Mock order items with interactive status changes
+  final List<Map<String, dynamic>> _orders = [
+    {
+      'id': '#FH-9021',
+      'tag': '⚡ Urgent • New',
+      'tagBg': const Color(0xFFFFEDD5),
+      'tagText': const Color(0xFFC2410C),
+      'time': '12m ago',
+      'initials': 'CP',
+      'initialsBg': const Color(0xFFE0E7FF),
+      'initialsText': const Color(0xFF4338CA),
+      'customer': 'Chaminda Perera',
+      'amount': 'Rs. 1,760',
+      'location': 'Colombo 05',
+      'payment': 'Cash on Delivery',
+      'isCod': true,
+      'itemHeader': 'ORDER ITEMS (2)',
+      'itemBadge': 'Packed fresh',
+      'itemTitle': '3 kg Nuwara Eliya Carrots',
+      'itemSubtitle': '2 kg Leeks (Welimada Farm)',
+      'itemImg':
+          'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=200&auto=format&fit=crop&q=80',
+      'status': 'new', // new, preparing, ready
+      'accepted': false,
+    },
+    {
+      'id': '#FH-9018',
+      'tag': 'New Order',
+      'tagBg': const Color(0xFFDCFCE7),
+      'tagText': const Color(0xFF15803D),
+      'time': '35m ago',
+      'initials': 'DJ',
+      'initialsBg': const Color(0xFFD1FAE5),
+      'initialsText': const Color(0xFF065F46),
+      'customer': 'Dilani Jayawardena',
+      'amount': 'Rs. 600',
+      'location': 'Dehiwala',
+      'payment': 'Paid Online',
+      'isCod': false,
+      'itemHeader': 'ORDER ITEMS (2)',
+      'itemBadge': 'Standard Delivery',
+      'itemTitle': '1 kg Organic Gotukola',
+      'itemSubtitle': '2 kg Red Tomatoes',
+      'itemImg':
+          'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&auto=format&fit=crop&q=80',
+      'status': 'new',
+      'accepted': false,
+    },
+    {
+      'id': '#FH-9005',
+      'tag': '👨‍🌾 Preparing',
+      'tagBg': const Color(0xFFFFEDD5),
+      'tagText': const Color(0xFFC2410C),
+      'time': 'In Progress',
+      'initials': 'KM',
+      'initialsBg': const Color(0xFFE0E7FF),
+      'initialsText': const Color(0xFF3730A3),
+      'customer': 'Kusal Mendis',
+      'amount': 'Rs. 2,100',
+      'location': 'Kandy',
+      'payment': 'Direct Farm Dispatch',
+      'isCod': false,
+      'itemHeader': 'ORDER CONTENT',
+      'itemBadge': '5 kg Total',
+      'itemTitle': '5 kg Highland Potatoes',
+      'itemSubtitle': 'Grade A • Sifted and bagged',
+      'itemImg':
+          'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=200&auto=format&fit=crop&q=80',
+      'status': 'preparing',
+      'driverName': 'Sunil Driver (Tuk-tuk #WP-AB-4412)',
+      'driverEta': 'Arriving at gate in 20 min',
+      'accepted': true,
+      'readyForPickup': false,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    OrderLifecycleManager.instance.addListener(_onOrdersLifecycleChanged);
+    _syncLiveFarmerOrders();
+  }
+
+  @override
+  void dispose() {
+    OrderLifecycleManager.instance.removeListener(_onOrdersLifecycleChanged);
+    super.dispose();
+  }
+
+  void _onOrdersLifecycleChanged() {
+    if (mounted) {
+      setState(() {
+        _syncLiveFarmerOrders();
+      });
+    }
+  }
+
+  void _syncLiveFarmerOrders() {
+    for (final fo in OrderLifecycleManager.instance.farmerOrders) {
+      final exists = _orders.any((o) => (o['id'] as String).replaceAll('#', '').trim() == fo.id.replaceAll('#', '').trim());
+      if (!exists) {
+        final statusKey = fo.status.toLowerCase().contains('prep')
+            ? 'preparing'
+            : (fo.status.toLowerCase().contains('ready') || fo.status.toLowerCase().contains('transit')
+                ? 'ready'
+                : 'new');
+        _orders.insert(0, {
+          'id': fo.id.length > 8 ? '#${fo.id.substring(0, 8).toUpperCase()}' : (fo.id.startsWith('#') ? fo.id : '#${fo.id}'),
+          'tag': fo.status == 'Pending' ? '⚡ Urgent • New' : fo.status,
+          'tagBg': fo.status == 'Pending' ? const Color(0xFFFFEDD5) : const Color(0xFFDCFCE7),
+          'tagText': fo.status == 'Pending' ? const Color(0xFFC2410C) : const Color(0xFF15803D),
+          'time': 'Just now',
+          'initials': fo.customer.isNotEmpty
+              ? fo.customer.substring(0, min(2, fo.customer.length)).toUpperCase()
+              : 'CU',
+          'initialsBg': const Color(0xFFE0E7FF),
+          'initialsText': const Color(0xFF4338CA),
+          'customer': fo.customer,
+          'amount': fo.amount,
+          'location': fo.deliveryAddress.isNotEmpty ? fo.deliveryAddress : 'Colombo',
+          'payment': fo.paymentMethod,
+          'isCod': fo.paymentMethod.toLowerCase().contains('cash'),
+          'itemHeader': 'ORDER ITEMS (${max(1, fo.items.length)})',
+          'itemBadge': 'Packed fresh',
+          'itemTitle': fo.items.isNotEmpty
+              ? '${fo.items.first.quantity} ${fo.items.first.unit} ${fo.items.first.name}'
+              : 'Fresh Farm Basket',
+          'itemSubtitle': fo.items.length > 1
+              ? '${fo.items[1].quantity} ${fo.items[1].unit} ${fo.items[1].name}'
+              : 'Welimada Farm Fresh',
+          'itemImg':
+              'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=200&auto=format&fit=crop&q=80',
+          'status': statusKey,
+          'accepted': statusKey != 'new',
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+
+    final filteredOrders = _orders.where((o) {
+      if (_selectedFilter == 0) return o['status'] == 'new';
+      if (_selectedFilter == 1) return o['status'] == 'preparing';
+      return o['status'] == 'ready';
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAF8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Top Brand Bar matching Image 1 ─────────────────────────────────
+            _buildTopBrandBar(),
+
+            // ── Scrollable Body ───────────────────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+
+                    // ── Header Title & Live Sync Row ──────────────────────────
+                    _buildHeaderRow(),
+                    const SizedBox(height: 14),
+
+                    // ── Filter Pill Tabs ──────────────────────────────────────
+                    _buildFilterTabs(),
+                    const SizedBox(height: 16),
+
+                    // ── Orders List ───────────────────────────────────────────
+                    if (filteredOrders.isEmpty)
+                      _buildEmptyState()
+                    else
+                      ...filteredOrders.map((ord) => _buildOrderCard(ord)),
+
+                    const SizedBox(height: 16),
+
+                    // ── Logistics Hotline Card matching Image 1 ───────────────
+                    _buildLogisticsHotlineCard(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: FarmerBottomNav(current: 2),
+    );
+  }
+
+  // ── Top Brand Bar ───────────────────────────────────────────────────────────
+  Widget _buildTopBrandBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                const AppBrandLogo(size: 36, hasGlow: false),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const AppBrandWordmark(fontSize: 16, isLight: false),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'FARMER',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF15803D),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        _farmer.name.isNotEmpty ? _farmer.name : 'Farmer Bandara',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Row(
+            children: [
+              const AppLanguagePill(),
+              const SizedBox(width: 8),
+              // Notification bell with red alert dot
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(context.tr.syncNotifications),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Color(0xFF166534),
+                    ),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_none_rounded,
+                        color: Color(0xFF1F2937),
+                        size: 20,
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Profile Avatar circle
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FarmerProfileScreen(farmer: _farmer),
+                  ),
+                ),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF166534),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipOval(
+                    child: (_farmer.avatarUrl != null && _farmer.avatarUrl!.isNotEmpty)
+                        ? Image.network(_farmer.avatarUrl!, fit: BoxFit.cover)
+                        : const Icon(Icons.person, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Header Title & Live Sync Row ────────────────────────────────────────────
+  Widget _buildHeaderRow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Farmer Orders'.trAuto(context),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Live Sync'.trAuto(context),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF15803D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Sync / reload button
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Orders synced with live marketplace ✓'.trAuto(context)),
+                    backgroundColor: const Color(0xFF166534),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.sync_rounded,
+                  color: Color(0xFF4B5563),
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                color: Color(0xFF166534),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '14 Orders Today'.trAuto(context),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF166534),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '•  Avg prep time: 18m'.trAuto(context),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Filter Tabs matching Image 1 ────────────────────────────────────────────
+  Widget _buildFilterTabs() {
+    final tabs = ['New (3)', 'Preparing (4)', 'Ready for Pickup'];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: List.generate(tabs.length, (i) {
+          final isSelected = _selectedFilter == i;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedFilter = i);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF166534) : const Color(0xFFEEF2F6),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  tabs[i].trAuto(context),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  // ── Order Card matching Image 1 ─────────────────────────────────────────────
+  Widget _buildOrderCard(Map<String, dynamic> ord) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Order ID + Status badge + Time
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        ord['id'],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: ord['tagBg'],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        (ord['tag'] as String).trAuto(context),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: ord['tagText'],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                children: [
+                  const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF9CA3AF)),
+                  const SizedBox(width: 4),
+                  Text(
+                    (ord['time'] as String).trAuto(context),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: ord['time'] == 'In Progress'
+                          ? const Color(0xFF059669)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Customer Row: Initials Avatar + Name & Location + Amount
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: ord['initialsBg'],
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    ord['initials'],
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: ord['initialsText'],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ord['customer'],
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_rounded, size: 13, color: Color(0xFF9CA3AF)),
+                        const SizedBox(width: 3),
+                        Text(
+                          (ord['location'] as String).trAuto(context),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '•  ${(ord['payment'] as String).trAuto(context)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: ord['isCod']
+                                ? const Color(0xFFB45309)
+                                : const Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    (ord['amount'] as String).trAuto(context),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF166534),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        if (_expandedOrderIds.contains(ord['id'])) {
+                          _expandedOrderIds.remove(ord['id']);
+                        } else {
+                          _expandedOrderIds.add(ord['id']);
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _expandedOrderIds.contains(ord['id'])
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: const Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Collapsible/Expandable Order Content
+          if (_expandedOrderIds.contains(ord['id'])) ...[
+            const SizedBox(height: 14),
+
+            // Inner Item Container
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFEDF2F7)),
+              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      (ord['itemHeader'] as String).trAuto(context),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      (ord['itemBadge'] as String).trAuto(context),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        ord['itemImg'],
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 44,
+                          height: 44,
+                          color: const Color(0xFFDCFCE7),
+                          child: const Center(
+                            child: Text('🥕', style: TextStyle(fontSize: 20)),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            (ord['itemTitle'] as String).trAuto(context),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            (ord['itemSubtitle'] as String).trAuto(context),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Optional Driver Tracking Box (shown for Preparing order #FH-9005)
+          if (ord['driverName'] != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.electric_moped_rounded,
+                      color: Color(0xFF059669),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ord['driverName'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF065F46),
+                          ),
+                        ),
+                        Text(
+                          ord['driverEta'],
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF059669),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      final conv = ChatService.instance.getOrCreateConversation(
+                        peerId: 'conv_driver_${ord['driverName'].toString().toLowerCase().replaceAll(' ', '_')}',
+                        peerName: ord['driverName'],
+                        peerRole: 'Driver',
+                        orderId: ord['id'],
+                        subtitle: 'Pickup for ${ord['id']} • ${ord['driverEta']}',
+                        phone: '+94 77 345 6789',
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatDetailScreen(
+                            conversation: conv,
+                            currentRole: 'farmer',
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF6EE7B7)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF047857)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Chat'.trAuto(context),
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF047857),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+
+          const SizedBox(height: 14),
+
+          // Action Buttons matching Image 1
+          if (ord['status'] == 'new')
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _showOrderDetailsDialog(ord);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEEF2F6),
+                        foregroundColor: const Color(0xFF374151),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'View Details'.trAuto(context),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        setState(() {
+                          ord['status'] = 'preparing';
+                          ord['tag'] = '👨‍🌾 Preparing';
+                          ord['tagBg'] = const Color(0xFFFFEDD5);
+                          ord['tagText'] = const Color(0xFFC2410C);
+                        });
+                        try {
+                          OrderLifecycleManager.instance.onFarmerStatusUpdated(
+                            ord['id'] as String,
+                            'Preparing',
+                          );
+                        } catch (_) {}
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${ord['id']} accepted! Moved to Preparing.'.trAuto(context)),
+                            backgroundColor: const Color(0xFF166534),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF166534),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                      label: Text(
+                        'Accept Order'.trAuto(context),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else if (ord['status'] == 'preparing')
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  setState(() {
+                    ord['status'] = 'ready';
+                    ord['tag'] = 'Ready for Pickup';
+                    ord['tagBg'] = const Color(0xFFDCFCE7);
+                    ord['tagText'] = const Color(0xFF15803D);
+                  });
+                  try {
+                    OrderLifecycleManager.instance.onFarmerStatusUpdated(
+                      ord['id'] as String,
+                      'Ready for Pickup',
+                    );
+                  } catch (_) {}
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${ord['id']} marked Ready for Pickup! Driver notified.'.trAuto(context)),
+                      backgroundColor: const Color(0xFF166534),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF166534),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined, size: 17),
+                label: Text(
+                  'Mark Ready for Pickup'.trAuto(context),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Ready for Driver Pickup'.trAuto(context),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF15803D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ── Logistics Hotline Card matching Image 1 ─────────────────────────────────
+  Widget _buildLogisticsHotlineCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2FF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0E7FF)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFFDCFCE7),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.headset_mic_rounded,
+              color: Color(0xFF15803D),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Logistics Hotline'.trAuto(context),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E1B4B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Direct driver dispatch coordinator'.trAuto(context),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(': 011-2345678'),
+                  backgroundColor: Color(0xFF166534),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF166534),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: Text(
+              'Call Driver\nHub'.trAuto(context),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF1F5F9),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              size: 30,
+              color: Color(0xFF94A3B8),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No orders in this status'.trAuto(context),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475569),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Check other tabs for active farm deliveries'.trAuto(context),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOrderDetailsDialog(Map<String, dynamic> ord) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${"Order Details".trAuto(context)}: ${ord['id']}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${"Buyer".trAuto(context)}: ${ord['customer']}',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              '${"Location".trAuto(context)}: ${(ord['location'] as String).trAuto(context)}',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            ),
+            Text(
+              '${"Payment Mode".trAuto(context)}: ${(ord['payment'] as String).trAuto(context)}',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              '${"Items".trAuto(context)}: ${(ord['itemTitle'] as String).trAuto(context)} + ${(ord['itemSubtitle'] as String).trAuto(context)}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${"Total Payout".trAuto(context)}: ${(ord['amount'] as String).trAuto(context)}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF166534),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF166534),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(context.tr.close),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}

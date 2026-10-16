@@ -7,12 +7,17 @@ import '../../../core/routes/app_router.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../../orders_chat/presentation/orders_chat_screen.dart';
+import '../../orders_chat/presentation/chat_list_screen.dart';
 import '../data/buyer_mock_data.dart';
 import '../services/buyer_profile_manager.dart';
 import 'buyer_farmer_profile_screen.dart';
 import 'buyer_notifications_screen.dart';
+import 'buyer_reviews_screen.dart';
+import '../services/buyer_review_service.dart';
 import 'widgets/buyer_bottom_nav.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
+import '../../payment/presentation/saved_payment_methods_screen.dart';
+import '../../payment/services/payment_method_manager.dart';
+import '../../payment/presentation/widgets/wallet_top_up_sheet.dart';
 
 /// Buyer Profile Screen — matching Farm2Home "Buyer Profile - Consumer Hub" design.
 class BuyerProfileScreen extends StatefulWidget {
@@ -256,8 +261,8 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                       );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Delivery address & hub saved!'),
+                        SnackBar(
+                          content: Text(context.tr.addressSaved),
                           backgroundColor: _forestGreen,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -270,7 +275,7 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Update Delivery Hub', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: Text(context.tr.updateDeliveryHub, style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -286,12 +291,12 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to sign out of your Farm2Home buyer account?'),
+        title: Text(context.tr.logout, style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(context.tr.signOutConfirmBuyer),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: _textMuted)),
+            child: Text(context.tr.cancel, style: const TextStyle(color: _textMuted)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -965,59 +970,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
               ),
             ),
 
-            // Buyer Freshness Promise Active (Banner)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFDCFCE7)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFDCFCE7),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.verified_user_rounded, color: _forestGreen, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.tr.buyerFreshnessPromise,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF14532D),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              context.tr.freshnessPromiseBody,
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Color(0xFF166534),
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
             // Quick Action Menu List
             SliverToBoxAdapter(
               child: Padding(
@@ -1048,13 +1000,28 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         title: context.tr.farmDirectWallet,
                         subtitle: context.tr.walletSub,
                         trailingPill: profile.formattedWallet,
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${context.tr.walletBalance}: ${profile.formattedWallet}'),
-                              backgroundColor: _forestGreen,
-                              behavior: SnackBarBehavior.floating,
-                            ),
+                        onTap: () => WalletTopUpSheet.show(context),
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                      ListenableBuilder(
+                        listenable: PaymentMethodManager.instance,
+                        builder: (ctx, _) {
+                          final count = PaymentMethodManager.instance.methods.length;
+                          return _buildMenuItem(
+                            icon: Icons.credit_card_rounded,
+                            iconBg: const Color(0xFFF0FDF4),
+                            iconColor: const Color(0xFF15803D),
+                            title: 'Payment Methods & Cards'.trAuto(context),
+                            subtitle: 'Manage saved cards, default payment & accounts'.trAuto(context),
+                            trailingPill: '$count ${count == 1 ? 'Card' : 'Cards'}',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SavedPaymentMethodsScreen(),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
@@ -1094,6 +1061,29 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         },
                       ),
                       const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                      ListenableBuilder(
+                        listenable: BuyerReviewService.instance,
+                        builder: (ctx, _) {
+                          final myCount = BuyerReviewService.instance.myReviews(profile.id).length;
+                          return _buildMenuItem(
+                            icon: Icons.star_rate_rounded,
+                            iconBg: const Color(0xFFFEF3C7),
+                            iconColor: const Color(0xFFD97706),
+                            title: 'My Reviews & Farmer Ratings'.trAuto(context),
+                            subtitle: 'Manage feedback, star ratings & farmer responses'.trAuto(context),
+                            trailingPill: '$myCount ${myCount == 1 ? "Review" : "Reviews"}',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const BuyerReviewsScreen(initialFilterIndex: 1),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
                       _buildMenuItem(
                         icon: Icons.handshake_outlined,
                         iconBg: const Color(0xFFCCFBF1),
@@ -1127,30 +1117,15 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                         title: context.tr.officerHubSupport,
                         subtitle: context.tr.officerHubSub,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const OrdersChatScreen(initialTab: 1),
-                            ),
-                          );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ChatListScreen(),
+                                ),
+                              );
                         },
                       ),
-                      const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
-                      _buildMenuItem(
-                        icon: Icons.admin_panel_settings_rounded,
-                        iconBg: const Color(0xFFDCFCE7),
-                        iconColor: const Color(0xFF047857),
-                        title: 'Marketplace Admin Console',
-                        subtitle: 'Multi-role Management & CRUD System',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AdminPanelScreen(),
-                            ),
-                          );
-                        },
-                      ),
+
                     ],
                   ),
                 ),

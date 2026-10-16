@@ -46,10 +46,16 @@ enum UserRole {
 
 /// App-wide persisted preferences: language, onboarding state and role.
 class AppSettings extends ChangeNotifier {
+  static AppSettings? _instance;
+  static AppSettings get current => _instance!;
+  static final ValueNotifier<int> changeNotifier = ValueNotifier<int>(0);
+
   AppSettings._(this._prefs)
       : _language = AppLanguage.fromCode(_prefs.getString(_kLanguage)),
         _onboardingSeen = _prefs.getBool(_kOnboarding) ?? false,
-        _role = UserRole.fromName(_prefs.getString(_kRole));
+        _role = UserRole.fromName(_prefs.getString(_kRole)) {
+    _instance = this;
+  }
 
   static const _kLanguage = 'app_language';
   static const _kOnboarding = 'onboarding_seen';
@@ -64,7 +70,13 @@ class AppSettings extends ChangeNotifier {
   static Future<AppSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
     await AppAutoTranslator.instance.init();
-    return AppSettings._(prefs);
+    final settings = AppSettings._(prefs);
+    _instance = settings;
+    AppAutoTranslator.instance.addListener(() {
+      settings.notifyListeners();
+      changeNotifier.value++;
+    });
+    return settings;
   }
 
   /// The language chosen by the user, or `null` if not yet selected.
@@ -79,24 +91,29 @@ class AppSettings extends ChangeNotifier {
   Future<void> setLanguage(AppLanguage lang) async {
     _language = lang;
     notifyListeners();
+    changeNotifier.value++;
+    AppAutoTranslator.instance.notifyListeners();
     await _prefs.setString(_kLanguage, lang.code);
   }
 
   Future<void> completeOnboarding() async {
     _onboardingSeen = true;
     notifyListeners();
+    changeNotifier.value++;
     await _prefs.setBool(_kOnboarding, true);
   }
 
   Future<void> setRole(UserRole role) async {
     _role = role;
     notifyListeners();
+    changeNotifier.value++;
     await _prefs.setString(_kRole, role.name);
   }
 
   Future<void> clearRole() async {
     _role = null;
     notifyListeners();
+    changeNotifier.value++;
     await _prefs.remove(_kRole);
   }
 }

@@ -28,12 +28,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   }
 
   Future<void> _continue() async {
-    final lang = _selected;
-    if (lang == null) return;
+    final lang = _selected ?? AppLanguage.sinhala;
     final s = context.settings;
     await s.setLanguage(lang);
     if (!mounted) return;
-    context.go(s.onboardingSeen ? AppRoutes.roleSelection : AppRoutes.onboarding);
+    context.go(AppRoutes.onboarding);
   }
 
   @override

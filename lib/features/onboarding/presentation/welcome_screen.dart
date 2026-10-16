@@ -32,28 +32,8 @@ class WelcomeScreen extends StatelessWidget {
 
               const Spacer(flex: 2),
 
-              // ── Brand Logo ──────────────────────────────────────────────
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: AppColors.darkGreen,
-                  borderRadius:
-                      BorderRadius.circular(AppDimensions.radiusXL),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.darkGreen.withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.eco_rounded,
-                  color: AppColors.accentOrange,
-                  size: 44,
-                ),
-              ),
+              // ── Brand Logo (Matching Splash Loading Screen) ──────────────
+              const AppBrandLogo(size: 88, hasGlow: true),
 
               const SizedBox(height: AppDimensions.spaceLG),
 

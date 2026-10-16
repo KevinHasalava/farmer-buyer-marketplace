@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -17,6 +18,10 @@ import 'buyer_cart_screen.dart';
 import 'widgets/buyer_bottom_nav.dart';
 import '../services/buyer_profile_manager.dart';
 import '../services/buyer_notification_service.dart';
+import '../../auction/presentation/buyer/buyer_auction_list_screen.dart';
+import '../../auction/presentation/buyer/buyer_auction_detail_screen.dart';
+import '../../auction/services/auction_manager.dart';
+import '../../auction/models/auction_model.dart';
 
 /// 9. Buyer Home Screen — matching Screenshot 9
 class BuyerHomeScreen extends StatefulWidget {
@@ -45,7 +50,11 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _cartState.addListener(_onCartChanged);
     _profileManager.addListener(_onProfileChanged);
     _notifService.addListener(_onNotifChanged);
+    AuctionManager.instance.addListener(_onCartChanged);
     _profileManager.loadProfile();
+    BuyerMockData.syncFromDatabase().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -53,6 +62,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
     _cartState.removeListener(_onCartChanged);
     _profileManager.removeListener(_onProfileChanged);
     _notifService.removeListener(_onNotifChanged);
+    AuctionManager.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -442,157 +452,8 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
             ),
 
             // Hero Promo Banner matching User's Reference
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  height: 205,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D3820),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0D3820).withValues(alpha: 0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    children: [
-                      // Background Image: Freshly harvested carrots in wooden crate on field
-                      Positioned.fill(
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=1000&auto=format&fit=crop&q=80',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.centerRight,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: const Color(0xFF0D3820),
-                          ),
-                        ),
-                      ),
-                      // Smooth gradient overlay from dark green on left to translucent on right
-                      Positioned.fill(
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFF0D3820),
-                                Color(0xFF0D3820),
-                                Color(0xE60D3820),
-                                Color(0x800D3820),
-                                Color(0x260D3820),
-                              ],
-                              stops: [0.0, 0.40, 0.60, 0.82, 1.0],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Content
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Top Pill Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E5232).withValues(alpha: 0.95),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFF3B7A50),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    context.tr.springHarvestFest,
-                                    style: const TextStyle(
-                                      color: Color(0xFF86EFAC),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.6,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Headline & Subheading
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.tr.promoHeadline,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 21,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.15,
-                                    letterSpacing: -0.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  context.tr.promoSub,
-                                  style: const TextStyle(
-                                    color: Color(0xFFD1FAE5),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // CTA Button
-                            GestureDetector(
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BuyerProductListScreen(
-                                    categoryTitle: context.tr.categoryVegetables,
-                                  ),
-                                ),
-                              ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(22),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.12),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  context.tr.shopSeasonSpecials,
-                                  style: const TextStyle(
-                                    color: Color(0xFF0D3820),
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            const SliverToBoxAdapter(
+              child: _BuyerPromoCarousel(),
             ),
 
             // Categories Section
@@ -785,6 +646,102 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               ),
             ),
 
+            // Live Crop Auctions & Bidding Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.gavel_rounded, color: _forestGreen, size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Live Crop Auctions & Bidding 🌾'.trAuto(context),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textDark,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                Text(
+                                  'Bid on bulk harvest lots direct from farmers'.trAuto(context),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BuyerAuctionListScreen()),
+                      ),
+                      child: Text(
+                        'See All'.trAuto(context),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _forestGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Live Auctions Horizontal Cards
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 235,
+                child: ListenableBuilder(
+                  listenable: AuctionManager.instance,
+                  builder: (context, _) {
+                    final auctions = AuctionManager.instance.activeAuctions;
+                    if (auctions.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: auctions.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, idx) {
+                        final a = auctions[idx];
+                        return _buildBuyerAuctionCard(a);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+
             // Popular Right Now Section Header
             SliverToBoxAdapter(
               child: Padding(
@@ -793,27 +750,34 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.tr.popularRightNow,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: _textDark,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr.popularRightNow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _textDark,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          context.tr.verifiedFreshPartner,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: _textMuted,
+                          const SizedBox(height: 2),
+                          Text(
+                            context.tr.verifiedFreshPartner,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: _textMuted,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
@@ -827,6 +791,7 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.tune_rounded, size: 12, color: _textDark),
                             const SizedBox(width: 4),
@@ -952,12 +917,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
           children: [
             Stack(
               children: [
-                Image.network(
-                  product.imageUrl,
-                  height: 105,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                product.imageUrl.startsWith('assets')
+                    ? Image.asset(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        product.imageUrl,
+                        height: 105,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
                 Positioned(
                   top: 8,
                   left: 8,
@@ -1009,44 +981,216 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.formattedPrice,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: _forestGreen,
-                            ),
-                          ),
-                          if (product.originalPrice != null)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              product.formattedOriginalPrice,
+                              product.formattedPrice,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 10,
-                                decoration: TextDecoration.lineThrough,
-                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _forestGreen,
                               ),
                             ),
-                        ],
+                            if (product.originalPrice != null)
+                              Text(
+                                product.formattedOriginalPrice,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 4),
                       GestureDetector(
                         onTap: onAdd,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(
                             color: _forestGreen,
-                            borderRadius: BorderRadius.circular(14),
+                            shape: BoxShape.circle,
                           ),
-                          child: Text(
-                            context.tr.addProduct,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                          child: const Icon(Icons.add, size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuyerAuctionCard(AuctionModel auction) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuyerAuctionDetailScreen(auctionId: auction.id),
+        ),
+      ),
+      child: Container(
+        width: 220,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Stack with LIVE BADGE & TIMER
+            Stack(
+              children: [
+                SizedBox(
+                  height: 115,
+                  width: double.infinity,
+                  child: Image.network(
+                    auction.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: _forestGreen),
+                  ),
+                ),
+                Container(
+                  height: 115,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0x59000000),
+                        Colors.transparent,
+                        Color(0xB3000000),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.bolt_rounded, size: 11, color: Colors.white),
+                        const SizedBox(width: 2),
+                        Text(
+                          'LIVE BID'.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.timer_outlined, size: 10, color: Color(0xFFFDBA74)),
+                        const SizedBox(width: 3),
+                        Text(
+                          auction.remainingTimeString.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 6,
+                  left: 8,
+                  right: 8,
+                  child: Text(
+                    '${auction.quantity.toStringAsFixed(0)} ${auction.unit} • ${auction.location}'.trAuto(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+
+            // Card Body
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auction.cropName.trAuto(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _textDark),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Farmer: ${auction.farmerName}'.trAuto(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10.5, color: _textMuted),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (auction.totalBids > 0 ? 'Top Bid' : 'Starting Bid').trAuto(context),
+                              style: const TextStyle(fontSize: 9.5, color: _textMuted, fontWeight: FontWeight.w600),
                             ),
-                          ),
+                            Text(
+                              'Rs. ${auction.effectivePrice.toStringAsFixed(0)}/${auction.unit}'.trAuto(context),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: _forestGreen),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _forestGreen,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Bid Now'.trAuto(context),
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],
@@ -1088,10 +1232,15 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  product.imageUrl.startsWith('assets')
+                      ? Image.asset(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.network(
+                          product.imageUrl,
+                          fit: BoxFit.cover,
+                        ),
                   if (product.badge != null)
                     Positioned(
                       top: 8,
@@ -1134,14 +1283,19 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        product.formattedPrice,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: _forestGreen,
+                      Expanded(
+                        child: Text(
+                          product.formattedPrice,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: _forestGreen,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 4),
                       GestureDetector(
                         onTap: onAdd,
                         child: Container(
@@ -1155,6 +1309,203 @@ class _BuyerHomeScreenState extends State<BuyerHomeScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BuyerPromoCarousel extends StatefulWidget {
+  const _BuyerPromoCarousel();
+
+  @override
+  State<_BuyerPromoCarousel> createState() => _BuyerPromoCarouselState();
+}
+
+class _BuyerPromoCarouselState extends State<_BuyerPromoCarousel> {
+  int _currentIndex = 0;
+  Timer? _timer;
+
+  final List<String> _images = [
+    'assets/images/promo_1.jpg',
+    'assets/images/promo_2.jpg',
+    'assets/images/promo_3.jpg',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentIndex = (_currentIndex + 1) % _images.length;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 205,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D3820),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0D3820).withValues(alpha: 0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Rotating Background Images
+            Positioned.fill(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 800),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: Image.asset(
+                  _images[_currentIndex],
+                  key: ValueKey<int>(_currentIndex),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.centerRight,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xFF0D3820),
+                  ),
+                ),
+              ),
+            ),
+            // Smooth gradient overlay from dark green on left to translucent on right
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF0D3820),
+                      Color(0xFF0D3820),
+                      Color(0xE60D3820),
+                      Color(0x800D3820),
+                      Color(0x260D3820),
+                    ],
+                    stops: [0.0, 0.40, 0.60, 0.82, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Top Pill Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E5232).withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF3B7A50),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.eco_rounded, size: 13, color: Color(0xFF4ADE80)),
+                        const SizedBox(width: 5),
+                        Text(
+                          context.tr.springHarvestFest,
+                          style: const TextStyle(
+                            color: Color(0xFF86EFAC),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Headline & Subheading
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr.promoHeadline,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        context.tr.promoSub,
+                        style: const TextStyle(
+                          color: Color(0xFFD1FAE5),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // CTA Button
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BuyerProductListScreen(
+                          categoryTitle: context.tr.categoryVegetables,
+                        ),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        context.tr.shopSeasonSpecials,
+                        style: const TextStyle(
+                          color: Color(0xFF0D3820),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

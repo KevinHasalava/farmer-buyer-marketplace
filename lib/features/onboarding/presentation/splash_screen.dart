@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/auth_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../admin/services/admin_auth_service.dart';
 
 /// Step 1: Splash Screen — matching original WelcomeScreen design system.
 class SplashScreen extends StatefulWidget {
@@ -17,38 +19,104 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  bool _navigated = false;
+
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: const Duration(milliseconds: 1000),
   )..forward();
+
+  late final AnimationController _progressController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  );
+
+  late final Animation<double> _progressAnimation = CurvedAnimation(
+    parent: _progressController,
+    curve: Curves.easeInOut,
+  );
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2200), _routeNext);
+    _progressController.forward();
+    _progressController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 280), _routeNext);
+      }
+    });
   }
 
-  void _routeNext() {
-    if (!mounted) return;
+  Future<void> _routeNext() async {
+    if (!mounted || _navigated) return;
+    _navigated = true;
     final s = context.settings;
 
-    if (!s.hasLanguage) {
-      context.go(AppRoutes.language);
+    // If master admin is authenticated, route directly to Admin Panel:
+    if (AdminAuthService.instance.isAuthenticated) {
+      context.go(AppRoutes.adminPanel);
       return;
     }
 
-    if (s.role != null) {
-      context.go(AppRoutes.homeFor(s.role!));
+    // A returning user with a valid Supabase session goes straight home,
+    // using the role stored in the database (never a locally cached guess).
+    if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
+      try {
+        final roleStr = await const AuthService().fetchRole();
+        if (!mounted) return;
+        if (roleStr == 'admin') {
+          final ok = await AdminAuthService.instance.adoptCurrentSession();
+          if (!mounted) return;
+          if (ok) {
+            context.go(AppRoutes.adminPanel);
+            return;
+          }
+        } else {
+          final role = UserRole.fromName(roleStr) ?? UserRole.buyer;
+          await s.setRole(role);
+          if (!mounted) return;
+          context.go(AppRoutes.homeFor(role));
+          return;
+        }
+      } on AuthException catch (e) {
+        if (!mounted) return;
+        final msg = e.message.toLowerCase();
+        if (msg == 'profile_not_found' ||
+            msg.contains('not found') ||
+            msg.contains('no rows')) {
+          // Signed in (e.g. Google) but not registered yet: keep the session
+          // and let the user pick a role and complete registration.
+          final chosen = s.role;
+          context.go(!s.hasLanguage
+              ? AppRoutes.language
+              : (chosen != null
+                  ? AppRoutes.registerFor(chosen)
+                  : AppRoutes.roleSelection));
+          return;
+        }
+        await const AuthService().signOut();
+      } catch (_) {
+        // Suspended / offline: fall through to sign-in.
+        await const AuthService().signOut();
+      }
+    }
+    if (!mounted) return;
+
+    // Returning user who already chose a language: skip language selection.
+    if (s.hasLanguage) {
+      context.go(s.onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
       return;
     }
 
-    context.go(s.onboardingSeen ? AppRoutes.roleSelection : AppRoutes.onboarding);
+    // First launch: Splash -> Language -> Onboarding -> Role -> Login
+    context.go(AppRoutes.language);
   }
 
   @override
   void dispose() {
     _anim.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
@@ -59,152 +127,333 @@ class _SplashScreenState extends State<SplashScreen>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.backgroundLight,
-        body: SafeArea(
-          child: Padding(
-            padding: AppDimensions.screenPadding,
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
-
-                // ── Brand Logo (matching WelcomeScreen) ───────────────────
-                ScaleTransition(
-                  scale: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
-                  ),
-                  child: const AppBrandLogo(size: 96),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceLG),
-
-                // ── Tagline Badge ─────────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.spaceMD,
-                      vertical: AppDimensions.spaceXXS + 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusFull),
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.verified_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 14,
-                        ),
-                        const SizedBox(width: AppDimensions.spaceXXS),
-                        Text(
-                          tr.ethicalAndDirect,
-                          style: AppTheme.fontStyle(
-                            context.currentLanguage,
-                            color: AppColors.primaryGreen,
-                            letterSpacing: AppTextStyles.trackingWidest,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceMD),
-
-                // ── Wordmark Headline ──────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
-                  ),
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: AppTheme.fontStyle(
-                        context.currentLanguage,
-                        fontSize: 34,
-                        color: AppColors.textDark,
-                        letterSpacing: -0.5,
-                      ),
-                      children: const [
-                        TextSpan(
-                          text: 'Farm',
-                          style: TextStyle(fontWeight: FontWeight.w400),
-                        ),
-                        TextSpan(
-                          text: '2',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.accentOrange,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'Home',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppDimensions.spaceSM),
-
-                // ── Localized Tagline ───────────────────────────────────────
-                FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _anim,
-                    curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-                  ),
-                  child: Text(
-                    tr.tagline,
-                    textAlign: TextAlign.center,
-                    style: AppTheme.fontStyle(
-                      context.currentLanguage,
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-
-                const Spacer(flex: 3),
-
-                // ── Loader / Indicator ───────────────────────────────────────
-                SizedBox(
-                  width: 90,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      minHeight: 3,
-                      backgroundColor:
-                          AppColors.primaryGreen.withValues(alpha: 0.15),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryGreen,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spaceXL),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF021B10),
+                Color(0xFF052F1E),
+                Color(0xFF09462B),
               ],
             ),
+          ),
+          child: Stack(
+            children: [
+              // ── Ambient Glow Background Circles ───────────────────────────
+              Positioned(
+                top: -60,
+                right: -60,
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 80,
+                left: -80,
+                child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF059669).withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+
+              // ── Main Balanced Content ──────────────────────────────────────
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Center Brand Block (Perfect Optical Balance)
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Glowing Squircle Brand Emblem ───────────────
+                              ScaleTransition(
+                                scale: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+                                ),
+                                child: const AppBrandLogo(size: 104, hasGlow: true),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // ── Verified Ethical Badge (No text clipping) ───
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.25, 0.75, curve: Curves.easeOut),
+                                ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.22),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.08),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.verified_rounded,
+                                        color: Color(0xFF34D399),
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Flexible(
+                                        child: Text(
+                                          tr.ethicalAndDirect,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTheme.fontStyle(
+                                            context.currentLanguage,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11.5,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 18),
+
+                              // ── Wordmark Headline ────────────────────────────
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.35, 0.85, curve: Curves.easeOut),
+                                ),
+                                child: RichText(
+                                  textAlign: TextAlign.center,
+                                  text: TextSpan(
+                                    style: AppTheme.fontStyle(
+                                      context.currentLanguage,
+                                      fontSize: 36,
+                                      color: Colors.white,
+                                      letterSpacing: -0.6,
+                                    ),
+                                    children: const [
+                                      TextSpan(
+                                        text: 'Farm',
+                                        style: TextStyle(fontWeight: FontWeight.w700),
+                                      ),
+                                      TextSpan(
+                                        text: '2',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFFBBF24),
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: 'Home',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF34D399),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // ── Localized Tagline ─────────────────────────────
+                              FadeTransition(
+                                opacity: CurvedAnimation(
+                                  parent: _anim,
+                                  curve: const Interval(0.45, 0.95, curve: Curves.easeOut),
+                                ),
+                                child: Text(
+                                  tr.tagline,
+                                  textAlign: TextAlign.center,
+                                  style: AppTheme.fontStyle(
+                                    context.currentLanguage,
+                                    color: const Color(0xFFD1FAE5).withValues(alpha: 0.85),
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ── Bottom Section (Grounded & Balanced with Live Progress) ─────────────────
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 34, left: 24, right: 24),
+                      child: AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, _) {
+                          final p = _progressAnimation.value;
+                          final pct = (p * 100).toInt().clamp(0, 100);
+
+                          final currentLang = context.currentLanguage;
+                          String statusMsg = switch (currentLang) {
+                            AppLanguage.sinhala => p > 0.30 && p <= 0.70
+                                ? '🚜 දේශීය ගොවි ජාලය සමමුහුර්ත වෙමින්...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% නැවුම් අස්වැන්න තහවුරුයි...'
+                                    : p >= 1.0
+                                        ? 'සම්පූර්ණයි ✓'
+                                        : '🌱 Farm2Home පද්ධතිය සූදානම් වෙමින්...',
+                            AppLanguage.tamil => p > 0.30 && p <= 0.70
+                                ? '🚜 உள்ளூர் விவசாயிகள் இணைக்கப்படுகிறார்கள்...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% புதிய விளைச்சல் உறுதி...'
+                                    : p >= 1.0
+                                        ? 'முடிந்தது ✓'
+                                        : '🌱 Farm2Home அமைப்பு தயாராகிறது...',
+                            AppLanguage.english => p > 0.30 && p <= 0.70
+                                ? '🚜 Syncing local farmer network...'
+                                : p > 0.70 && p < 1.0
+                                    ? '✨ 100% fresh harvest guaranteed...'
+                                    : p >= 1.0
+                                        ? 'Ready ✓'
+                                        : '🌱 Preparing Farm2Home system...',
+                          };
+
+                          final noteMsg = switch (currentLang) {
+                            AppLanguage.sinhala => 'ශ්‍රී ලාංකීය ගොවි ප්‍රජාව සවිබල ගන්වමින් 🇱🇰',
+                            AppLanguage.tamil => 'இலங்கை விவசாய சமூகத்தை மேம்படுத்துகிறது 🇱🇰',
+                            AppLanguage.english => 'Empowering Sri Lankan Farming Community 🇱🇰',
+                          };
+
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Progress bar container with subtle glow
+                              Container(
+                                width: 200,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    width: 0.8,
+                                  ),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    FractionallySizedBox(
+                                      widthFactor: p.clamp(0.02, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF34D399),
+                                              Color(0xFF10B981),
+                                              Color(0xFFFBBF24),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF34D399).withValues(alpha: 0.6),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Realtime Stage Text & Percent
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    statusMsg,
+                                    style: AppTheme.fontStyle(
+                                      context.currentLanguage,
+                                      color: const Color(0xFFD1FAE5).withValues(alpha: 0.85),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '$pct%',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFBBF24),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Empowering Note
+                              Text(
+                                noteMsg,
+                                textAlign: TextAlign.center,
+                                style: AppTheme.fontStyle(
+                                  context.currentLanguage,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

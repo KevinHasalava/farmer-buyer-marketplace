@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/auto_translator.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../widgets/premium/premium_widgets.dart';
 import '../services/admin_auth_service.dart';
 
 /// Ultra-Premium Restricted Administrator Login Screen
@@ -15,8 +16,8 @@ class AdminLoginScreen extends StatefulWidget {
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
-  final _emailCtrl = TextEditingController(text: 'admin@farm2home.lk');
-  final _passwordCtrl = TextEditingController(text: 'Admin@2026');
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberSession = true;
   bool _isLoading = false;
@@ -24,18 +25,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   void dispose() {
-    _emailCtrl.dispose;
-    _passwordCtrl.dispose;
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
-  }
-
-  void _quickFill() {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _emailCtrl.text = 'admin@farm2home.lk';
-      _passwordCtrl.text = 'Admin@2026';
-      _errorMessage = null;
-    });
   }
 
   Future<void> _handleLogin() async {
@@ -56,9 +48,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
     HapticFeedback.mediumImpact();
 
-    // Artificial tiny delay for realistic authentication verification experience
-    await Future.delayed(const Duration(milliseconds: 600));
-
     final success = await AdminAuthService.instance.login(
       email: email,
       password: password,
@@ -68,19 +57,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Master Authentication successful. Access granted.'),
-          backgroundColor: Color(0xFF047857),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
       context.go(AppRoutes.adminPanel);
     } else {
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Invalid Administrator credentials. Please verify your email & password.';
+        _errorMessage = AdminAuthService.instance.lastError ??
+            'Sign in failed. Please verify your email & password.';
       });
       HapticFeedback.heavyImpact();
     }
@@ -168,57 +150,25 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Shield Emblem & Top Badge
-                        Center(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 84,
-                                height: 84,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF059669), Color(0xFF047857)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                      blurRadius: 20,
-                                      spreadRadius: 3,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF061E17),
-                                ),
-                                child: const Icon(
-                                  Icons.admin_panel_settings_rounded,
-                                  color: Color(0xFF34D399),
-                                  size: 38,
-                                ),
-                              ),
-                            ],
-                          ),
+                        // Brand Emblem matching Splash Loading Screen
+                        const Center(
+                          child: AppBrandLogo(size: 80, hasGlow: true),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
 
                         // Title & Subtitle
+                        const Center(
+                          child: AppBrandWordmark(fontSize: 24, isLight: true),
+                        ),
+                        const SizedBox(height: 4),
                         const Text(
-                          'Farm2Home Master Console',
+                          'Master Console',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF34D399),
+                            letterSpacing: 1.2,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -315,7 +265,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             style: const TextStyle(color: Colors.white, fontSize: 13.5),
                             decoration: const InputDecoration(
-                              hintText: 'admin@farm2home.lk',
+                              hintText: 'admin email',
                               hintStyle: TextStyle(color: Color(0xFF64748B)),
                               prefixIcon: Icon(Icons.alternate_email_rounded, color: Color(0xFF34D399), size: 18),
                               border: InputBorder.none,
@@ -398,29 +348,17 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               ],
                             ),
                             InkWell(
-                              onTap: _quickFill,
+                              onTap: () => context.push(AppRoutes.forgotPassword),
                               borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0F766E).withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFF14B8A6).withValues(alpha: 0.3)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.bolt_rounded, size: 13, color: Color(0xFF2DD4BF)),
-                                    SizedBox(width: 3),
-                                    Text(
-                                      'Quick Fill Demo',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF2DD4BF),
-                                      ),
-                                    ),
-                                  ],
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text(
+                                  'Forgot password?',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2DD4BF),
+                                  ),
                                 ),
                               ),
                             ),

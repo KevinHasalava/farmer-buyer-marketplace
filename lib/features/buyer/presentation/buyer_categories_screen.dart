@@ -84,17 +84,9 @@ class _BuyerCategoriesScreenState extends State<BuyerCategoriesScreen> {
                 children: [
                   Row(
                     children: const [
-                      Icon(Icons.eco_rounded, color: _forestGreen, size: 24),
-                      SizedBox(width: 6),
-                      Text(
-                        'Farm2Home Direct',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _forestGreen,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
+                      AppBrandLogo(size: 34),
+                      SizedBox(width: 8),
+                      AppBrandWordmark(fontSize: 18),
                     ],
                   ),
                   Row(

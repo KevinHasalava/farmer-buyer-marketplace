@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import 'role_meta.dart';
@@ -23,14 +24,24 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _selected = context.settings.role;
+    _selected = context.settings.role ?? UserRole.farmer;
   }
 
   Future<void> _continue() async {
-    final role = _selected;
-    if (role == null) return;
+    final role = _selected ?? UserRole.farmer;
     await context.settings.setRole(role);
-    if (mounted) context.push(AppRoutes.phoneAuth);
+    if (!mounted) return;
+
+    // If the user already has an active session (e.g. signed in via Google
+    // OAuth but has no profile yet), send them directly to registration.
+    // Otherwise send them to login as usual.
+    final hasSession = SupabaseConfig.isInitialized &&
+        SupabaseConfig.auth.currentUser != null;
+    if (hasSession) {
+      context.go(AppRoutes.registerFor(role));
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
   @override
@@ -88,14 +99,13 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        '🌾 Farm2Home Direct',
-                        style: AppTheme.fontStyle(
-                          context.currentLanguage,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
+                      const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppBrandLogo(size: 16),
+                          SizedBox(width: 5),
+                          AppBrandWordmark(fontSize: 12),
+                        ],
                       ),
                     ],
                   ),

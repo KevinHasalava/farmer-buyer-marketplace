@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/localization/app_settings.dart';
-import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,7 +152,6 @@ class AppHeaderBanner extends StatelessWidget {
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      letterSpacing: -0.5,
                     ),
                   ),
 
@@ -227,32 +225,180 @@ class AppBottomWaveClipper extends CustomClipper<Path> {
 // ─────────────────────────────────────────────────────────────────────────────
 // App Brand Logo (squircle dark green + amber leaf motif matching Welcome screen)
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Unified Brand Emblem & Wordmark (Identical to Splash Loading Screen)
+// ─────────────────────────────────────────────────────────────────────────────
 class AppBrandLogo extends StatelessWidget {
-  const AppBrandLogo({super.key, this.size = 80});
+  const AppBrandLogo({
+    super.key,
+    this.size = 80,
+    this.hasGlow = true,
+  });
 
   final double size;
+  final bool hasGlow;
 
   @override
   Widget build(BuildContext context) {
+    final double radius = size * (30.0 / 104.0);
+    final double innerSize = size * (60.0 / 104.0);
+    final double iconSize = size * (34.0 / 104.0);
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.darkGreen,
-        borderRadius: BorderRadius.circular(size * 0.28),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.darkGreen.withValues(alpha: 0.3),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+        color: const Color(0xFF032215),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: const Color(0xFF34D399).withValues(alpha: 0.35),
+          width: size >= 48 ? 1.5 : 1.0,
+        ),
+        boxShadow: hasGlow
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  blurRadius: size * 0.35,
+                  spreadRadius: size >= 48 ? 2 : 1,
+                  offset: Offset(0, size * 0.1),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Center(
+        child: Container(
+          width: innerSize,
+          height: innerSize,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFF10B981)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: hasGlow
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                      blurRadius: size * 0.14,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Icon(
+              Icons.eco_rounded,
+              color: Colors.white,
+              size: iconSize,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The official 3-color brand wordmark matching the Splash screen: Farm + 2 + Home
+class AppBrandWordmark extends StatelessWidget {
+  const AppBrandWordmark({
+    super.key,
+    this.fontSize = 20,
+    this.isLight = false,
+  });
+
+  final double fontSize;
+  final bool isLight;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: fontSize,
+          letterSpacing: -0.5,
+          fontFamily: AppTheme.fontFamily(context.currentLanguage),
+        ),
+        children: [
+          TextSpan(
+            text: 'Farm',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: isLight ? Colors.white : const Color(0xFF166534),
+            ),
+          ),
+          const TextSpan(
+            text: '2',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: Color(0xFFFBBF24),
+            ),
+          ),
+          const TextSpan(
+            text: 'Home',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF10B981),
+            ),
           ),
         ],
       ),
-      child: Icon(
-        Icons.eco_rounded,
-        color: AppColors.accentOrange,
-        size: size * 0.5,
-      ),
+    );
+  }
+}
+
+/// Unified Header row containing loading emblem logo + brand wordmark + role badge
+class AppBrandHeaderRow extends StatelessWidget {
+  const AppBrandHeaderRow({
+    super.key,
+    this.logoSize = 36,
+    this.fontSize = 16,
+    this.isLight = false,
+    this.badgeText,
+    this.badgeColor,
+    this.badgeTextColor,
+  });
+
+  final double logoSize;
+  final double fontSize;
+  final bool isLight;
+  final String? badgeText;
+  final Color? badgeColor;
+  final Color? badgeTextColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppBrandLogo(size: logoSize, hasGlow: false),
+        const SizedBox(width: 8),
+        AppBrandWordmark(fontSize: fontSize, isLight: isLight),
+        if (badgeText != null) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: badgeColor ?? (isLight ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFDCFCE7)),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              badgeText!,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: badgeTextColor ?? (isLight ? Colors.white : const Color(0xFF15803D)),
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -582,7 +728,6 @@ class AppSelectableCard extends StatelessWidget {
                                   context.currentLanguage,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.3,
                                   color: isSelected
                                       ? AppColors.darkGreen
                                       : AppColors.textDark,
@@ -816,7 +961,6 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
                           fontSize: AppTextStyles.labelLarge,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: AppTextStyles.trackingWide,
                         ),
                       ),
                       if (widget.icon != null) ...[
@@ -833,7 +977,7 @@ class _AppPrimaryButtonState extends State<AppPrimaryButton> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// App Language Pill (Light Themed)
+// App Language Pill (Light / Dark Header Themed)
 // ─────────────────────────────────────────────────────────────────────────────
 class AppLanguagePill extends StatelessWidget {
   const AppLanguagePill({super.key, this.isDarkHeader = false});
@@ -846,20 +990,21 @@ class AppLanguagePill extends StatelessWidget {
     try {
       settings = context.watch<AppSettings>();
     } catch (_) {}
-    final lang = settings?.language ?? AppLanguage.english;
+    final lang = settings?.language ?? AppSettings.current.language ?? AppLanguage.english;
 
     return GestureDetector(
       onTap: () => showAppLanguageSheet(context),
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isDarkHeader
-              ? Colors.white.withValues(alpha: 0.15)
+              ? Colors.white.withValues(alpha: 0.18)
               : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDarkHeader
-                ? Colors.white.withValues(alpha: 0.3)
+                ? Colors.white.withValues(alpha: 0.35)
                 : const Color(0xFFE5E7EB),
           ),
           boxShadow: isDarkHeader
@@ -880,21 +1025,21 @@ class AppLanguagePill extends StatelessWidget {
               color: isDarkHeader ? Colors.white : AppColors.primaryGreen,
               size: 15,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               lang.nativeName,
               style: AppTheme.fontStyle(
                 lang,
                 color: isDarkHeader ? Colors.white : AppColors.textDark,
                 fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(width: 2),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               color: isDarkHeader
-                  ? Colors.white.withValues(alpha: 0.7)
+                  ? Colors.white.withValues(alpha: 0.75)
                   : AppColors.textSecondary,
               size: 16,
             ),
@@ -918,8 +1063,8 @@ Future<void> showAppLanguageSheet(BuildContext context) {
       try {
         settings = ctx.watch<AppSettings>();
       } catch (_) {}
-      final currentLang = settings?.language ?? AppLanguage.english;
-      final strings = settings?.strings ?? const AppStrings(AppLanguage.english);
+      final currentLang = settings?.language ?? AppSettings.current.language ?? AppLanguage.english;
+      final strings = settings?.strings ?? AppSettings.current.strings;
 
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -966,10 +1111,12 @@ Future<void> showAppLanguageSheet(BuildContext context) {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.selectionClick();
-                    settings?.setLanguage(l);
-                    Navigator.pop(ctx);
+                    await AppSettings.current.setLanguage(l);
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(

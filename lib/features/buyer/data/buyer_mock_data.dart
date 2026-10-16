@@ -1,7 +1,27 @@
 import 'package:flutter/material.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../models/buyer_models.dart';
 
 class BuyerMockData {
+  static final List<BuyerProduct> _liveDbProducts = [];
+
+  /// Loads real products from Supabase database
+  static Future<void> syncFromDatabase() async {
+    if (!SupabaseConfig.isInitialized) return;
+    try {
+      final rows = await SupabaseConfig.client
+          .from('products')
+          .select()
+          .order('created_at', ascending: false);
+      _liveDbProducts.clear();
+      for (final r in rows) {
+        _liveDbProducts.add(
+            BuyerProduct.fromDb(Map<String, dynamic>.from(r as Map)));
+      }
+    } catch (e) {
+      debugPrint('[BuyerMockData] syncFromDatabase note: $e');
+    }
+  }
   // ── Farmers ──────────────────────────────────────────────────────────
   static const BuyerFarmer primaryFarmer = BuyerFarmer(
     name: 'K. M. Bandara',
@@ -166,7 +186,7 @@ class BuyerMockData {
     farmLocation: 'Keppetipola',
     farmName: 'Keppetipola Mountain Terraces',
     harvestTime: 'Yesterday, 4:00 PM',
-    imageUrl: 'https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/potato.jpg',
     category: 'Vegetables',
     badge: 'Highland Soil',
     badgeColor: Color(0xFF8B5CF6),
@@ -371,7 +391,7 @@ class BuyerMockData {
     farmLocation: 'Embilipitiya',
     farmName: 'Walawe Basin Fruit Gardens',
     harvestTime: 'Today, 6:00 AM',
-    imageUrl: 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/papaya.jpg',
     category: 'Fruits',
     badge: 'Sun Sweetened',
     badgeColor: Color(0xFFEA580C),
@@ -471,7 +491,7 @@ class BuyerMockData {
     farmLocation: 'Kalutara',
     farmName: 'Bentota Riverbank Palms',
     harvestTime: 'Today, 6:00 AM',
-    imageUrl: 'https://images.unsplash.com/photo-1544894079-e81a9eb1da8b?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=800&auto=format&fit=crop&q=80',
     category: 'Fruits',
     badge: 'Pure Electrolyte',
     badgeColor: Color(0xFFEA580C),
@@ -531,7 +551,7 @@ class BuyerMockData {
     farmLocation: 'Polonnaruwa',
     farmName: 'Parakrama Samudra Fields',
     harvestTime: 'Cured Batch 04',
-    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/keeri_samba.jpg',
     category: 'Grains & Rice',
     badge: 'Aromatic Fine Grain',
     badgeColor: Color(0xFF16A34A),
@@ -635,7 +655,7 @@ class BuyerMockData {
     farmLocation: 'Matale',
     farmName: 'Riverston View Estate',
     harvestTime: 'Today, 6:00 AM',
-    imageUrl: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/green_chilies.jpg',
     category: 'Spices & Herbs',
     badge: 'Spicy Fresh',
     badgeColor: Color(0xFFEF4444),
@@ -715,7 +735,7 @@ class BuyerMockData {
     farmLocation: 'Kandy',
     farmName: 'Riverbank Organic Herbal Grove',
     harvestTime: 'Today, 5:00 AM',
-    imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/gotukola.jpg',
     category: 'Organic & Traditional',
     badge: '100% Bio Spring Fed',
     badgeColor: Color(0xFF10B981),
@@ -841,7 +861,7 @@ class BuyerMockData {
     farmLocation: 'Nuwara Eliya',
     farmName: 'Ambewela Valley Pastures',
     harvestTime: 'Gathered Today, 6:00 AM',
-    imageUrl: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'assets/images/farm_eggs.jpg',
     category: 'Dairy & Farm Fresh',
     badge: 'Golden Yolk Pasture',
     badgeColor: Color(0xFFF59E0B),
@@ -871,6 +891,7 @@ class BuyerMockData {
 
   // ── All Products Master Catalog ───────────────────────────────────────
   static List<BuyerProduct> get allProducts => [
+    ..._liveDbProducts,
     // Vegetables
     carrotProduct,
     tomatoProduct,

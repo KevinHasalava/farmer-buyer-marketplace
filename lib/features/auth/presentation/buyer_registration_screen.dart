@@ -1,15 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 import '../../../core/constants/constants.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/routes/app_router.dart';
-import '../../../models/user_model.dart';
+import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/notify_sms_service.dart';
+import '../../../widgets/premium/google_brand_button.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import 'otp_verification_dialog.dart';
 
@@ -42,6 +44,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   bool _agreeTerms = true;
   bool _isLoading = false;
   bool _otpVerified = false;
+  bool _submitting = false;
   bool _otpSending = false;
 
   final Set<String> _producePreferences = {
@@ -66,8 +69,38 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     'Heirloom Rice',
   ];
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    if (SupabaseConfig.isInitialized) {
+      _authSubscription =
+          SupabaseConfig.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session == null || !mounted || _submitting) return;
+        try {
+          final roleStr = await _authService.fetchRole();
+          if (!mounted || roleStr == 'admin') return;
+          // Already registered: go straight to the dashboard of their role.
+          final role = UserRole.fromName(roleStr) ?? UserRole.buyer;
+          await context.read<AppSettings>().setRole(role);
+          if (mounted) context.go(AppRoutes.homeFor(role));
+        } on AuthException {
+          // New Google user without a profile: stay on this form and prefill.
+          if (!mounted) return;
+          final meta = session.user.userMetadata ?? {};
+          final name = (meta['full_name'] ?? meta['name'] ?? '').toString();
+          if (_nameCtrl.text.isEmpty && name.isNotEmpty) _nameCtrl.text = name;
+          if (_emailCtrl.text.isEmpty) _emailCtrl.text = session.user.email ?? '';
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
@@ -75,6 +108,20 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    setState(() => _isLoading = true);
+    HapticFeedback.lightImpact();
+    try {
+      await _authService.signInWithGoogle();
+    } on AuthException catch (e) {
+      if (mounted) _showSnackBar(e.message);
+    } catch (e) {
+      if (mounted) _showSnackBar('Google Sign-In: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _sendOtp() async {
@@ -138,6 +185,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       return;
     }
 
+    _submitting = true;
     setState(() => _isLoading = true);
 
     try {
@@ -150,27 +198,58 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       final hub = _selectedHub ?? 'Colombo Regional Hub (Western Province)';
       final prefs = _producePreferences.toList();
 
-      UserModel? user;
+      String? userId;
+      bool needsEmailConfirmation = false;
+
       if (email.isNotEmpty && password.isNotEmpty) {
-        user = await _authService.signUp(
-          email: email,
-          password: password,
-          fullName: name.isNotEmpty ? name : 'Chaminda Perera',
-          isFarmer: false,
-          extraData: {
-            'phone': phone,
-            'address': address,
-            'hub': hub,
-            'buyer_type': buyerType,
-            'preferences': prefs,
-            'role': 'buyer',
-          },
-        );
+        try {
+          // signUpWithRole returns true when session is created immediately,
+          // false when email confirmation is required. Does NOT throw on
+          // email-pending case, so we can always proceed to save data.
+          final signedIn = await _authService.signUpWithRole(
+            email: email,
+            password: password,
+            fullName: name.isNotEmpty ? name : 'Buyer',
+            role: 'buyer',
+            phone: phone,
+            details: {
+              'address': address,
+              'delivery_address': address,
+              'hub': hub,
+              'delivery_hub': hub,
+              'buyer_type': buyerType,
+              'preferences': prefs,
+            },
+          );
+          needsEmailConfirmation = !signedIn;
+          userId = _authService.lastCreatedUserId ??
+              (SupabaseConfig.isInitialized
+                  ? SupabaseConfig.auth.currentUser?.id
+                  : null);
+          if (userId == null && SupabaseConfig.isInitialized && email.isNotEmpty) {
+            try {
+              final row = await SupabaseConfig.client
+                  .from('profiles')
+                  .select('id')
+                  .eq('email', email)
+                  .maybeSingle();
+              userId = row?['id'] as String?;
+            } catch (_) {}
+          }
+        } on AuthException catch (e) {
+          final msg = e.message.toLowerCase();
+          if (msg.contains('confirm') || msg.contains('check your inbox')) {
+            needsEmailConfirmation = true;
+          } else {
+            rethrow;
+          }
+        }
       } else {
         await Future.delayed(const Duration(milliseconds: 600));
       }
 
-      // Persist real registration data into profile manager & DB
+      // Always persist registration data: this runs even when email
+      // confirmation is pending so the buyers table gets the row.
       await BuyerProfileManager.instance.saveRegistrationData(
         name: name,
         email: email,
@@ -179,34 +258,24 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         buyerType: buyerType,
         hub: hub,
         preferences: prefs,
-        userId: user?.id,
+        userId: userId,
       );
 
       if (!mounted) return;
       await context.read<AppSettings>().setRole(UserRole.buyer);
 
       if (mounted) {
+        if (needsEmailConfirmation) {
+          _showSnackBar('Account created! Please check your email to confirm before signing in.');
+        }
         _showSuccessDialog();
       }
+    } on AuthException catch (e) {
+      _showSnackBar(e.message);
     } catch (e) {
-      // In demo mode or if Supabase gives rate limit/error, still save local profile and proceed
-      try {
-        await BuyerProfileManager.instance.saveRegistrationData(
-          name: _nameCtrl.text.trim(),
-          email: _emailCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim(),
-          address: _addressCtrl.text.trim(),
-          buyerType: _buyerType,
-          hub: _selectedHub ?? 'Colombo Regional Hub (Western Province)',
-          preferences: _producePreferences.toList(),
-        );
-      } catch (_) {}
-
-      if (mounted) {
-        await context.read<AppSettings>().setRole(UserRole.buyer);
-        if (mounted) _showSuccessDialog();
-      }
+      _showSnackBar('Registration error: ${e.toString()}');
     } finally {
+      _submitting = false;
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -214,7 +283,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   void _showSnackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: AutoText(msg),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
@@ -244,7 +313,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            AutoText(
               context.tr.buyerAccountCreated,
               style: TextStyle(
                 fontSize: 18,
@@ -253,7 +322,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AutoText(
               context.tr.buyerWelcomeMsg,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -277,7 +346,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: AutoText(
                   context.tr.exploreFreshProduce,
                   style: TextStyle(
                     fontSize: 15,
@@ -290,9 +359,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         ),
       ),
     );
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -310,11 +377,11 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             }
           },
         ),
-        title: Text(
+        title: AutoText(
           context.tr.registerAsBuyerTitle,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: AppColors.textDark,
           ),
         ),
@@ -326,12 +393,12 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               width: 36,
               height: 36,
               decoration: const BoxDecoration(
-                color: Color(0xFF1E8342),
+                color: Color(0xFFDCFCE7),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
+                Icons.shopping_basket_rounded,
+                color: Color(0xFF15803D),
                 size: 20,
               ),
             ),
@@ -339,690 +406,680 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Role Profile Pill ──────────────────────────────────────────
+              // ── Hero Header Banner ──────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F8F5),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDCFCE7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.shopping_basket_rounded,
-                        color: Color(0xFF1E8342),
-                        size: 18,
-                      ),
+                  image: const DecorationImage(
+                    image: NetworkImage('https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=800&q=80'),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Color(0x99000000), // Dark overlay for text readability
+                      BlendMode.darken,
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          context.tr.roleProfile,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AutoText('🌿', style: TextStyle(fontSize: 12)),
+                              SizedBox(width: 5),
+                              AutoText(
+                                'BUYER REGISTRATION',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          context.tr.roleProfileBuyer,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
+                        InkWell(
+                          onTap: () => context.go(AppRoutes.roleSelection),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AutoText(
+                                  context.tr.changeRole,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.swap_horiz_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => context.go(AppRoutes.roleSelection),
-                      child: Row(
-                        children: [
-                          Text(
-                            context.tr.changeRole,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1E8342),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 14),
+                    AutoText(
+                      context.tr.registerAsBuyerTitle,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    AutoText(
+                      'Direct farm-fresh harvest delivered straight from rural fields to your doorstep.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.white.withValues(alpha: 0.88),
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 14),
-
-              // ── Pure Field Origin Badge ─────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: const Color(0xFF1E8342).withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  '🌱 Pure Field Origin',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF15803D),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // ── Title & Subtitle ───────────────────────────────────────────
-              Text(
-                context.tr.registerAsBuyerTitle,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Direct farm-fresh harvest delivered straight from rural fields to your doorstep.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Produce Hero Banner Image ──────────────────────────────────
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  children: [
-                    Image.network(
-                      'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
-                      height: 135,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 135,
-                        color: const Color(0xFF0F3E26),
-                        child: const Center(
-                          child: Icon(
-                            Icons.eco_rounded,
-                            color: Colors.white54,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 12,
-                      bottom: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.65),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('🌿', style: TextStyle(fontSize: 12)),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Harvested at dawn, delivered by evening',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+              // ── Section 1: Account & Contact ────────────────────────────────
+              _buildSectionCard(
+                title: 'Account & Contact Details',
+                icon: Icons.person_outline_rounded,
+                children: [
+                  // Buyer Type Selector
+                  _buildFieldLabel(context.tr.buyerTypeLabel),
+                  Row(
+                    children: [
+                      ('Family', '🏡 Family'),
+                      ('Restaurant', '🍽️ Restaurant'),
+                      ('Bulk Co-op', '📦 Bulk Co-op'),
+                    ].map((entry) {
+                      final type = entry.$1;
+                      final label = entry.$2;
+                      final isSel = _buyerType == type;
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _buyerType = type);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: isSel ? const Color(0xFF15803D) : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSel ? const Color(0xFF15803D) : const Color(0xFFE2E8F0),
+                                  width: isSel ? 1.5 : 1,
+                                ),
+                              ),
+                              child: AutoText(
+                                label,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
+                                  color: isSel ? Colors.white : const Color(0xFF334155),
+                                ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      );
+                    }).toList(),
+                  ),
 
-              const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-              // ── Select Buyer Type ──────────────────────────────────────────
-              Text(
-                context.tr.buyerTypeLabel,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: ['Family', 'Restaurant', 'Bulk Co-op'].map((type) {
-                  final isSel = _buyerType == type;
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: InkWell(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _buyerType = type);
-                        },
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isSel
+                  _buildFieldLabel(context.tr.fullNameLabel),
+                  _buildTextInput(
+                    controller: _nameCtrl,
+                    hintText: 'e.g., Chaminda Perera',
+                    icon: Icons.person_outline_rounded,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Mobile Number with Sri Lanka prefix + OTP
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildFieldLabel(context.tr.mobileNumberLabel),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _otpVerified
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: AutoText(
+                          _otpVerified
+                              ? context.tr.smsOtpVerified
+                              : context.tr.smsOtpVerification,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: _otpVerified
                                 ? const Color(0xFF15803D)
-                                : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSel
-                                  ? const Color(0xFF15803D)
-                                  : const Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          child: Text(
-                            type,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                              color: isSel ? Colors.white : AppColors.textDark,
-                            ),
+                                : const Color(0xFFD97706),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 18),
-
-              // ── Full Name ──────────────────────────────────────────────────
-              _buildFieldLabel(context.tr.fullNameLabel),
-              _buildTextInput(
-                controller: _nameCtrl,
-                hintText: 'e.g., Chaminda Perera',
-                icon: Icons.person_outline_rounded,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Mobile Number ──────────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildFieldLabel(context.tr.mobileNumberLabel),
+                    ],
+                  ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: _otpVerified
-                          ? const Color(0xFFE8F5E9)
-                          : const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      _otpVerified
-                          ? context.tr.smsOtpVerified
-                          : context.tr.smsOtpVerification,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
                         color: _otpVerified
                             ? const Color(0xFF15803D)
-                            : const Color(0xFFE65100),
+                            : const Color(0xFFE2E8F0),
+                        width: _otpVerified ? 1.5 : 1,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _otpVerified
-                        ? const Color(0xFF15803D)
-                        : const Color(0xFFE2E8F0),
-                    width: _otpVerified ? 1.5 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          right: BorderSide(color: Color(0xFFE2E8F0)),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🇱🇰', style: TextStyle(fontSize: 16)),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+94',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              right: BorderSide(color: Color(0xFFE2E8F0)),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                        enabled: !_otpVerified,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: '77 123 4567',
-                          hintStyle: TextStyle(
-                            fontSize: 13.5,
-                            color: AppColors.textHint,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: TextButton(
-                        onPressed: _otpSending
-                            ? null
-                            : (_otpVerified ? null : _sendOtp),
-                        style: TextButton.styleFrom(
-                          backgroundColor: _otpVerified
-                              ? const Color(0xFFE8F5E9)
-                              : const Color(0xFF15803D),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: _otpSending
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AutoText('🇱🇰', style: TextStyle(fontSize: 16)),
+                              SizedBox(width: 6),
+                              AutoText(
+                                '+94',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
                                 ),
-                              )
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (_otpVerified) ...[
-                                    const Icon(
-                                      Icons.check_circle_rounded,
-                                      size: 14,
-                                      color: Color(0xFF15803D),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.tr.verified,
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF15803D),
-                                      ),
-                                    ),
-                                  ] else ...[
-                                    const Icon(
-                                      Icons.sms_outlined,
-                                      size: 14,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                            enabled: !_otpVerified,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0F172A),
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            decoration: const InputDecoration(
+                              hintText: '77 123 4567',
+                              hintStyle: TextStyle(
+                                fontSize: 13.5,
+                                color: Color(0xFF94A3B8),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: TextButton(
+                            onPressed: _otpSending
+                                ? null
+                                : (_otpVerified ? null : _sendOtp),
+                            style: TextButton.styleFrom(
+                              backgroundColor: _otpVerified
+                                  ? const Color(0xFFDCFCE7)
+                                  : const Color(0xFF15803D),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: _otpSending
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                       color: Colors.white,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.tr.sendOtp,
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.check_box_outlined,
-                    size: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      'We will send a 6-digit OTP code to verify your mobile number',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Email Address ──────────────────────────────────────────────
-              _buildFieldLabel(context.tr.emailLabel),
-              _buildTextInput(
-                controller: _emailCtrl,
-                hintText: 'name@example.com',
-                icon: Icons.mail_outline_rounded,
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Delivery City / Hub Area Dropdown ───────────────────────────
-              _buildFieldLabel(context.tr.regionalHubLabel),
-              Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppColors.textSecondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedHub,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textDark,
+                                  )
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (_otpVerified) ...[
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 14,
+                                          color: Color(0xFF15803D),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        AutoText(
+                                          context.tr.verified,
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF15803D),
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        const Icon(
+                                          Icons.sms_outlined,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        AutoText(
+                                          context.tr.sendOtp,
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                           ),
-                          onChanged: (val) => setState(() => _selectedHub = val),
-                          items: _hubList.map((hub) {
-                            return DropdownMenuItem(
-                              value: hub,
-                              child: Text(
-                                hub,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Default Street Address ─────────────────────────────────────
-              _buildFieldLabel(context.tr.deliveryAddressLabel),
-              _buildTextInput(
-                controller: _addressCtrl,
-                hintText: 'House / Apartment number, Road name, Landmark',
-                icon: Icons.home_outlined,
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Password ───────────────────────────────────────────────────
-              _buildFieldLabel(context.tr.passwordLabel),
-              _buildTextInput(
-                controller: _passwordCtrl,
-                hintText: 'At least 8 characters',
-                icon: Icons.lock_outline_rounded,
-                obscureText: _obscurePassword,
-                suffix: IconButton(
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: 18,
-                    color: AppColors.textSecondary,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Confirm Password ───────────────────────────────────────────
-              _buildFieldLabel(context.tr.confirmPasswordLabel),
-              _buildTextInput(
-                controller: _confirmCtrl,
-                hintText: 'Repeat your password',
-                icon: Icons.lock_outline_rounded,
-                obscureText: _obscureConfirm,
-                suffix: IconButton(
-                  icon: Icon(
-                    _obscureConfirm
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: 18,
-                    color: AppColors.textSecondary,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ── Produce & Harvest Preferences ──────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    context.tr.producePreferencesLabel,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      ],
                     ),
                   ),
-                  Text(
-                    'Customized box recommendations',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: AppColors.textSecondary,
-                    ),
+
+                  const SizedBox(height: 16),
+
+                  _buildFieldLabel(context.tr.emailLabel),
+                  _buildTextInput(
+                    controller: _emailCtrl,
+                    hintText: 'name@example.com',
+                    icon: Icons.alternate_email_rounded,
+                    keyboardType: TextInputType.emailAddress,
                   ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _prefChips.map((chip) {
-                  final isSel = _producePreferences.contains(chip);
-                  return FilterChip(
-                    label: Text(chip),
-                    selected: isSel,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _producePreferences.add(chip);
-                        } else {
-                          _producePreferences.remove(chip);
-                        }
-                      });
-                    },
-                    selectedColor: const Color(0xFF15803D),
-                    checkmarkColor: Colors.white,
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: isSel
-                            ? const Color(0xFF15803D)
-                            : const Color(0xFFCBD5E1),
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: isSel ? Colors.white : AppColors.textDark,
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ── Buyer Freshness Promise Card ───────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF1E8342).withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.verified_user_rounded,
-                        color: Color(0xFF1E8342),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.tr.buyerFreshnessPromise,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0F3E26),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            context.tr.freshnessPromiseBody,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: const Color(0xFF2D5A40),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
               ),
 
               const SizedBox(height: 16),
 
-              // ── Terms & Conditions Checkbox ────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // ── Section 2: Delivery & Hub ──────────────────────────────────
+              _buildSectionCard(
+                title: 'Delivery & Preferences',
+                icon: Icons.local_shipping_outlined,
                 children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _agreeTerms,
-                      activeColor: const Color(0xFF1E8342),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      onChanged: (v) => setState(() => _agreeTerms = v ?? false),
+                  _buildFieldLabel(context.tr.regionalHubLabel),
+                  Container(
+                    height: 52,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          color: Color(0xFF64748B),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedHub,
+                              isExpanded: true,
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A),
+                              ),
+                              onChanged: (val) => setState(() => _selectedHub = val),
+                              items: _hubList.map((hub) {
+                                return DropdownMenuItem(
+                                  value: hub,
+                                  child: AutoText(
+                                    hub,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      context.tr.agreeTermsBuyer,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.textSecondary,
-                        height: 1.35,
+
+                  const SizedBox(height: 16),
+
+                  _buildFieldLabel(context.tr.deliveryAddressLabel),
+                  _buildTextInput(
+                    controller: _addressCtrl,
+                    hintText: 'House / Apartment number, Road, Landmark',
+                    icon: Icons.home_work_outlined,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildFieldLabel('Preferred Produce & Certifications'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _prefChips.map((chip) {
+                      final isSelected = _producePreferences.contains(chip);
+                      return FilterChip(
+                        label: AutoText(
+                          chip,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF334155),
+                          ),
+                        ),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFF15803D),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        checkmarkColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: isSelected
+                                ? const Color(0xFF15803D)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        onSelected: (val) {
+                          setState(() {
+                            if (val) {
+                              _producePreferences.add(chip);
+                            } else {
+                              _producePreferences.remove(chip);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // ── Section 3: Security & Access ────────────────────────────────
+              _buildSectionCard(
+                title: 'Security & Terms',
+                icon: Icons.shield_outlined,
+                children: [
+                  _buildFieldLabel(context.tr.passwordLabel),
+                  _buildTextInput(
+                    controller: _passwordCtrl,
+                    hintText: 'At least 8 characters',
+                    icon: Icons.lock_outline_rounded,
+                    obscureText: _obscurePassword,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: const Color(0xFF64748B),
                       ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildFieldLabel(context.tr.confirmPasswordLabel),
+                  _buildTextInput(
+                    controller: _confirmCtrl,
+                    hintText: 'Repeat your password',
+                    icon: Icons.lock_outline_rounded,
+                    obscureText: _obscureConfirm,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: const Color(0xFF64748B),
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Elegant Divider ──────────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 1,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.transparent, Color(0xFFCBD5E1)],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const AutoText(
+                          'OR SIGN UP WITH GOOGLE',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Container(
+                          height: 1,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFCBD5E1), Colors.transparent],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ── Fast 1-Click Social Sign-Up Card ────────────────────────────
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.bolt_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const AutoText(
+                              'FAST 1-CLICK REGISTRATION',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF2563EB),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const AutoText(
+                                'RECOMMENDED',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GoogleBrandButton(
+                          onPressed: _isLoading ? null : _signUpWithGoogle,
+                          label: 'Sign up with Google',
+                          isLoading: _isLoading,
+                        ),
+                        const SizedBox(height: 8),
+                        const Center(
+                          child: AutoText(
+                            'Instant verification • No password needed',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Terms & Conditions Checkbox
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: _agreeTerms,
+                          activeColor: const Color(0xFF15803D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          onChanged: (v) => setState(() => _agreeTerms = v ?? false),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: AutoText(
+                          context.tr.agreeTermsBuyer,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF64748B),
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
 
               const SizedBox(height: 22),
 
-              // ── Submit Button ──────────────────────────────────────────────
+              // ── Primary Submit CTA Button ──────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -1031,9 +1088,10 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF15803D),
                     foregroundColor: Colors.white,
-                    elevation: 0,
+                    elevation: 2,
+                    shadowColor: const Color(0xFF15803D).withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: _isLoading
@@ -1048,10 +1106,10 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
+                            AutoText(
                               context.tr.createBuyerAccountBtn,
-                              style: TextStyle(
-                                fontSize: 15,
+                              style: const TextStyle(
+                                fontSize: 15.5,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1066,24 +1124,28 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
 
               // ── Already have account? Log In ──────────────────────────────
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
-                    Text(
+                    const AutoText(
                       'Already have an account? ',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12.5,
-                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
                       ),
                     ),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
-                      child: Text(
+                      child: const AutoText(
                         'Log In',
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF15803D),
+                          color: Color(0xFF15803D),
                         ),
                       ),
                     ),
@@ -1097,15 +1159,68 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     );
   }
 
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: const Color(0xFF15803D), size: 16),
+              ),
+              const SizedBox(width: 10),
+              AutoText(
+                title,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
+      child: AutoText(
         label,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12.5,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textDark,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF334155),
         ),
       ),
     );
@@ -1120,35 +1235,43 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     Widget? suffix,
     String? Function(String?)? validator,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      validator: validator,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF0F172A),
       ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        validator: validator,
-        style: TextStyle(
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
+        suffixIcon: suffix,
+        hintText: hintText,
+        hintStyle: const TextStyle(
           fontSize: 13.5,
-          fontWeight: FontWeight.w500,
-          color: AppColors.textDark,
+          color: Color(0xFF94A3B8),
+          fontWeight: FontWeight.w400,
         ),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
-          suffixIcon: suffix,
-          hintText: hintText,
-          hintStyle: TextStyle(
-            fontSize: 13,
-            color: AppColors.textHint,
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
-          ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF16A34A), width: 1.6),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFEF4444)),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.6),
         ),
       ),
     );

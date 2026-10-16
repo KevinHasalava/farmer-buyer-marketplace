@@ -42,7 +42,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       emoji: '🥕',
       category: 'Vegetables',
       imageUrl:
-          'https://images.unsplash.com/photo-1598170845058-32b9d6a5c317?w=400&auto=format&fit=crop&q=80',
+          'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=80',
     ),
     (
       name: 'Cucumber',
@@ -616,14 +616,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         child: DropdownButton<String>(
           value: _selectedProductName,
           isExpanded: true,
+          dropdownColor: Colors.white,
           icon: const Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Color(0xFF9CA3AF),
+            color: Color(0xFF374151),
             size: 24,
           ),
-          style: AppTheme.fontStyle(context.currentLanguage, 
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
           onChanged: (val) {
@@ -643,7 +645,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _productOptions.map((opt) {
             return DropdownMenuItem<String>(
               value: opt.name,
-              child: Text(opt.name.trAuto(context)),
+              child: Text(
+                '${opt.emoji}  ${opt.name.trAuto(context)}',
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
             );
           }).toList(),
         ),
@@ -664,14 +674,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         child: DropdownButton<String>(
           value: _selectedCategory,
           isExpanded: true,
+          dropdownColor: Colors.white,
           icon: const Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Color(0xFF9CA3AF),
+            color: Color(0xFF374151),
             size: 24,
           ),
-          style: AppTheme.fontStyle(context.currentLanguage, 
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+          style: AppTheme.fontStyle(
+            context.currentLanguage,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
           onChanged: (val) {
@@ -682,7 +694,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           items: _categoryOptions.map((cat) {
             return DropdownMenuItem<String>(
               value: cat,
-              child: Text(cat.trAuto(context)),
+              child: Text(
+                cat.trAuto(context),
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
             );
           }).toList(),
         ),

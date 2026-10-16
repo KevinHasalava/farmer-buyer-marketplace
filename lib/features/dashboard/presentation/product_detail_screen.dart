@@ -7,12 +7,15 @@ import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../../cart/presentation/my_cart_screen.dart';
 import '../../cart/presentation/checkout_delivery_screen.dart';
+import '../../orders_chat/presentation/chat_detail_screen.dart';
+import '../../../services/chat_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared product data model — used by dashboard + detail screens
 // ─────────────────────────────────────────────────────────────────────────────
 class ProductData {
   const ProductData({
+    this.id,
     required this.name,
     required this.price,
     required this.unit,
@@ -31,6 +34,7 @@ class ProductData {
     this.imageUrl,
   });
 
+  final String? id;
   final String name;
   final String price;
   final String unit;
@@ -49,6 +53,7 @@ class ProductData {
   final String? imageUrl;
 
   ProductData copyWith({
+    String? id,
     String? name,
     String? price,
     String? unit,
@@ -67,6 +72,7 @@ class ProductData {
     String? imageUrl,
   }) {
     return ProductData(
+      id: id ?? this.id,
       name: name ?? this.name,
       price: price ?? this.price,
       unit: unit ?? this.unit,
@@ -84,6 +90,80 @@ class ProductData {
       isActive: isActive ?? this.isActive,
       imageUrl: imageUrl ?? this.imageUrl,
     );
+  }
+
+  Map<String, dynamic> toSupabaseMap(String farmerId) {
+    final cleanPrice = price.replaceAll('Rs.', '').replaceAll('Rs', '').replaceAll(',', '').trim();
+    final priceNum = double.tryParse(cleanPrice) ?? 0.0;
+    final cleanQty = availability.replaceAll('Available:', '').replaceAll('kg', '').replaceAll('Kg', '').trim();
+    final qtyNum = double.tryParse(cleanQty) ?? 0.0;
+    return {
+      if (id != null && id!.isNotEmpty) 'id': id,
+      if (farmerId.isNotEmpty) 'farmer_id': farmerId,
+      'name': name,
+      'category': category,
+      'price': priceNum,
+      'unit': unit,
+      'stock_qty': qtyNum,
+      'is_organic': tags.any((t) => t.toLowerCase().contains('organic')) ||
+          (tag?.toLowerCase().contains('organic') ?? false),
+      'image_url': imageUrl ?? '',
+      'description': description,
+    };
+  }
+
+  factory ProductData.fromSupabase(Map<String, dynamic> map, FarmerData fallbackFarmer) {
+    final priceVal = (map['price'] is num)
+        ? (map['price'] as num).toDouble()
+        : double.tryParse(map['price']?.toString() ?? '0') ?? 0.0;
+    final qtyVal = (map['stock_qty'] is num)
+        ? (map['stock_qty'] as num).toDouble()
+        : (map['available_qty'] is num)
+            ? (map['available_qty'] as num).toDouble()
+            : double.tryParse((map['stock_qty'] ?? map['available_qty'])?.toString() ?? '0') ?? 0.0;
+    final isOrganic = map['is_organic'] as bool? ?? false;
+    final status = map['status'] as String? ?? 'In Stock';
+    final name = map['name'] as String? ?? 'Product';
+
+    return ProductData(
+      id: map['id']?.toString(),
+      name: name,
+      price: 'Rs. ${priceVal.toStringAsFixed(0)}',
+      unit: map['unit'] as String? ?? '/kg',
+      rating: '4.8',
+      reviews: '12',
+      availability: 'Available: ${qtyVal.toStringAsFixed(0)} kg',
+      emoji: _pickEmoji(name),
+      tag: isOrganic ? 'Organic' : 'Fresh',
+      tagColor: const Color(0xFF1E8342),
+      description: map['description'] as String? ?? '',
+      harvestDate: 'Fresh',
+      tags: isOrganic ? const ['Organic', 'Farm Fresh'] : const ['Farm Fresh'],
+      farmer: fallbackFarmer,
+      category: map['category'] as String? ?? 'Vegetables',
+      isActive: status == 'In Stock',
+      imageUrl: (map['image_url'] as String?)?.isNotEmpty == true
+          ? map['image_url'] as String
+          : null,
+    );
+  }
+
+  static String _pickEmoji(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('tomato')) return '🍅';
+    if (lower.contains('carrot')) return '🥕';
+    if (lower.contains('potato')) return '🥔';
+    if (lower.contains('cabbage')) return '🥬';
+    if (lower.contains('cucumber')) return '🥒';
+    if (lower.contains('chili') || lower.contains('chilli')) return '🌶️';
+    if (lower.contains('mango')) return '🥭';
+    if (lower.contains('banana')) return '🍌';
+    if (lower.contains('papaya')) return '🍈';
+    if (lower.contains('avocado')) return '🥑';
+    if (lower.contains('onion')) return '🧅';
+    if (lower.contains('garlic')) return '🧄';
+    if (lower.contains('rice')) return '🌾';
+    return '🌿';
   }
   String localizedName(BuildContext context) => name.trAuto(context);
   String localizedPrice(BuildContext context) => price.trAuto(context);
@@ -659,6 +739,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('${widget.product.name} added to cart!'),
+                            duration: const Duration(seconds: 1),
                             action: SnackBarAction(
                               label: 'View Cart',
                               textColor: const Color(0xFF4ADE80),
@@ -943,6 +1024,45 @@ class _FarmerCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+
+          // Chat with Farmer Button
+          GestureDetector(
+            onTap: () {
+              final conv = ChatService.instance.getOrCreateConversation(
+                peerId: 'conv_farmer_${farmer.name.toLowerCase().replaceAll(' ', '_')}',
+                peerName: farmer.name,
+                peerRole: 'Farmer',
+                avatarUrl: farmer.avatarUrl,
+                subtitle: '${farmer.role} • ${farmer.location}',
+                phone: farmer.phone ?? '+94 76 323 8225',
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatDetailScreen(
+                    conversation: conv,
+                    currentRole: 'buyer',
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 16,
+                color: AppColors.primaryGreen,
+              ),
             ),
           ),
 

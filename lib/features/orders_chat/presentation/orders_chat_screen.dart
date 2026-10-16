@@ -4,15 +4,20 @@ import '../../buyer/presentation/buyer_cart_screen.dart';
 import '../../buyer/presentation/buyer_categories_screen.dart';
 import '../../buyer/presentation/buyer_home_screen.dart';
 import '../../buyer/presentation/buyer_profile_screen.dart';
+import '../../buyer/presentation/buyer_reviews_screen.dart';
 import '../../buyer/presentation/widgets/buyer_bottom_nav.dart';
 import '../../cart/models/cart_item_model.dart';
 import '../../cart/services/cart_state.dart';
 import '../models/chat_model.dart';
 import '../models/order_model.dart';
 import 'chat_detail_screen.dart';
+import 'chat_list_screen.dart';
 import 'order_tracking_screen.dart';
+import '../../../services/chat_service.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../widgets/premium/premium_widgets.dart';
+import '../../pre_order/presentation/pre_order_list_screen.dart';
+import '../../pre_order/presentation/create_pre_order_screen.dart';
 
 /// Clean, beautifully organized "Orders & Chat" screen aligned with the Farm2Home design system
 class OrdersChatScreen extends StatefulWidget {
@@ -104,7 +109,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
         content: Text('${order.items.length} items from #${order.id} added to cart!'),
         backgroundColor: _forestGreen,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 1),
         action: SnackBarAction(
           label: context.tr.viewCart,
           textColor: Colors.white,
@@ -155,27 +160,36 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${context.tr.orderId} #${order.id}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.id.length > 8
+                            ? '${context.tr.orderId} #${order.id.substring(0, 8).toUpperCase()}'
+                            : '${context.tr.orderId} #${order.id}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: _textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      order.preferredDateTime,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: _textMuted,
+                      const SizedBox(height: 3),
+                      Text(
+                        order.preferredDateTime,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _textMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 _buildStatusBadge(order.status),
               ],
             ),
@@ -297,7 +311,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
 
             Row(
               children: [
-                if (isInTransit)
+                if (isInTransit) ...[
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -327,8 +341,89 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                         );
                       },
                     ),
-                  )
-                else
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _forestGreen,
+                        side: const BorderSide(color: _forestGreen, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+                      label: Text(
+                        context.tr.chat,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final conv = ChatService.instance.getOrCreateConversation(
+                          peerId: 'conv_driver_ranjith',
+                          peerName: 'Ranjith Subha (Driver)',
+                          peerRole: 'Driver',
+                          phone: '+94 77 123 4567',
+                          subtitle: 'Chilled Transit Van NC-4982 • Order #${order.id}',
+                          orderId: order.id,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatDetailScreen(
+                              conversation: conv,
+                              currentRole: 'buyer',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ] else ...[
+                  if (order.status == OrderStatus.delivered) ...[
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F3D24),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.star_rate_rounded, color: Color(0xFFF59E0B), size: 18),
+                        label: Text(
+                          'Rate & Review'.trAuto(context),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BuyerReviewsScreen(
+                                initialProductId: order.items.isNotEmpty
+                                    ? 'prod_${order.items.first.name.hashCode.abs() % 10}'
+                                    : null,
+                                initialProductName: order.items.isNotEmpty ? order.items.first.name : null,
+                                initialFarmerName: 'K. M. Bandara',
+                                initialProductImage: '',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -354,6 +449,48 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                       },
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _forestGreen,
+                        side: const BorderSide(color: _forestGreen, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline_rounded, size: 17),
+                      label: Text(
+                        context.tr.chat,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final conv = ChatService.instance.getOrCreateConversation(
+                          peerId: 'conv_sunil',
+                          peerName: 'Sunil Perera (Farmer)',
+                          peerRole: 'Farmer',
+                          phone: '+94 77 123 4567',
+                          subtitle: 'Hakgala Organic Farm • Order #${order.id}',
+                          orderId: order.id,
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatDetailScreen(
+                              conversation: conv,
+                              currentRole: 'buyer',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -397,7 +534,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 onChanged: (val) => setState(() => _searchQuery = val.trim()),
               )
             : Text(
-                context.tr.ordersAndChat,
+                'Orders & Pre-Orders',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -585,33 +722,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                context.tr.chat,
+                                'Pre-Orders',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: _selectedTab == 1 ? FontWeight.w700 : FontWeight.w600,
                                   color: _selectedTab == 1 ? Colors.white : _textMuted,
                                 ),
                               ),
-                              if (_totalUnreadChats > 0) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: _selectedTab == 1
-                                        ? Colors.white.withValues(alpha: 0.25)
-                                        : _forestGreen,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '$_totalUnreadChats',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -629,14 +746,32 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
           Expanded(
             child: _selectedTab == 0
                 ? _buildOrdersTabView()
-                : _buildChatTabView(),
+                : _buildPreOrderTabView(),
           ),
         ],
       ),
 
+      // ── Floating Action Button for Pre-Orders ───────────────────────────
+      floatingActionButton: _selectedTab == 1
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // We need to import CreatePreOrderScreen if not already, or we can just use the path
+                    builder: (_) => const CreatePreOrderScreen(),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF047857),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text(context.tr.newRequest, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            )
+          : null,
+
       // ── Unified 5-Tab Buyer Bottom Nav ────────────────────────────────────
       bottomNavigationBar: BuyerBottomNav(
-        selectedIndex: _selectedTab == 0 ? 2 : 3,
+        selectedIndex: 2,
         onTabSelected: (index) {
           switch (index) {
             case 0:
@@ -661,7 +796,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
               setState(() => _selectedTab = 0);
               break;
             case 3:
-              setState(() => _selectedTab = 1);
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => const ChatListScreen(),
+                  transitionDuration: Duration.zero,
+                ),
+              );
               break;
             case 4:
               Navigator.pushReplacement(
@@ -917,47 +1058,56 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAF5EF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.eco_rounded,
-                            color: _forestGreen,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '#${order.id}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: _textDark,
-                                letterSpacing: -0.2,
-                              ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF5EF),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              order.preferredDateTime,
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                color: _textMuted,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: const Icon(
+                              Icons.eco_rounded,
+                              color: _forestGreen,
+                              size: 20,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.id.length > 8 ? '#${order.id.substring(0, 8).toUpperCase()}' : '#${order.id}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textDark,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  order.preferredDateTime,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: _textMuted,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
 
                     // Status Badge
                     _buildStatusBadge(order.status),
@@ -1131,7 +1281,47 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                               );
                             },
                           )
-                        else
+                        else ...[
+                          if (order.status == OrderStatus.delivered) ...[
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F3D24),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 13,
+                                  vertical: 9,
+                                ),
+                              ),
+                              icon: const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                              label: Text(
+                                'Rate & Review'.trAuto(context),
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BuyerReviewsScreen(
+                                      initialProductId: order.items.isNotEmpty
+                                          ? 'prod_${order.items.first.name.hashCode.abs() % 10}'
+                                          : null,
+                                      initialProductName: order.items.isNotEmpty ? order.items.first.name : null,
+                                      initialFarmerName: 'K. M. Bandara',
+                                      initialProductImage: '',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: _forestGreen,
@@ -1140,7 +1330,7 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 15,
+                                horizontal: 14,
                                 vertical: 9,
                               ),
                             ),
@@ -1152,13 +1342,14 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                             label: Text(
                               context.tr.reorder,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
                                 color: _forestGreen,
                               ),
                             ),
                             onPressed: () => _reorderItems(order),
                           ),
+                        ],
                       ],
                     ),
                   ],
@@ -1222,6 +1413,13 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
         ),
       ),
     );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PRE-ORDER TAB VIEW
+  // ───────────────────────────────────────────────────────────────────────────
+  Widget _buildPreOrderTabView() {
+    return const PreOrderListScreen(isFarmerMode: false, isEmbedded: true);
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -1312,11 +1510,10 @@ class _OrdersChatScreenState extends State<OrdersChatScreen> {
                 ),
               ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.tr.showingAllChats),
-                    behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 2),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChatListScreen(currentRole: 'buyer'),
                   ),
                 );
               },

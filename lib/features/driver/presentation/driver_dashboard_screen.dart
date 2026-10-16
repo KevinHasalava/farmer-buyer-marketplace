@@ -245,68 +245,37 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          // App Logo Icon Box
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFF006B44),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_downward_rounded,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // App Logo Icon Box matching Splash Loading Screen
+          const AppBrandLogo(size: 38, hasGlow: false),
           const SizedBox(width: 10),
 
-          // Brand Name
-          Text(
-            'Farm2Home',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-              letterSpacing: -0.3,
+          // Brand Name + DRIVER Badge
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppBrandWordmark(fontSize: 17, isLight: false),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'DRIVER'.trAuto(context),
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF065F46),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-
-          // DRIVER Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD1FAE5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              'DRIVER'.trAuto(context),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF065F46),
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-
-          const Spacer(),
+          const SizedBox(width: 6),
 
           // Language Switcher Pill
           const AppLanguagePill(),
@@ -411,16 +380,21 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Subtitle label
-            Text(
-              context.tr.highlandAgriCorridor,
-              style: AppTheme.fontStyle(
-                context.currentLanguage,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
-                letterSpacing: 0.6,
+            Expanded(
+              child: Text(
+                context.tr.highlandAgriCorridor,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTheme.fontStyle(
+                  context.currentLanguage,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                  letterSpacing: 0.6,
+                ),
               ),
             ),
+            const SizedBox(width: 8),
 
             // On Duty Status Pill (Interactive toggle - UPDATE - U)
             GestureDetector(
@@ -515,12 +489,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
               color: Color(0xFF64748B),
             ),
             const SizedBox(width: 5),
-            Text(
-              _vehicleInfo.trAuto(context),
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+            Expanded(
+              child: Text(
+                _vehicleInfo.trAuto(context),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
+                ),
               ),
             ),
           ],

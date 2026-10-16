@@ -9,13 +9,17 @@ import '../models/buyer_profile_model.dart';
 
 class BuyerProfileManager extends ChangeNotifier {
   BuyerProfileManager._internal() {
+    if (SupabaseConfig.isInitialized) {
+      // Reload whenever someone signs in / out so accounts never mix.
+      SupabaseConfig.auth.onAuthStateChange.listen((_) => loadProfile());
+    }
     loadProfile();
   }
 
   static final BuyerProfileManager instance = BuyerProfileManager._internal();
   factory BuyerProfileManager() => instance;
 
-  BuyerProfileModel _profile = BuyerProfileModel.defaultBuyer;
+  BuyerProfileModel _profile = BuyerProfileModel.empty;
   bool _isLoading = false;
 
   BuyerProfileModel get profile => _profile;
@@ -23,40 +27,65 @@ class BuyerProfileManager extends ChangeNotifier {
 
   static const String _kBuyerProfileKey = 'buyer_profile_cache_v1';
 
-  /// Loads profile from SharedPreferences cache, and synchronizes with Supabase if online
+  /// Loads the signed-in buyer's profile from the `buyers` table or cache.
   Future<void> loadProfile() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedJson = prefs.getString(_kBuyerProfileKey);
-
-      if (cachedJson != null) {
-        try {
-          final map = jsonDecode(cachedJson) as Map<String, dynamic>;
-          _profile = BuyerProfileModel.fromJson(map);
-        } catch (_) {}
-      }
-
-      // Check Supabase Auth
-      if (SupabaseConfig.isInitialized) {
-        final user = SupabaseConfig.auth.currentUser;
-        if (user != null) {
-          final metadata = user.userMetadata;
-          if (metadata != null) {
-            _profile = _profile.copyWith(
-              id: user.id,
-              name: metadata['full_name'] as String? ?? _profile.name,
-              phone: metadata['phone'] as String? ?? user.phone ?? _profile.phone,
-              email: user.email ?? _profile.email,
-              deliveryAddress: metadata['address'] as String? ?? _profile.deliveryAddress,
-              deliveryHub: metadata['hub'] as String? ?? _profile.deliveryHub,
-              buyerType: metadata['buyer_type'] as String? ?? _profile.buyerType,
-            );
-          }
-          await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
+      final user =
+          SupabaseConfig.isInitialized ? SupabaseConfig.auth.currentUser : null;
+      if (user == null) {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString(_kBuyerProfileKey);
+        if (raw != null) {
+          _profile = BuyerProfileModel.fromJson(jsonDecode(raw));
+        } else {
+          _profile = BuyerProfileModel.empty;
         }
+      } else {
+        Map<String, dynamic>? row;
+        try {
+          row = await SupabaseConfig.client
+              .from('buyers')
+              .select()
+              .eq('id', user.id)
+              .maybeSingle();
+        } catch (_) {}
+
+        final metadata = user.userMetadata ?? {};
+        final code = user.id.length >= 4
+            ? '#B-${user.id.substring(user.id.length - 4).toUpperCase()}'
+            : '#B-0034';
+        _profile = BuyerProfileModel.empty.copyWith(
+          id: user.id,
+          buyerCode: code,
+          email: (row?['email'] as String?) ?? user.email ?? '',
+          name: (row?['full_name'] as String?) ??
+              (metadata['full_name'] as String?) ??
+              '',
+          phone: (row?['phone'] as String?) ??
+              (metadata['phone'] as String?) ??
+              '',
+          deliveryAddress: (row?['delivery_address'] as String?) ??
+              (metadata['delivery_address'] as String?) ??
+              (metadata['address'] as String?) ??
+              '',
+          deliveryHub: (row?['delivery_hub'] as String?) ??
+              (metadata['delivery_hub'] as String?) ??
+              (metadata['hub'] as String?) ??
+              '',
+          buyerType: (row?['buyer_type'] as String?) ??
+              (metadata['buyer_type'] as String?) ??
+              '',
+          completedOrders: (row?['total_orders'] as num?)?.toInt() ?? 0,
+          directFarmSpend: (row?['total_spent'] as num?)?.toDouble() ?? 0,
+          isVerified: true,
+          memberSince: row?['created_at'] != null
+              ? (DateTime.tryParse(row!['created_at'].toString())?.year ?? '')
+                  .toString()
+              : '',
+        );
       }
     } catch (e) {
       debugPrint('Error loading buyer profile: $e');
@@ -103,25 +132,63 @@ class BuyerProfileManager extends ChangeNotifier {
       await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
     } catch (_) {}
 
-    // Dual-sync to Supabase if authenticated
+    // Direct persistence to Supabase buyers & profiles tables
     try {
-      if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
-        await SupabaseConfig.auth.updateUser(
-          UserAttributes(
-            data: {
-              'full_name': _profile.name,
-              'phone': _profile.phone,
-              'address': _profile.deliveryAddress,
-              'hub': _profile.deliveryHub,
-              'buyer_type': _profile.buyerType,
-              'preferences': _profile.preferences,
+      if (SupabaseConfig.isInitialized) {
+        final targetId = (userId != null && userId.isNotEmpty && !userId.startsWith('b-'))
+            ? userId
+            : (SupabaseConfig.auth.currentUser?.id ?? effectiveId);
+
+        // 1) Always upsert the buyer row into the `buyers` table directly
+        try {
+          await SupabaseConfig.client.from('buyers').upsert({
+            'id': targetId,
+            'full_name': _profile.name,
+            'email': _profile.email,
+            'phone': _profile.phone,
+            'delivery_address': _profile.deliveryAddress,
+            'delivery_hub': _profile.deliveryHub,
+            'buyer_type': _profile.buyerType,
+            'status': 'Active',
+          }, onConflict: 'id');
+          debugPrint('[BuyerProfileManager] Buyer upserted to buyers table: $targetId');
+        } catch (be) {
+          debugPrint('[BuyerProfileManager] buyers upsert error: $be');
+        }
+
+        // 2) If authenticated or session available, update auth user and profiles
+        if (SupabaseConfig.auth.currentUser != null) {
+          final uid = SupabaseConfig.auth.currentUser!.id;
+          try {
+            await SupabaseConfig.auth.updateUser(
+              UserAttributes(
+                data: {
+                  'full_name': _profile.name,
+                  'phone': _profile.phone,
+                  'address': _profile.deliveryAddress,
+                  'hub': _profile.deliveryHub,
+                  'buyer_type': _profile.buyerType,
+                  'preferences': _profile.preferences,
+                  'role': 'buyer',
+                },
+              ),
+            );
+          } catch (_) {}
+
+          try {
+            await SupabaseConfig.client.from('profiles').upsert({
+              'id': uid,
               'role': 'buyer',
-            },
-          ),
-        );
+              'full_name': _profile.name,
+              'email': _profile.email,
+              'phone': _profile.phone,
+              'status': 'Active',
+            }, onConflict: 'id');
+          } catch (_) {}
+        }
       }
     } catch (e) {
-      debugPrint('[BuyerProfileManager] Supabase update note: $e');
+      debugPrint('[BuyerProfileManager] Supabase upsert error: $e');
     }
 
     // Two-way synchronization with Admin Panel and remote database
@@ -159,6 +226,7 @@ class BuyerProfileManager extends ChangeNotifier {
 
     try {
       if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
+        // Update auth metadata
         await SupabaseConfig.auth.updateUser(
           UserAttributes(
             data: {
@@ -171,8 +239,32 @@ class BuyerProfileManager extends ChangeNotifier {
             },
           ),
         );
+
+        // Sync updated fields back to the profiles and buyers tables
+        final uid = SupabaseConfig.auth.currentUser!.id;
+        try {
+          await SupabaseConfig.client.from('profiles').upsert({
+            'id': uid,
+            'role': 'buyer',
+            'full_name': _profile.name,
+            'email': _profile.email,
+            'phone': _profile.phone,
+          }, onConflict: 'id');
+        } catch (_) {}
+
+        await SupabaseConfig.client.from('buyers').upsert({
+          'id': uid,
+          'full_name': _profile.name,
+          'email': _profile.email,
+          'phone': _profile.phone,
+          'delivery_address': _profile.deliveryAddress,
+          'delivery_hub': _profile.deliveryHub,
+          'buyer_type': _profile.buyerType,
+        }, onConflict: 'id');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[BuyerProfileManager] updateProfile Supabase error: $e');
+    }
 
     // Two-way synchronization with Admin Panel and remote database
     try {
@@ -192,5 +284,46 @@ class BuyerProfileManager extends ChangeNotifier {
       await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
     } catch (_) {}
     notifyListeners();
+  }
+
+  /// Top up digital wallet balance
+  Future<bool> topUpWallet(double amount) async {
+    if (amount <= 0) return false;
+    final newBalance = _profile.walletBalance + amount;
+    _profile = _profile.copyWith(walletBalance: newBalance);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
+    } catch (_) {}
+
+    try {
+      AdminMarketplaceService.instance.syncBuyerFromApp(_profile);
+    } catch (_) {}
+
+    notifyListeners();
+    return true;
+  }
+
+  /// Deduct digital wallet balance for order payment
+  Future<bool> deductWallet(double amount) async {
+    if (amount <= 0 || _profile.walletBalance < amount) return false;
+    final newBalance = _profile.walletBalance - amount;
+    _profile = _profile.copyWith(
+      walletBalance: newBalance,
+      directFarmSpend: _profile.directFarmSpend + amount,
+    );
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kBuyerProfileKey, jsonEncode(_profile.toJson()));
+    } catch (_) {}
+
+    try {
+      AdminMarketplaceService.instance.syncBuyerFromApp(_profile);
+    } catch (_) {}
+
+    notifyListeners();
+    return true;
   }
 }

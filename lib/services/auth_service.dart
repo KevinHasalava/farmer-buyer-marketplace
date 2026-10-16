@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../core/supabase/supabase_config.dart';
 import '../models/user_model.dart';
-import 'notify_sms_service.dart';
 
 /// Exception thrown on authentication errors.
 class AuthException implements Exception {
@@ -14,46 +13,157 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
-/// Supabase Authentication service with local fallback.
-/// Uses the single Supabase backend configured in [SupabaseConfig].
+/// Supabase-only authentication service.
+///
+/// Every account is a real Supabase Auth user. The role (farmer / buyer /
+/// driver / admin) is stored in `public.profiles`, created automatically by
+/// the `handle_new_user` database trigger from the sign-up metadata.
+/// There are NO local / fake accounts.
 class AuthService {
   const AuthService();
 
-  static UserModel? _localCurrentUser;
   static final StreamController<UserModel?> _authStateController =
       StreamController<UserModel?>.broadcast();
 
-  // ── Helpers ────────────────────────────────────────────────────────────
+  static void _requireClient() {
+    if (!SupabaseConfig.isInitialized) {
+      throw const AuthException(
+          'Cannot reach the server. Please check your internet connection.');
+    }
+  }
+
+  // ── Current user ───────────────────────────────────────────────────────
 
   UserModel? get currentUser {
     try {
       if (SupabaseConfig.isInitialized) {
-        final sbUser = SupabaseConfig.auth.currentUser;
-        if (sbUser != null) {
-          return UserModel(
-            id: sbUser.id,
-            name: sbUser.userMetadata?['full_name'] as String? ??
-                sbUser.email?.split('@').first ??
-                'User',
-            email: sbUser.email ?? '',
-            phone: sbUser.phone ?? '',
-            isFarmer: sbUser.userMetadata?['is_farmer'] as bool? ?? false,
-            userMetadata: sbUser.userMetadata,
-          );
-        }
+        final u = SupabaseConfig.auth.currentUser;
+        if (u != null) return _fromSupabase(u);
       }
     } catch (_) {}
-    return _localCurrentUser;
+    return null;
   }
 
+  static String? _lastCreatedUserId;
+  String? get lastCreatedUserId => _lastCreatedUserId;
+
   Stream<UserModel?> get authStateChanges => _authStateController.stream;
-
   UserModel? get currentSession => currentUser;
-
   UserModel? get currentUserModel => currentUser;
 
-  // ── Sign Up ────────────────────────────────────────────────────────────
+  static UserModel _fromSupabase(sb.User u, {String? role}) {
+    final meta = u.userMetadata ?? {};
+    final r = (role ?? meta['role'] as String? ?? '').toLowerCase();
+    return UserModel(
+      id: u.id,
+      name: (meta['full_name'] as String?) ??
+          u.email?.split('@').first ??
+          '',
+      email: u.email ?? '',
+      phone: (meta['phone'] as String?) ?? u.phone ?? '',
+      isFarmer: r == 'farmer',
+      role: r,
+      userMetadata: meta,
+    );
+  }
 
+  // ── Role lookup (source of truth = public.profiles) ────────────────────
+
+  /// Returns the role stored in the database for the signed-in user.
+  Future<String> fetchRole() async {
+    _requireClient();
+    final u = SupabaseConfig.auth.currentUser;
+    if (u == null) throw const AuthException('You are not signed in.');
+    try {
+      final row = await SupabaseConfig.client
+          .from('profiles')
+          .select('role, status')
+          .eq('id', u.id)
+          .maybeSingle();
+      if (row == null) {
+        // No profile row yet — this is a brand-new Google/OAuth user.
+        // Throw a sentinel so the login screen can redirect to registration.
+        throw const AuthException('profile_not_found');
+      }
+      if ((row['status'] ?? 'Active') != 'Active') {
+        await SupabaseConfig.auth.signOut();
+        throw const AuthException(
+            'Your account has been suspended. Please contact support.');
+      }
+      return (row['role'] as String).toLowerCase();
+    } on sb.PostgrestException catch (e) {
+      throw AuthException('Could not load your profile: ${e.message}');
+    }
+  }
+
+  // ── Sign up ────────────────────────────────────────────────────────────
+
+  /// Creates a real account. [role] must be farmer, buyer or driver.
+  /// [details] is stored as sign-up metadata and copied into the role table
+  /// by the database trigger (farm_name, district, vehicle_type ...).
+  ///
+  /// Returns `true` when the user is signed in immediately, `false` when the
+  /// project requires e-mail confirmation first.
+  Future<bool> signUpWithRole({
+    required String email,
+    required String password,
+    required String fullName,
+    required String role,
+    required String phone,
+    Map<String, dynamic> details = const {},
+  }) async {
+    _requireClient();
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty || password.isEmpty) {
+      throw const AuthException('Please enter your email and password.');
+    }
+    if (password.length < 6) {
+      throw const AuthException('Password must be at least 6 characters.');
+    }
+    if (!const ['farmer', 'buyer', 'driver'].contains(role)) {
+      throw const AuthException('Please choose a valid account type.');
+    }
+
+    try {
+      final res = await SupabaseConfig.auth.signUp(
+        email: cleanEmail,
+        password: password,
+        data: {
+          'full_name': fullName.trim(),
+          'phone': phone.trim(),
+          'role': role,
+          ...details,
+        },
+      );
+      if (res.user == null) {
+        throw const AuthException(
+            'Registration could not be completed. Please try again.');
+      }
+      // Supabase returns an obfuscated user with no identities when the
+      // e-mail is already registered (and confirmations are enabled).
+      if ((res.user!.identities ?? []).isEmpty) {
+        throw const AuthException(
+            'An account with this email already exists. Please sign in.');
+      }
+      _lastCreatedUserId = res.user?.id;
+      final signedIn = res.session != null;
+      if (signedIn) _authStateController.add(_fromSupabase(res.user!, role: role));
+      return signedIn;
+    } on sb.AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('already registered') || msg.contains('already exists')) {
+        throw const AuthException(
+            'An account with this email already exists. Please sign in.');
+      }
+      if (msg.contains('rate limit')) {
+        throw const AuthException(
+            'Too many attempts. Please wait a few minutes and try again.');
+      }
+      throw AuthException(e.message);
+    }
+  }
+
+  /// Backwards compatible wrapper used by older screens.
   Future<UserModel> signUp({
     required String email,
     required String password,
@@ -61,114 +171,70 @@ class AuthService {
     required bool isFarmer,
     Map<String, dynamic>? extraData,
   }) async {
-    try {
-      if (SupabaseConfig.isInitialized) {
-        final res = await SupabaseConfig.auth.signUp(
-          email: email,
-          password: password,
-          data: {
-            'full_name': fullName,
-            'is_farmer': isFarmer,
-            if (extraData != null) ...extraData,
-          },
-        );
-        final sbUser = res.user;
-        if (sbUser != null) {
-          final user = UserModel(
-            id: sbUser.id,
-            name: fullName,
-            email: email,
-            isFarmer: isFarmer,
-            userMetadata: sbUser.userMetadata,
-          );
-          _localCurrentUser = user;
-          _authStateController.add(user);
-          return user;
-        }
-      }
-    } catch (e) {
-      debugPrint('[AuthService] Supabase signUp note: $e');
-    }
-
-    final user = UserModel(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-      name: fullName,
+    final role = (extraData?['role'] as String?) ?? (isFarmer ? 'farmer' : 'buyer');
+    final phone = (extraData?['phone'] as String?) ?? '';
+    await signUpWithRole(
       email: email,
-      isFarmer: isFarmer,
-      userMetadata: {
-        'full_name': fullName,
-        'is_farmer': isFarmer,
-        if (extraData != null) ...extraData,
-      },
+      password: password,
+      fullName: fullName,
+      role: role,
+      phone: phone,
+      details: {...?extraData}..removeWhere((k, _) => k == 'role' || k == 'phone'),
     );
-    _localCurrentUser = user;
-    _authStateController.add(user);
-    return user;
+    final u = currentUser;
+    if (u == null) {
+      throw const AuthException(
+          'Account created. Please confirm your email, then sign in.');
+    }
+    return u;
   }
 
-  // ── Sign In ────────────────────────────────────────────────────────────
+  // ── Sign in ────────────────────────────────────────────────────────────
 
   Future<UserModel> signIn({
     required String email,
     required String password,
   }) async {
-    try {
-      if (SupabaseConfig.isInitialized) {
-        final res = await SupabaseConfig.auth.signInWithPassword(
-          email: email,
-          password: password,
-        );
-        final sbUser = res.user;
-        if (sbUser != null) {
-          final user = UserModel(
-            id: sbUser.id,
-            name: sbUser.userMetadata?['full_name'] as String? ??
-                email.split('@').first,
-            email: email,
-            phone: sbUser.phone ?? '',
-            isFarmer: sbUser.userMetadata?['is_farmer'] as bool? ?? false,
-            userMetadata: sbUser.userMetadata,
-          );
-          _localCurrentUser = user;
-          _authStateController.add(user);
-          return user;
-        }
-      }
-    } catch (e) {
-      debugPrint('[AuthService] Supabase signIn note: $e');
+    _requireClient();
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty || password.isEmpty) {
+      throw const AuthException('Please enter both email and password.');
     }
-
-    final name = email.contains('@') ? email.split('@').first : email;
-    final user = UserModel(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}',
-      name: name,
-      email: email,
-      isFarmer: false,
-      userMetadata: {
-        'full_name': name,
-      },
-    );
-    _localCurrentUser = user;
-    _authStateController.add(user);
-    return user;
+    try {
+      final res = await SupabaseConfig.auth
+          .signInWithPassword(email: cleanEmail, password: password);
+      final sbUser = res.user;
+      if (sbUser == null) {
+        throw const AuthException('Sign in failed. Account not found.');
+      }
+      final role = await fetchRole();
+      final user = _fromSupabase(sbUser, role: role);
+      _authStateController.add(user);
+      return user;
+    } on sb.AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid login credentials') ||
+          msg.contains('invalid_credentials')) {
+        throw const AuthException('Incorrect email or password.');
+      } else if (msg.contains('email not confirmed')) {
+        throw const AuthException(
+            'Please confirm your email first (check your inbox), then sign in.');
+      } else if (msg.contains('rate limit')) {
+        throw const AuthException(
+            'Too many attempts. Please wait a few minutes and try again.');
+      }
+      throw AuthException(e.message);
+    }
   }
 
-  // ── Phone OTP (password-less via Notify.lk & Supabase) ─────────────────
+  // ── Phone OTP (only works when an SMS provider is configured) ──────────
 
   Future<void> sendPhoneOtp(String phone) async {
-    // 1. Send real SMS OTP to the phone number via Notify.lk
-    final result = await NotifySmsService.instance.sendOtp(phone);
-    if (!result.success && result.error != null && result.error!.contains('valid')) {
-      throw AuthException(result.error!);
-    }
-
-    // 2. Also attempt Supabase signInWithOtp if configured
+    _requireClient();
     try {
-      if (SupabaseConfig.isInitialized) {
-        await SupabaseConfig.auth.signInWithOtp(phone: phone, shouldCreateUser: true);
-      }
-    } catch (e) {
-      debugPrint('[AuthService] Supabase sendPhoneOtp note: $e');
+      await SupabaseConfig.auth.signInWithOtp(phone: phone, shouldCreateUser: false);
+    } on sb.AuthException catch (e) {
+      throw AuthException(e.message);
     }
   }
 
@@ -176,118 +242,110 @@ class AuthService {
     required String phone,
     required String token,
   }) async {
-    // 1. Verify via Notify.lk OTP service
-    final isValid = NotifySmsService.instance.verifyOtp(rawPhone: phone, code: token);
-    if (!isValid) {
-      throw const AuthException('Invalid or expired OTP code');
-    }
-
-    // 2. Try Supabase verify if available
+    _requireClient();
     try {
-      if (SupabaseConfig.isInitialized) {
-        final res = await SupabaseConfig.auth.verifyOTP(
-          phone: phone,
-          token: token,
-          type: sb.OtpType.sms,
-        );
-        final sbUser = res.user;
-        if (sbUser != null) {
-          final user = UserModel(
-            id: sbUser.id,
-            name: sbUser.userMetadata?['full_name'] as String? ?? 'User',
-            email: sbUser.email ?? '$phone@farm2home.local',
-            phone: phone,
-            userMetadata: sbUser.userMetadata,
-          );
-          _localCurrentUser = user;
-          _authStateController.add(user);
-          return user;
-        }
-      }
-    } catch (e) {
-      debugPrint('[AuthService] Supabase verifyOTP note: $e');
+      final res = await SupabaseConfig.auth
+          .verifyOTP(phone: phone, token: token, type: sb.OtpType.sms);
+      final u = res.user;
+      if (u == null) throw const AuthException('Invalid or expired code.');
+      final user = _fromSupabase(u, role: await fetchRole());
+      _authStateController.add(user);
+      return user;
+    } on sb.AuthException catch (e) {
+      throw AuthException(e.message);
     }
-
-    final shortSuffix = phone.length > 4 ? phone.substring(phone.length - 4) : phone;
-    final user = UserModel(
-      id: 'usr_phone_${phone.replaceAll(RegExp(r'\D'), '')}',
-      name: 'User $shortSuffix',
-      email: '$phone@farm2home.local',
-      phone: phone,
-      userMetadata: {
-        'phone': phone,
-        'full_name': 'User $shortSuffix',
-      },
-    );
-    _localCurrentUser = user;
-    _authStateController.add(user);
-    return user;
   }
+
+  // ── Profile ────────────────────────────────────────────────────────────
 
   Future<void> updateProfile({
     required String fullName,
     required String role,
   }) async {
+    _requireClient();
+    final u = SupabaseConfig.auth.currentUser;
+    if (u == null) return;
     try {
-      if (SupabaseConfig.isInitialized && SupabaseConfig.auth.currentUser != null) {
-        await SupabaseConfig.auth.updateUser(
-          sb.UserAttributes(
-            data: {
-              'full_name': fullName,
-              'role': role,
-              'is_farmer': role == 'farmer',
-            },
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('[AuthService] Supabase updateProfile note: $e');
-    }
-
-    if (_localCurrentUser != null) {
-      final updated = UserModel(
-        id: _localCurrentUser!.id,
-        name: fullName,
-        email: _localCurrentUser!.email,
-        phone: _localCurrentUser!.phone,
-        isFarmer: role == 'farmer',
-        userMetadata: {
-          ...?_localCurrentUser!.userMetadata,
-          'full_name': fullName,
-          'role': role,
-          'is_farmer': role == 'farmer',
-        },
-      );
-      _localCurrentUser = updated;
-      _authStateController.add(updated);
+      // Role is intentionally NOT writable from the client; only the name.
+      await SupabaseConfig.client
+          .from('profiles')
+          .update({'full_name': fullName}).eq('id', u.id);
+      await SupabaseConfig.auth
+          .updateUser(sb.UserAttributes(data: {'full_name': fullName}));
+    } on sb.PostgrestException catch (e) {
+      throw AuthException('Could not update profile: ${e.message}');
     }
   }
 
-  // ── Sign In with OAuth ─────────────────────────────────────────────────
+  // ── OAuth ──────────────────────────────────────────────────────────────
 
   Future<void> signInWithGoogle() async {
+    _requireClient();
     try {
-      if (SupabaseConfig.isInitialized) {
-        await SupabaseConfig.auth.signInWithOAuth(sb.OAuthProvider.google);
-        return;
-      }
-    } catch (_) {}
-    await signIn(email: 'demo_user@farm2home.lk', password: '');
+      final String redirectUrl = kIsWeb
+          ? '${Uri.base.origin}/'
+          : 'io.supabase.farmtrust://login-callback/';
+      await SupabaseConfig.auth.signInWithOAuth(
+        sb.OAuthProvider.google,
+        redirectTo: redirectUrl,
+      );
+    } on sb.AuthException catch (e) {
+      throw AuthException(e.message);
+    } catch (e) {
+      throw AuthException('Google Sign-In failed: $e');
+    }
   }
 
-  // ── Password Reset ─────────────────────────────────────────────────────
+  // ── Password reset (6-digit e-mail code, no deep link needed) ──────────
+  //
+  // Supabase > Authentication > Email Templates > "Reset Password" must
+  // contain {{ .Token }} so the e-mail shows the code.
 
   Future<void> sendPasswordResetEmail({required String email}) async {
+    _requireClient();
+    final clean = email.trim();
+    if (clean.isEmpty || !clean.contains('@')) {
+      throw const AuthException('Please enter a valid email address.');
+    }
     try {
-      if (SupabaseConfig.isInitialized) {
-        await SupabaseConfig.auth.resetPasswordForEmail(email);
-        return;
+      await SupabaseConfig.auth.resetPasswordForEmail(clean);
+    } on sb.AuthException catch (e) {
+      if (e.message.toLowerCase().contains('rate limit')) {
+        throw const AuthException(
+            'Too many requests. Please wait a few minutes and try again.');
       }
-    } catch (_) {}
-    await Future.delayed(const Duration(milliseconds: 200));
+      throw AuthException(e.message);
+    }
   }
 
-  // ── Sign Out ───────────────────────────────────────────────────────────
+  /// Verifies the e-mailed code and sets the new password.
+  Future<void> resetPasswordWithCode({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    _requireClient();
+    if (newPassword.length < 6) {
+      throw const AuthException('Password must be at least 6 characters.');
+    }
+    try {
+      await SupabaseConfig.auth.verifyOTP(
+        email: email.trim(),
+        token: code.trim(),
+        type: sb.OtpType.recovery,
+      );
+      await SupabaseConfig.auth.updateUser(sb.UserAttributes(password: newPassword));
+      await SupabaseConfig.auth.signOut();
+    } on sb.AuthException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('expired') || msg.contains('invalid')) {
+        throw const AuthException('Invalid or expired code. Please request a new one.');
+      }
+      throw AuthException(e.message);
+    }
+  }
+
+  // ── Sign out ───────────────────────────────────────────────────────────
 
   Future<void> signOut() async {
     try {
@@ -295,7 +353,6 @@ class AuthService {
         await SupabaseConfig.auth.signOut();
       }
     } catch (_) {}
-    _localCurrentUser = null;
     _authStateController.add(null);
   }
 }

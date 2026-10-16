@@ -12,7 +12,9 @@ import 'delivery_history_screen.dart';
 import 'driver_chat_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'driver_profile_photo_data.dart';
-import '../../admin/presentation/admin_panel_screen.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/routes/app_router.dart';
+import '../../../services/auth_service.dart';
 
 /// Pixel-perfect Driver Profile Screen matching the reference mockup.
 ///
@@ -241,34 +243,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       titleSpacing: 16,
       title: Row(
         children: [
-          // Green Brand Icon Container
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFF006B44),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.home_filled,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          // Unified Brand Logo (Matching Splash Screen)
+          const AppBrandLogo(size: 36, hasGlow: false),
           const SizedBox(width: 9),
 
-          // Brand Name
-          Text(
-            'Farm2Home',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
-              letterSpacing: -0.3,
-            ),
-          ),
+          // Brand Wordmark
+          const AppBrandWordmark(fontSize: 18),
           const SizedBox(width: 8),
 
           // DRIVER Badge Pill
@@ -2449,7 +2429,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Save & Verify'),
+            child: Text(context.tr.saveAndVerify),
           ),
         ],
       ),
@@ -2556,7 +2536,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dlgContext),
-            child: Text('Cancel', style: TextStyle()),
+            child: Text(context.tr.cancel, style: const TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2577,7 +2557,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Confirm Transfer'),
+            child: Text(context.tr.confirmTransfer),
           ),
         ],
       ),
@@ -2619,7 +2599,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 backgroundColor: const Color(0xFF064E3B),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Done'),
+              child: Text(context.tr.done),
             ),
           ],
         ),
@@ -2670,7 +2650,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Close', style: TextStyle()),
+            child: Text(context.tr.close, style: const TextStyle()),
           ),
           ElevatedButton(
             onPressed: () {
@@ -3430,24 +3410,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 );
               },
             ),
-            const SizedBox(height: 8),
-            ListTile(
-              tileColor: const Color(0xFFF0FDF4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Color(0xFFA7F3D0)),
-              ),
-              leading: const Icon(Icons.admin_panel_settings_rounded, color: Color(0xFF047857)),
-              title: Text('Marketplace Admin Console'.trAuto(context), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF047857))),
-              subtitle: Text('Manage Farmers, Buyers, Drivers & Orders'.trAuto(context), style: const TextStyle(fontSize: 11, color: Color(0xFF065F46))),
-              trailing: const Icon(Icons.chevron_right, color: Color(0xFF047857)),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-                );
-              },
-            ),
+
           ],
         ),
       ),
@@ -3473,9 +3436,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             child: Text('Cancel'.trAuto(context), style: TextStyle()),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              try {
+                await const AuthService().signOut();
+              } catch (_) {}
+              if (!context.mounted) return;
+              await context.settings.clearRole();
+              if (context.mounted) {
+                context.go(AppRoutes.roleSelection);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
@@ -3512,12 +3482,12 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
             const SizedBox(height: 14),
             Text(
-              'Driver Support & Dispatch Chat'.trAuto(context),
+              'Direct Chat Messages'.trAuto(context),
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
-              'Instant chat channel with Agri-Dispatch and Corridor Support team.'.trAuto(context),
+              'Chat directly with Farmers and Buyers regarding active deliveries.'.trAuto(context),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12.5, color: const Color(0xFF64748B)),
             ),
@@ -3539,7 +3509,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                         accountNumber: widget.accountNumber,
                         cargoCapacity: widget.cargoCapacity,
                         licenseNumber: widget.licenseNumber,
-                        initialThreadId: 'dispatch',
                       ),
                     ),
                   );
@@ -3548,7 +3517,7 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   backgroundColor: const Color(0xFF064E3B),
                   foregroundColor: Colors.white,
                 ),
-                child: Text('Start Chat with Support'.trAuto(context)),
+                child: Text('Open Messages'.trAuto(context)),
               ),
             ),
           ],

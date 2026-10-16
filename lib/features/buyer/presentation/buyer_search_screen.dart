@@ -252,26 +252,32 @@ class _BuyerSearchScreenState extends State<BuyerSearchScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _textDark),
-                        onPressed: () => Navigator.pop(context),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.eco_rounded, color: _forestGreen, size: 22),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${context.tr.appName} Direct',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: _forestGreen,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _textDark),
+                          onPressed: () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        const Icon(Icons.eco_rounded, color: _forestGreen, size: 22),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${context.tr.appName} Direct',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _forestGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Row(
                     children: [
