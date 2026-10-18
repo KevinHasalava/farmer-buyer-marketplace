@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 
-import 'deliveries_screen.dart';
 import 'delivery_details_screen.dart';
-import 'driver_chat_screen.dart';
+import 'driver_bottom_nav.dart';
 import 'driver_profile_photo_data.dart';
 import 'driver_profile_screen.dart';
 import 'pickup_navigation_map_data.dart';
@@ -43,7 +42,6 @@ class DriverDashboardScreen extends StatefulWidget {
 
 class _DriverDashboardScreenState extends State<DriverDashboardScreen>
     with SingleTickerProviderStateMixin {
-  int _selectedNavIndex = 0;
   bool _isOnDuty = true;
   late AnimationController _transitPulseController;
   late Animation<double> _transitPulseAnimation;
@@ -1493,141 +1491,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen>
 
   // ── Bottom Navigation Bar ──────────────────────────────────────────────────
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.only(top: 10, bottom: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            index: 0,
-            icon: Icons.local_shipping,
-            label: context.tr.navHome,
-          ),
-          _buildNavItem(
-            index: 1,
-            icon: Icons.shopping_bag_outlined,
-            label: context.tr.navDeliveries,
-          ),
-          _buildNavItem(
-            index: 2,
-            icon: Icons.chat_bubble_outline_rounded,
-            label: context.tr.navChat,
-          ),
-          _buildNavItem(
-            index: 3,
-            icon: Icons.person_outline_rounded,
-            label: context.tr.navProfile,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required String label,
-  }) {
-    final isSelected = _selectedNavIndex == index;
-    const activeColor = Color(0xFF065F46);
-    const inactiveColor = Color(0xFF94A3B8);
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        if (index == 1) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const DeliveriesScreen(),
-            ),
-          );
-          return;
-        }
-        if (index == 2) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => DriverChatScreen(
-                driverId: _currentDriverId ?? widget.driverId,
-                driverName: _driverName,
-                vehicleType: _vehicleType,
-                plateNumber: _plateNumber,
-                bankName: _bankName,
-                accountNumber: _accountNumber,
-                cargoCapacity: _cargoCapacity,
-                licenseNumber: _licenseNumber,
-              ),
-            ),
-          );
-          return;
-        }
-        if (index == 3) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => DriverProfileScreen(
-                driverId: _currentDriverId ?? widget.driverId,
-                driverName: _driverName,
-                vehicleType: _vehicleType,
-                plateNumber: _plateNumber,
-                bankName: _bankName,
-                accountNumber: _accountNumber,
-                cargoCapacity: _cargoCapacity,
-                licenseNumber: _licenseNumber,
-              ),
-            ),
-          );
-          return;
-        }
-        setState(() {
-          _selectedNavIndex = index;
-        });
-
-        if (index != 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '$label tab selected',
-                style: TextStyle(),
-              ),
-              duration: const Duration(seconds: 1),
-              backgroundColor: const Color(0xFF065F46),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return DriverBottomNav(
+      current: 0,
+      driverId: _currentDriverId ?? widget.driverId,
+      driverName: _driverName,
+      vehicleType: _vehicleType,
+      plateNumber: _plateNumber,
+      bankName: _bankName,
+      accountNumber: _accountNumber,
+      cargoCapacity: _cargoCapacity,
+      licenseNumber: _licenseNumber,
     );
   }
 

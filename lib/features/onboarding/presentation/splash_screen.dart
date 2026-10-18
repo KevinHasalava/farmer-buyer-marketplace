@@ -79,15 +79,37 @@ class _SplashScreenState extends State<SplashScreen>
           context.go(AppRoutes.homeFor(role));
           return;
         }
+      } on AuthException catch (e) {
+        if (!mounted) return;
+        final msg = e.message.toLowerCase();
+        if (msg == 'profile_not_found' ||
+            msg.contains('not found') ||
+            msg.contains('no rows')) {
+          // Signed in (e.g. Google) but not registered yet: keep the session
+          // and let the user pick a role and complete registration.
+          final chosen = s.role;
+          context.go(!s.hasLanguage
+              ? AppRoutes.language
+              : (chosen != null
+                  ? AppRoutes.registerFor(chosen)
+                  : AppRoutes.roleSelection));
+          return;
+        }
+        await const AuthService().signOut();
       } catch (_) {
-        // Profile missing / suspended / offline: fall through to sign-in.
+        // Suspended / offline: fall through to sign-in.
         await const AuthService().signOut();
       }
     }
     if (!mounted) return;
 
-    // Sequential onboarding flow for unauthenticated users:
-    // Splash -> Language -> Onboarding (1,2,3) -> Role Selection -> Login
+    // Returning user who already chose a language: skip language selection.
+    if (s.hasLanguage) {
+      context.go(s.onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
+      return;
+    }
+
+    // First launch: Splash -> Language -> Onboarding -> Role -> Login
     context.go(AppRoutes.language);
   }
 

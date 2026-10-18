@@ -4,6 +4,9 @@ import '../../../services/chat_service.dart';
 import '../../../widgets/premium/premium_widgets.dart';
 import '../models/chat_model.dart';
 import 'chat_detail_screen.dart';
+import '../../buyer/presentation/widgets/buyer_bottom_nav.dart';
+import '../../farmer/presentation/farmer_bottom_nav.dart';
+import '../../driver/presentation/driver_bottom_nav.dart';
 
 /// Unified Chat Inbox Screen for Buyers, Farmers, and Drivers.
 class ChatListScreen extends StatefulWidget {
@@ -216,6 +219,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: switch (widget.currentRole.toLowerCase()) {
+        'farmer' => const FarmerBottomNav(current: 3),
+        'driver' => const DriverBottomNav(current: 3),
+        _ => const BuyerBottomNav(selectedIndex: 3),
+      },
     );
   }
 

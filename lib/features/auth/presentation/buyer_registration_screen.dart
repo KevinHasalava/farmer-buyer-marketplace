@@ -44,6 +44,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   bool _agreeTerms = true;
   bool _isLoading = false;
   bool _otpVerified = false;
+  bool _submitting = false;
   bool _otpSending = false;
 
   final Set<String> _producePreferences = {
@@ -77,20 +78,21 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       _authSubscription =
           SupabaseConfig.auth.onAuthStateChange.listen((data) async {
         final session = data.session;
-        if (session != null && mounted) {
-          final sbUser = session.user;
-          final metadata = sbUser.userMetadata ?? {};
-          await context.read<AppSettings>().setRole(UserRole.buyer);
-          final effectiveName = (metadata['full_name'] as String?) ??
-              sbUser.email?.split('@').first ??
-              'Buyer';
-          await BuyerProfileManager.instance.updateProfile(
-            name: effectiveName,
-            email: sbUser.email,
-          );
-          if (mounted) {
-            context.go(AppRoutes.dashboard);
-          }
+        if (session == null || !mounted || _submitting) return;
+        try {
+          final roleStr = await _authService.fetchRole();
+          if (!mounted || roleStr == 'admin') return;
+          // Already registered: go straight to the dashboard of their role.
+          final role = UserRole.fromName(roleStr) ?? UserRole.buyer;
+          await context.read<AppSettings>().setRole(role);
+          if (mounted) context.go(AppRoutes.homeFor(role));
+        } on AuthException {
+          // New Google user without a profile: stay on this form and prefill.
+          if (!mounted) return;
+          final meta = session.user.userMetadata ?? {};
+          final name = (meta['full_name'] ?? meta['name'] ?? '').toString();
+          if (_nameCtrl.text.isEmpty && name.isNotEmpty) _nameCtrl.text = name;
+          if (_emailCtrl.text.isEmpty) _emailCtrl.text = session.user.email ?? '';
         }
       });
     }
@@ -183,6 +185,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
       return;
     }
 
+    _submitting = true;
     setState(() => _isLoading = true);
 
     try {
@@ -272,6 +275,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
     } catch (e) {
       _showSnackBar('Registration error: ${e.toString()}');
     } finally {
+      _submitting = false;
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -279,7 +283,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   void _showSnackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: AutoText(msg),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
       ),
@@ -309,7 +313,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            AutoText(
               context.tr.buyerAccountCreated,
               style: TextStyle(
                 fontSize: 18,
@@ -318,7 +322,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AutoText(
               context.tr.buyerWelcomeMsg,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -342,7 +346,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
+                child: AutoText(
                   context.tr.exploreFreshProduce,
                   style: TextStyle(
                     fontSize: 15,
@@ -373,7 +377,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
             }
           },
         ),
-        title: Text(
+        title: AutoText(
           context.tr.registerAsBuyerTitle,
           style: const TextStyle(
             fontSize: 16,
@@ -448,9 +452,9 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🌿', style: TextStyle(fontSize: 12)),
+                              AutoText('🌿', style: TextStyle(fontSize: 12)),
                               SizedBox(width: 5),
-                              Text(
+                              AutoText(
                                 'BUYER REGISTRATION',
                                 style: TextStyle(
                                   fontSize: 10.5,
@@ -474,7 +478,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                AutoText(
                                   context.tr.changeRole,
                                   style: const TextStyle(
                                     fontSize: 11.5,
@@ -495,7 +499,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    Text(
+                    AutoText(
                       context.tr.registerAsBuyerTitle,
                       style: const TextStyle(
                         fontSize: 22,
@@ -505,7 +509,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    AutoText(
                       'Direct farm-fresh harvest delivered straight from rural fields to your doorstep.',
                       style: TextStyle(
                         fontSize: 12.5,
@@ -554,7 +558,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                                   width: isSel ? 1.5 : 1,
                                 ),
                               ),
-                              child: Text(
+                              child: AutoText(
                                 label,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -596,7 +600,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                               : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
+                        child: AutoText(
                           _otpVerified
                               ? context.tr.smsOtpVerified
                               : context.tr.smsOtpVerification,
@@ -635,9 +639,9 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('🇱🇰', style: TextStyle(fontSize: 16)),
+                              AutoText('🇱🇰', style: TextStyle(fontSize: 16)),
                               SizedBox(width: 6),
-                              Text(
+                              AutoText(
                                 '+94',
                                 style: TextStyle(
                                   fontSize: 13.5,
@@ -711,7 +715,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                                           color: Color(0xFF15803D),
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.verified,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -726,7 +730,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                                           color: Colors.white,
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
+                                        AutoText(
                                           context.tr.sendOtp,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -794,7 +798,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                               items: _hubList.map((hub) {
                                 return DropdownMenuItem(
                                   value: hub,
-                                  child: Text(
+                                  child: AutoText(
                                     hub,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -825,7 +829,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                     children: _prefChips.map((chip) {
                       final isSelected = _producePreferences.contains(chip);
                       return FilterChip(
-                        label: Text(
+                        label: AutoText(
                           chip,
                           style: TextStyle(
                             fontSize: 12,
@@ -932,7 +936,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                           color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
+                        child: const AutoText(
                           'OR SIGN UP WITH GOOGLE',
                           style: TextStyle(
                             fontSize: 10.5,
@@ -991,7 +995,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            const AutoText(
                               'FAST 1-CLICK REGISTRATION',
                               style: TextStyle(
                                 fontSize: 11,
@@ -1007,7 +1011,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                                 color: const Color(0xFFDCFCE7),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
+                              child: const AutoText(
                                 'RECOMMENDED',
                                 style: TextStyle(
                                   fontSize: 9.5,
@@ -1026,7 +1030,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Center(
-                          child: Text(
+                          child: AutoText(
                             'Instant verification • No password needed',
                             style: TextStyle(
                               fontSize: 11.5,
@@ -1059,7 +1063,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AutoText(
                           context.tr.agreeTermsBuyer,
                           style: const TextStyle(
                             fontSize: 11.5,
@@ -1102,7 +1106,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
+                            AutoText(
                               context.tr.createBuyerAccountBtn,
                               style: const TextStyle(
                                 fontSize: 15.5,
@@ -1126,7 +1130,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    const Text(
+                    const AutoText(
                       'Already have an account? ',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -1136,7 +1140,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                     ),
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.phoneAuth),
-                      child: const Text(
+                      child: const AutoText(
                         'Log In',
                         style: TextStyle(
                           fontSize: 13,
@@ -1189,7 +1193,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
                 child: Icon(icon, color: const Color(0xFF15803D), size: 16),
               ),
               const SizedBox(width: 10),
-              Text(
+              AutoText(
                 title,
                 style: const TextStyle(
                   fontSize: 14.5,
@@ -1211,7 +1215,7 @@ class _BuyerRegistrationScreenState extends State<BuyerRegistrationScreen> {
   Widget _buildFieldLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
+      child: AutoText(
         label,
         style: const TextStyle(
           fontSize: 12.5,

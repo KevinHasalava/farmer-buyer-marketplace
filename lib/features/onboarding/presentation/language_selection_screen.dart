@@ -24,7 +24,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _selected = context.settings.language ?? AppLanguage.sinhala;
+    _selected = context.settings.language;
   }
 
   Future<void> _continue() async {

@@ -8,6 +8,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/role_selection_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/entering_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../supabase/supabase_config.dart';
 import '../../features/driver/presentation/driver_dashboard_screen.dart';
@@ -45,6 +46,7 @@ abstract final class AppRoutes {
   static const String farmerRegister     = '/register-farmer';
   static const String driverRegister     = '/register-driver';
   static const String dashboard          = '/dashboard';
+  static const String entering           = '/entering';
   static const String farmerDashboard    = '/farmer-dashboard';
   static const String driverDashboard    = '/driver-dashboard';
   static const String driverRegistration = '/driver-registration';
@@ -160,6 +162,18 @@ final appRouter = GoRouter(
       name: 'driverRegister',
       builder: (context, state) =>
           const RegisterScreen(initialRole: UserRole.driver),
+    ),
+    GoRoute(
+      path: AppRoutes.entering,
+      name: 'entering',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return EnteringScreen(
+          role: UserRole.fromName(extra?['role'] as String?),
+          name: extra?['name'] as String?,
+          isNew: extra?['isNew'] == true,
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.welcome,

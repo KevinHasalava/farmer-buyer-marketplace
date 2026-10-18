@@ -14,10 +14,13 @@ import '../../../widgets/premium/google_brand_button.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notify_sms_service.dart';
 import '../../farmer/services/farmer_profile_manager.dart';
 import '../../buyer/services/buyer_profile_manager.dart';
 import '../../driver/services/driver_profile_manager.dart';
 import '../../admin/services/admin_auth_service.dart';
+import 'otp_verification_dialog.dart';
+
 /// Premium Login / Create Account screen — Farm2Home
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,9 +36,24 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  // Language & Smart detection helpers
+  bool get _isSinhala => context.currentLanguage == AppLanguage.sinhala;
+  bool get _isTamil => context.currentLanguage == AppLanguage.tamil;
+
+  bool get _isPhone => _isPhoneInput(_identifierCtrl.text.trim());
+
+  static bool _isPhoneInput(String input) {
+    final clean = input.replaceAll(RegExp(r'[\s\-]'), '');
+    if (clean.isEmpty) return false;
+    if (clean.contains('@') || RegExp(r'[a-zA-Z]').hasMatch(clean)) {
+      return false;
+    }
+    return RegExp(r'^\+?[0-9]{3,}$').hasMatch(clean);
+  }
+
   // Form controllers
-  final _emailCtrl    = TextEditingController();
-  final _passwordCtrl = TextEditingController();
+  final _identifierCtrl = TextEditingController();
+  final _passwordCtrl   = TextEditingController();
 
   final _authService  = const AuthService();
   StreamSubscription<AuthState>? _authSubscription;
@@ -113,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen>
     _authSubscription?.cancel();
     _headerController.dispose();
     _formController.dispose();
-    _emailCtrl.dispose();
+    _identifierCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
@@ -136,7 +154,12 @@ class _LoginScreenState extends State<LoginScreen>
         if (e.message == 'profile_not_found' ||
             e.message.toLowerCase().contains('not found') ||
             e.message.toLowerCase().contains('no rows')) {
-          if (mounted) context.go(AppRoutes.roleSelection);
+          if (mounted) {
+            final chosen = context.read<AppSettings>().role;
+            context.go(chosen != null
+                ? AppRoutes.registerFor(chosen)
+                : AppRoutes.roleSelection);
+          }
           return;
         }
         rethrow;
@@ -179,7 +202,12 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
 
-      if (mounted) context.go(AppRoutes.homeFor(targetRole));
+      if (mounted) {
+        context.go(AppRoutes.entering, extra: {
+          'role': targetRole.name,
+          'name': effectiveName,
+        });
+      }
     } finally {
       _entering = false;
     }
@@ -188,16 +216,19 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final email = _emailCtrl.text.trim();
-    final password = _passwordCtrl.text;
+    final input = _identifierCtrl.text.trim();
+    if (_isPhoneInput(input)) {
+      await _loginWithPhoneOtp(input);
+    } else {
+      await _submitEmailPassword(input, _passwordCtrl.text);
+    }
+  }
 
+  Future<void> _submitEmailPassword(String email, String password) async {
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
     // ── Dedicated Master Admin Access ─────────────────────────────────
-    // Regardless of which user/role was selected on previous screens,
-    // entering the master admin credentials (admin@farm2home.lk / Admin@2026)
-    // grants direct entry to the Admin Dashboard console.
     if (email.toLowerCase() == AdminAuthService.masterAdminEmail.toLowerCase() &&
         password == AdminAuthService.masterAdminPassword) {
       try {
@@ -206,7 +237,6 @@ class _LoginScreenState extends State<LoginScreen>
           'Master Administrator',
         );
 
-        // Also attempt Supabase sign-in in background if account exists
         try {
           if (SupabaseConfig.isInitialized) {
             await SupabaseConfig.auth.signInWithPassword(
@@ -252,6 +282,85 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) _showError(e.message);
     } catch (e) {
       if (mounted) _showError('Google Sign-In: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Sends an OTP to the phone and shows the verification sheet.
+  /// On success, looks up the profile by phone and enters the app.
+  Future<void> _loginWithPhoneOtp(String phone) async {
+    if (!NotifySmsService.isValidSriLankanMobile(phone)) {
+      _showError(_isSinhala
+          ? 'වලංගු ශ්‍රී ලාංකික ජංගම දුරකථන අංකයක් ඇතුළත් කරන්න (උදා: 077 123 4567)'
+          : 'Please enter a valid Sri Lankan mobile number (e.g. 077 123 4567)');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    final result = await NotifySmsService.instance.sendOtp(phone);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (!result.success && result.otpCode == null) {
+      _showError(result.error ?? 'Could not send OTP. Please try again.');
+      return;
+    }
+
+    if (!mounted) return;
+    final verified = await OtpVerificationSheet.show(
+      context,
+      rawPhone: phone,
+      onVerified: () {},
+    );
+
+    if (!mounted) return;
+    if (verified != true) return;
+
+    // OTP verified – find the account by phone number and sign in
+    setState(() => _isLoading = true);
+    try {
+      final normalized = NotifySmsService.formatPhone(phone);
+      // Look up profile by phone (try both formats: +94... and 94...)
+      final rows = await SupabaseConfig.client
+          .from('profiles')
+          .select('id, role')
+          .or('phone.eq.+$normalized,phone.eq.0${normalized.substring(2)},'
+              'phone.eq.+94${normalized.substring(2)},')
+          .limit(1);
+
+      if (rows.isEmpty) {
+        _showError(_isSinhala
+            ? 'මෙම අංකයට ගිණුමක් හමු නොවීය. කරුණාකර පළමුව ලියාපදිංචි වන්න.'
+            : 'No account found for this number. Please register first.');
+        return;
+      }
+
+      final roleStr = (rows.first['role'] as String).toLowerCase();
+
+      // Attempt Supabase phone OTP if configured
+      try {
+        await SupabaseConfig.auth.signInWithOtp(
+          phone: '+$normalized',
+          shouldCreateUser: false,
+        );
+      } catch (_) {
+        // Supabase phone provider not configured – that's fine, we already
+        // verified the phone ourselves via Notify.lk. Continue.
+      }
+
+      if (!mounted) return;
+      // Enter the app using the profile we found
+      await context.read<AppSettings>().setRole(UserRole.fromName(roleStr) ?? UserRole.buyer);
+      if (!mounted) return;
+      context.go(AppRoutes.entering, extra: {
+        'role': roleStr,
+        'name': '',
+      });
+    } catch (e) {
+      _showError('Sign in failed: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -328,7 +437,17 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          context.tr.enterEmailPassword,
+                          _isPhone
+                              ? (_isSinhala
+                                  ? 'ඉදිරියට යාමට ඔබගේ දුරකථන අංකය ඇතුළත් කරන්න'
+                                  : (_isTamil
+                                      ? 'தொடர உங்கள் மொபைல் எண்ணை உள்ளிடவும்'
+                                      : 'Enter your mobile number to receive an SMS OTP'))
+                              : (_isSinhala
+                                  ? 'ඉදිරියට යාමට ඔබගේ විද්‍යුත් තැපෑල හෝ දුරකථන අංකය ඇතුළත් කරන්න'
+                                  : (_isTamil
+                                      ? 'தொடர உங்கள் மின்னஞ்சல் அல்லது மொபைல் எண்ணை உள்ளிடவும்'
+                                      : 'Enter your email or mobile number to continue')),
                           style: AppTheme.fontStyle(
                             context.currentLanguage,
                             fontSize: 13,
@@ -338,42 +457,137 @@ class _LoginScreenState extends State<LoginScreen>
 
                         const SizedBox(height: AppDimensions.spaceMD),
 
-                        // ── Fields ────────────────────────────────────
+                        // ── Unified Email or Mobile Number Input ──────────
                         _PremiumField(
-                          label: context.tr.email,
-                          hint: 'your.email@example.com',
-                          icon: Icons.mail_outline_rounded,
+                          label: _isPhone
+                              ? (_isSinhala
+                                  ? 'ජංගම දුරකථන අංකය'
+                                  : (_isTamil ? 'கைபேசி எண்' : 'Mobile number'))
+                              : (_isSinhala
+                                  ? 'විද්‍යුත් තැපෑල හෝ දුරකථන අංකය'
+                                  : (_isTamil
+                                      ? 'மின்னஞ்சல் அல்லது தொலைபேசி எண்'
+                                      : 'Email or Mobile number')),
+                          hint: _isPhone
+                              ? '077 123 4567'
+                              : 'your.email@example.com / 077 123 4567',
+                          icon: _isPhone
+                              ? Icons.phone_android_rounded
+                              : Icons.alternate_email_rounded,
                           keyboardType: TextInputType.emailAddress,
-                          controller: _emailCtrl,
-                          validator: (v) =>
-                              (v == null || !v.contains('@')) ? context.tr.invalidEmail : null,
+                          controller: _identifierCtrl,
+                          onChanged: (_) => setState(() {}),
+                          validator: (v) {
+                            final val = (v ?? '').trim();
+                            if (val.isEmpty) {
+                              return _isSinhala
+                                  ? 'විද්‍යුත් තැපෑල හෝ දුරකථන අංකය ඇතුළත් කරන්න'
+                                  : 'Email or mobile number is required';
+                            }
+                            if (_isPhoneInput(val)) {
+                              final raw = val.replaceAll(RegExp(r'[\s\-]'), '');
+                              if (!RegExp(r'^(\+94|0)?7\d{8}$').hasMatch(raw)) {
+                                return _isSinhala
+                                    ? 'වලංගු දුරකථන අංකයක් ඇතුළත් කරන්න (උදා: 077 123 4567)'
+                                    : 'Enter a valid Sri Lankan number (e.g. 077 123 4567)';
+                              }
+                            } else {
+                              if (!val.contains('@') || !val.contains('.')) {
+                                return context.tr.invalidEmail;
+                              }
+                            }
+                            return null;
+                          },
                         ),
-                        const SizedBox(height: AppDimensions.spaceMD),
 
-                        // Password
-                        _PremiumPasswordField(
-                          obscure: _obscurePassword,
-                          controller: _passwordCtrl,
-                          onToggle: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
-                          validator: (v) =>
-                              (v == null || v.length < 6) ? context.tr.passwordMinLength : null,
-                        ),
+                        AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 250),
+                          crossFadeState: _isPhone
+                              ? CrossFadeState.showSecond
+                              : CrossFadeState.showFirst,
+                          firstChild: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: AppDimensions.spaceMD),
 
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => context.push(AppRoutes.forgotPassword),
-                            child: AutoText(
-                              'Forgot password?',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF15803D),
+                              // Password
+                              _PremiumPasswordField(
+                                obscure: _obscurePassword,
+                                controller: _passwordCtrl,
+                                onToggle: () => setState(
+                                    () => _obscurePassword = !_obscurePassword),
+                                validator: (v) {
+                                  if (_isPhone) return null;
+                                  return (v == null || v.length < 6)
+                                      ? context.tr.passwordMinLength
+                                      : null;
+                                },
                               ),
-                            ),
+
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () => context.push(AppRoutes.forgotPassword),
+                                  child: AutoText(
+                                    'Forgot password?',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          secondChild: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: AppDimensions.spaceMD),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FDF4),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border:
+                                      Border.all(color: const Color(0xFFBBF7D0)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.sms_outlined,
+                                          size: 18, color: Color(0xFF15803D)),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _isSinhala
+                                            ? 'මෙම අංකයට තහවුරු කිරීමේ SMS OTP කේතයක් යවනු ලැබේ'
+                                            : (_isTamil
+                                                ? 'இந்த எண்ணுக்கு சரிபார்ப்பு SMS OTP குறியீடு அனுப்பப்படும்'
+                                                : 'An SMS verification code (OTP) will be sent to this number'),
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF166534),
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppDimensions.spaceSM),
+                            ],
                           ),
                         ),
 
@@ -381,7 +595,14 @@ class _LoginScreenState extends State<LoginScreen>
 
                         // CTA Button
                         _PremiumCTAButton(
-                          label: context.tr.signIn,
+                          label: _isPhone
+                              ? (_isSinhala
+                                  ? 'OTP ලබාගන්න'
+                                  : (_isTamil ? 'OTP பெறவும்' : 'Send OTP'))
+                              : context.tr.signIn,
+                          icon: _isPhone
+                              ? Icons.sms_rounded
+                              : Icons.arrow_forward_rounded,
                           isLoading: _isLoading,
                           onPressed: _submit,
                         ),
@@ -411,6 +632,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   letterSpacing: 1.1,
                                   color: Color(0xFF94A3B8),
                                 ),
+
                               ),
                             ),
                             Expanded(
@@ -790,6 +1012,7 @@ class _PremiumField extends StatelessWidget {
     this.controller,
     this.validator,
     this.keyboardType,
+    this.onChanged,
   });
 
   final String label;
@@ -798,6 +1021,7 @@ class _PremiumField extends StatelessWidget {
   final TextEditingController? controller;
   final FormFieldValidator<String>? validator;
   final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -818,6 +1042,7 @@ class _PremiumField extends StatelessWidget {
           controller: controller,
           validator: validator,
           keyboardType: keyboardType,
+          onChanged: onChanged,
           style: const TextStyle(
             fontSize: 14.5,
             fontWeight: FontWeight.w500,
@@ -981,10 +1206,12 @@ class _PremiumCTAButton extends StatefulWidget {
     required this.onPressed,
     required this.label,
     this.isLoading = false,
+    this.icon,
   });
   final VoidCallback onPressed;
   final String label;
   final bool isLoading;
+  final IconData? icon;
 
   @override
   State<_PremiumCTAButton> createState() => _PremiumCTAButtonState();
@@ -1069,8 +1296,8 @@ class _PremiumCTAButtonState extends State<_PremiumCTAButton>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
+                    Icon(
+                      widget.icon ?? Icons.arrow_forward_rounded,
                       color: Colors.white,
                       size: 19,
                     ),

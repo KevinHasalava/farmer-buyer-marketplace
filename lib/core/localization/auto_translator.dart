@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 import 'app_settings.dart';
+import 'register_vocab.dart';
 
 /// Hybrid Automated Localization & Translation Engine for FarmTrust Marketplace.
 ///
@@ -26,6 +27,10 @@ class AppAutoTranslator extends ChangeNotifier {
   static Map<String, (String, String)> get _lookupIndex {
     if (_cachedIndex != null) return _cachedIndex!;
     final map = <String, (String, String)>{};
+
+    for (final e in kRegisterVocab.entries) {
+      map[e.key.toLowerCase().trim()] = e.value;
+    }
 
     for (final e in _primaryVocab.entries) {
       map[e.key.toLowerCase().trim()] = e.value;
@@ -568,6 +573,42 @@ class AppAutoTranslator extends ChangeNotifier {
   };
 
   static const Map<String, (String, String)> _primaryVocab = {
+    // ── Categories ─────────────────────────────────────────────────────────────
+    'Vegetables': ('එළවළු', 'காய்கறிகள்'),
+    'Vegetable': ('එළවළු', 'காய்கறி'),
+    'Fruits': ('පළතුරු', 'பழங்கள்'),
+    'Fruit': ('පළතුරු', 'பழம்'),
+    'Grains': ('ධාන්‍ය', 'தானியங்கள்'),
+    'Grain': ('ධාන්‍ය', 'தானியம்'),
+    'Spices': ('කුළුබඩු', 'மசாலா பொருட்கள்'),
+    'Spice': ('කුළුබඩු', 'மசாலா'),
+    'Dairy': ('කිරි නිෂ්පාදන', 'பால் பொருட்கள்'),
+
+    // ── Months ─────────────────────────────────────────────────────────────────
+    'January': ('ජනවාරි', 'ஜனவரி'),
+    'Jan': ('ජනවාරි', 'ஜனவரி'),
+    'February': ('පෙබරවාරි', 'பிப்ரவரி'),
+    'Feb': ('පෙබරවාරි', 'பிப்ரவரி'),
+    'March': ('මාර්තු', 'மார்ச்'),
+    'Mar': ('මාර්තු', 'மார்ச்'),
+    'April': ('අප්‍රේල්', 'ஏப்ரல்'),
+    'Apr': ('අප්‍රේල්', 'ஏப்ரல்'),
+    'May': ('මැයි', 'மே'),
+    'June': ('ජූනි', 'ஜூன்'),
+    'Jun': ('ජූනි', 'ஜூன்'),
+    'July': ('ජූලි', 'ஜூலை'),
+    'Jul': ('ජූලි', 'ஜூலை'),
+    'August': ('අගෝස්තු', 'ஆகஸ்ட்'),
+    'Aug': ('අගෝස්තු', 'ஆகஸ்ட்'),
+    'September': ('සැප්තැම්බර්', 'செப்டம்பர்'),
+    'Sep': ('සැප්තැම්බර්', 'செப்டம்பர்'),
+    'October': ('ඔක්තෝබර්', 'அக்டோபர்'),
+    'Oct': ('ඔක්තෝබර්', 'அக்டோபர்'),
+    'November': ('නොවැම්බර්', 'நவம்பர்'),
+    'Nov': ('නොවැම්බර්', 'நவம்பர்'),
+    'December': ('දෙසැම්බර්', 'டிசம்பர்'),
+    'Dec': ('දෙසැම්බර්', 'டிசம்பர்'),
+
     // ── Vegetables ─────────────────────────────────────────────────────────────
     'Carrot': ('කැරට්', 'கேரட்'),
     'Carrots': ('කැරට්', 'கேரட்'),
@@ -580,6 +621,7 @@ class AppAutoTranslator extends ChangeNotifier {
     'Cabbage': ('ගෝවා', 'முட்டைக்கோஸ்'),
     'Capsicum': ('මාළු මිරිස්', 'குடைமிளகாய்'),
     'Bell Pepper': ('මාළු මිරිස්', 'குடைமிளகாய்'),
+    'Bell Peppers': ('මාළු මිරිස්', 'குடைமிளகாய்'),
     'Chili': ('මිරිස්', 'மிளகாய்'),
     'Green Chili': ('අමු මිරිස්', 'பச்சை மிளகாய்'),
     'Beetroot': ('බීට්රූට්', 'பீட்ரூட்'),
