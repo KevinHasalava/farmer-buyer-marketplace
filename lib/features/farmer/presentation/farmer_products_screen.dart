@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
@@ -149,6 +149,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       try {
         AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
       } catch (_) {}
+      if (!mounted) return;
       _showSnackBar(context.tr.productUpdated(updated.name));
     }
   }
@@ -170,6 +171,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
           final savedProduct = ProductData.fromSupabase(
               Map<String, dynamic>.from(inserted), _farmer);
           setState(() => _products.insert(0, savedProduct));
+          if (!mounted) return;
           _showSnackBar(context.tr.productAdded(newProd.name));
           return;
         } catch (e) {
@@ -180,6 +182,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
       try {
         AdminMarketplaceService.instance.addProduct(_toAdminProduct(newProd));
       } catch (_) {}
+      if (!mounted) return;
       _showSnackBar(context.tr.productAdded(newProd.name));
     }
   }
@@ -203,6 +206,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen>
     try {
       AdminMarketplaceService.instance.updateProduct(_toAdminProduct(updated));
     } catch (_) {}
+    if (!mounted) return;
     _showSnackBar(
       '${updated.name}: ${updated.isActive ? context.tr.active : context.tr.outOfStock}',
     );

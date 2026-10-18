@@ -4,6 +4,7 @@ import '../../../core/localization/app_settings.dart';
 import '../../../core/theme/app_theme.dart';
 
 import '../../dashboard/presentation/product_detail_screen.dart';
+import '../services/farmer_profile_manager.dart';
 
 /// Pixel-perfect Add/Edit Product Screen matching Screenshot 3
 class AddEditProductScreen extends StatefulWidget {
@@ -117,6 +118,34 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     'Dairy',
   ];
 
+  static const _sriLankanDistricts = <String>[
+    'Ampara',
+    'Anuradhapura',
+    'Badulla',
+    'Batticaloa',
+    'Colombo',
+    'Galle',
+    'Gampaha',
+    'Hambantota',
+    'Jaffna',
+    'Kalutara',
+    'Kandy',
+    'Kegalle',
+    'Kilinochchi',
+    'Kurunegala',
+    'Mannar',
+    'Matale',
+    'Matara',
+    'Monaragala',
+    'Mullaitivu',
+    'Nuwara Eliya',
+    'Polonnaruwa',
+    'Puttalam',
+    'Ratnapura',
+    'Trincomalee',
+    'Vavuniya',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -137,13 +166,20 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           p != null ? p.availability.replaceAll(RegExp(r'[^0-9.]'), '') : '50',
     );
     _descriptionController = TextEditingController(
-      text: p?.description ?? 'Fresh and organic tomatoes from our farm.',
-    );
-    _locationController = TextEditingController(
-      text: p?.farmer.location ?? 'Hambantota',
+      text: p?.description ?? '',
     );
 
-    _harvestDate = DateTime(2026, 8, 18);
+    final prof = FarmerProfileManager.instance.profile;
+    final defaultLoc = p?.farmer.location ??
+        (prof.district.isNotEmpty
+            ? prof.district
+            : (prof.location.isNotEmpty ? prof.location : 'Hambantota'));
+
+    _locationController = TextEditingController(
+      text: defaultLoc,
+    );
+
+    _harvestDate = DateTime.now();
     _isOrganic = p?.tags.contains('Organic') ?? true;
     _isFresh = p?.tags.contains('Fresh') ?? true;
   }
@@ -158,6 +194,40 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   }
 
   String _formatDate(DateTime dt) {
+    final lang = context.currentLanguage;
+    if (lang == AppLanguage.sinhala) {
+      const sinhalaMonths = [
+        'ජනවාරි',
+        'පෙබරවාරි',
+        'මාර්තු',
+        'අප්‍රේල්',
+        'මැයි',
+        'ජූනි',
+        'ජූලි',
+        'අගෝස්තු',
+        'සැප්තැම්බර්',
+        'ඔක්තෝබර්',
+        'නොවැම්බර්',
+        'දෙසැම්බර්'
+      ];
+      return '${dt.day} ${sinhalaMonths[dt.month - 1]} ${dt.year}';
+    } else if (lang == AppLanguage.tamil) {
+      const tamilMonths = [
+        'ஜனவரி',
+        'பிப்ரவரி',
+        'மார்ச்',
+        'ஏப்ரல்',
+        'மே',
+        'ஜூன்',
+        'ஜூலை',
+        'ஆகஸ்ட்',
+        'செப்டம்பர்',
+        'அக்டோபர்',
+        'நவம்பர்',
+        'டிசம்பர்'
+      ];
+      return '${dt.day} ${tamilMonths[dt.month - 1]} ${dt.year}';
+    }
     const months = [
       'Jan',
       'Feb',
@@ -290,12 +360,30 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         ? '50'
         : _quantityController.text.trim();
     final desc = _descriptionController.text.trim().isEmpty
-        ? 'Fresh and organic tomatoes from our farm.'
+        ? 'Fresh and high-quality $_selectedProductName directly from our farm.'
         : _descriptionController.text.trim();
 
     final tags = <String>[];
     if (_isOrganic) tags.add('Organic');
     if (_isFresh) tags.add('Fresh');
+
+    final locText = _locationController.text.trim().isNotEmpty
+        ? _locationController.text.trim()
+        : (FarmerProfileManager.instance.profile.district.isNotEmpty
+            ? FarmerProfileManager.instance.profile.district
+            : 'Hambantota');
+
+    final baseFarmer = widget.productToEdit?.farmer ??
+        FarmerProfileManager.instance.profile.toFarmerData();
+    final updatedFarmer = baseFarmer.copyWith(location: locText);
+
+    // Save location to farmer profile so it persists
+    if (_locationController.text.trim().isNotEmpty) {
+      FarmerProfileManager.instance.updateProfile(
+        location: locText,
+        district: locText,
+      );
+    }
 
     final product = ProductData(
       name: _selectedProductName,
@@ -310,7 +398,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       description: desc,
       harvestDate: _formatDate(_harvestDate),
       tags: tags.isEmpty ? ['Farm Fresh'] : tags,
-      farmer: widget.productToEdit?.farmer ?? FarmerData.defaultFarmer,
+      farmer: updatedFarmer,
       category: _selectedCategory,
       isActive: widget.productToEdit?.isActive ?? true,
       imageUrl: _selectedImageUrl,
@@ -628,6 +716,22 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
+          selectedItemBuilder: (context) {
+            return _productOptions.map((opt) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${opt.emoji}  ${opt.name.trAuto(context)}',
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+              );
+            }).toList();
+          },
           onChanged: (val) {
             if (val != null) {
               final match = _productOptions.firstWhere(
@@ -686,6 +790,22 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
+          selectedItemBuilder: (context) {
+            return _categoryOptions.map((cat) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  cat.trAuto(context),
+                  style: AppTheme.fontStyle(
+                    context.currentLanguage,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+              );
+            }).toList();
+          },
           onChanged: (val) {
             if (val != null) {
               setState(() => _selectedCategory = val);
@@ -779,6 +899,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   // ── Description Input ───────────────────────────────────────────────────────
   Widget _buildDescriptionInput() {
+    final hint = context.currentLanguage == AppLanguage.sinhala
+        ? 'අපගේ ගොවිපළේ නැවුම් සහ උසස් තත්ත්වයේ අස්වැන්න...'
+        : (context.currentLanguage == AppLanguage.tamil
+            ? 'எங்கள் பண்ணையிலிருந்து புதிய மற்றும் உயர்தர விளைச்சல்...'
+            : 'Fresh and organic produce from our farm.');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
@@ -796,7 +922,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: 'Fresh and organic tomatoes from our farm.',
+          hintText: hint,
           hintStyle: AppTheme.fontStyle(context.currentLanguage, 
             fontSize: 14,
             color: const Color(0xFF9CA3AF),
@@ -812,14 +938,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       children: [
         // Organic Switch
         _buildSwitchItem(
-          label: 'Organic',
+          label: 'Organic'.trAuto(context),
           value: _isOrganic,
           onChanged: (v) => setState(() => _isOrganic = v),
         ),
         const SizedBox(width: 32),
         // Fresh Switch
         _buildSwitchItem(
-          label: 'Fresh',
+          label: 'Fresh'.trAuto(context),
           value: _isFresh,
           onChanged: (v) => setState(() => _isFresh = v),
         ),
@@ -855,44 +981,303 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     );
   }
 
+  // ── District Picker Modal ───────────────────────────────────────────────────
+  void _showDistrictPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        String query = '';
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final filtered = _sriLankanDistricts.where((d) {
+              final loc = d.trAuto(context).toLowerCase();
+              final eng = d.toLowerCase();
+              final q = query.toLowerCase().trim();
+              return loc.contains(q) || eng.contains(q);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.72,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 16, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.currentLanguage == AppLanguage.sinhala
+                              ? 'දිස්ත්‍රික්කය තෝරන්න'
+                              : (context.currentLanguage == AppLanguage.tamil
+                                  ? 'மாவட்டத்தைத் தேர்ந்தெடுக்கவும்'
+                                  : 'Select District'),
+                          style: AppTheme.fontStyle(
+                            context.currentLanguage,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF6B7280)),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Search Field
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search_rounded, size: 20, color: Color(0xFF9CA3AF)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              onChanged: (val) {
+                                setModalState(() => query = val);
+                              },
+                              style: AppTheme.fontStyle(
+                                context.currentLanguage,
+                                fontSize: 14,
+                                color: const Color(0xFF111827),
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: context.currentLanguage == AppLanguage.sinhala
+                                    ? 'දිස්ත්‍රික්කය සොයන්න...'
+                                    : (context.currentLanguage == AppLanguage.tamil
+                                        ? 'மாவட்டத்தைத் தேடுங்கள்...'
+                                        : 'Search district...'),
+                                hintStyle: AppTheme.fontStyle(
+                                  context.currentLanguage,
+                                  fontSize: 14,
+                                  color: const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                      itemBuilder: (ctx, i) {
+                        final dist = filtered[i];
+                        final localizedDist = dist.trAuto(context);
+                        final currentText = _locationController.text.trim().toLowerCase();
+                        final isSelected = currentText == localizedDist.toLowerCase() ||
+                            currentText == dist.toLowerCase();
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                          onTap: () {
+                            setState(() {
+                              _locationController.text = localizedDist;
+                            });
+                            Navigator.pop(ctx);
+                          },
+                          leading: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.location_on_rounded,
+                              size: 18,
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                          title: Text(
+                            localizedDist,
+                            style: AppTheme.fontStyle(
+                              context.currentLanguage,
+                              fontSize: 15,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              color: isSelected ? const Color(0xFF059669) : const Color(0xFF111827),
+                            ),
+                          ),
+                          subtitle: localizedDist != dist
+                              ? Text(
+                                  dist,
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                )
+                              : null,
+                          trailing: isSelected
+                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 20)
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   // ── Location Field ──────────────────────────────────────────────────────────
   Widget _buildLocationField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.location_on_outlined,
-            size: 18,
-            color: Color(0xFF059669),
+    final hint = context.currentLanguage == AppLanguage.sinhala
+        ? 'ස්ථානය හෝ දිස්ත්‍රික්කය ඇතුළත් කරන්න'
+        : (context.currentLanguage == AppLanguage.tamil
+            ? 'இடத்தைத் தட்டச்சு செய்க அல்லது தேர்வுசெய்க'
+            : 'Enter location or select district');
+
+    const quickDistricts = [
+      'නුවරඑළිය',
+      'මහනුවර',
+      'බදුල්ල',
+      'දඹුල්ල',
+      'හම්බන්තොට',
+      'කුරුණෑගල',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _locationController,
-              style: AppTheme.fontStyle(context.currentLanguage, 
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF111827),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 20,
+                color: Color(0xFF059669),
               ),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                hintText: 'Hambantota',
-                hintStyle: AppTheme.fontStyle(context.currentLanguage, 
-                  fontSize: 14,
-                  color: const Color(0xFF9CA3AF),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _locationController,
+                  style: AppTheme.fontStyle(context.currentLanguage, 
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF111827),
+                  ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    hintText: hint,
+                    hintStyle: AppTheme.fontStyle(context.currentLanguage, 
+                      fontSize: 14,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              InkWell(
+                onTap: _showDistrictPicker,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.map_outlined, size: 15, color: Color(0xFF059669)),
+                      const SizedBox(width: 4),
+                      Text(
+                        context.currentLanguage == AppLanguage.sinhala
+                            ? 'දිස්ත්‍රික්ක'
+                            : (context.currentLanguage == AppLanguage.tamil ? 'மாவட்டங்கள்' : 'Districts'),
+                        style: AppTheme.fontStyle(
+                          context.currentLanguage,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF059669),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF059669)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: quickDistricts.map((d) {
+              final localized = d.trAuto(context);
+              final isCurrent = _locationController.text.trim() == localized;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _locationController.text = localized;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isCurrent ? const Color(0xFF235A43) : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isCurrent ? const Color(0xFF235A43) : const Color(0xFFE5E7EB),
+                      ),
+                    ),
+                    child: Text(
+                      localized,
+                      style: AppTheme.fontStyle(
+                        context.currentLanguage,
+                        fontSize: 11,
+                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                        color: isCurrent ? Colors.white : const Color(0xFF4B5563),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }
